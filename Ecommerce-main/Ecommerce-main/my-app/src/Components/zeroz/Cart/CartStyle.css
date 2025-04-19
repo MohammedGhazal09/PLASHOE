@@ -1,0 +1,120 @@
+@media (max-width:1200px){
+    .tableWrapper{
+        flex-direction: column;
+        gap: 20px 0;
+    }
+    .tableWrapper .tableRow{
+        display: flex;
+        flex-direction: column;
+    }
+    .tableWrapper .tableRow .information{
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        height: fit-content;
+        padding: 0;
+    }
+    .tableWrapper .tableRow .information .theTxt{
+        display: flex;
+    }
+    .tableWrapper .tableRow .information .theTxt p{
+        display: block;
+    }
+    .tableWrapper .tableRow .information .cartClosingBtn{
+        margin-left: 92%;
+        width: fit-content;
+        font-size: 1.3rem;
+    }
+    .tableWrapper .tableRow .information .imgContainer{
+        width: 150px;
+    }
+    .tableWrapper .tableRow .totalPrice{
+        flex-direction: row;
+        text-align: start;
+
+    }
+    .tableWrapper table .tableHeader{
+        display: none;
+    }
+    .tableWrapper *{
+        width: 100%;
+    }
+    .tableWrapper > div h4{
+        font-size: 1.3rem;
+    }
+    .tableWrapper > div div p{
+        margin-top: 5%;
+        font-size: 1rem;
+    }
+    .productName{
+        display: flex;
+        padding: 3%;
+    }
+    .txtContainer div{
+        padding: 3%;
+    }
+    .productSubtotal  div{
+        padding: 0;
+    }
+    .txtContainer{
+        align-items: center;
+        padding: 3%;
+
+    }
+    .txtTitle{
+        display: block;
+        text-align: start;
+        font-size: 1rem;
+    }
+    .discountPrice{
+        display: flex;
+        gap: 0 10px;
+        justify-content: end;
+    }
+    .discountPrice p{
+        width: fit-content;
+    }
+    .discountPrice{
+        padding: 0;
+    }
+    .txtValue{
+        text-align: end;
+        font-size: 1rem;
+        width: fit-content;
+        white-space: nowrap;
+
+    }
+    .sliderContainer{
+        padding: 3%;
+        align-items: center;
+    }
+    .sliderContainer div{
+        text-align: center;
+        min-width: fit-content;
+        max-width: 25%;
+        justify-content: end;
+    }
+    .cartTotalContainer{
+        padding: 0;
+    }
+    .cartTotalContainer div{
+        padding: 3%;
+    }
+    .AddCoupon{
+        margin-top: 5%;
+    }
+    .coupon{
+        margin-left: 2%;
+        font-size: 0.67rem;
+        padding: 2% 5%;
+    }
+}
+@media (max-width:550px){
+    .mainDiv{
+        padding: 8% 2%;
+    }
+    .txtValue , .txtTitle{
+        font-size: 0.75rem;
+    }
+
+}

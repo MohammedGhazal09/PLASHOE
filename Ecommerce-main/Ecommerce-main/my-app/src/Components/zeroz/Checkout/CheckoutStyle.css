@@ -1,0 +1,49 @@
+#yourOrder #yourOrderDiv{
+    display: block;
+}
+@media (max-width:1200px) {
+    #checkoutMainPageContainer h1{
+        font-size: 2.5rem;
+    }
+    #checkoutMainPageContainer{
+        padding: 0 2%;
+        border-top: 1px solid #eee;
+    }
+    #checkoutMainPageContainer > div{
+        margin-top: 0;
+    }
+    #cheackoutContainer{
+        flex-direction: column-reverse;
+    }
+    #checkoutForm{
+        width: 100%;
+    }
+    #yourOrderSummary{
+        display: flex;
+    }
+    #yourOrder{
+        width: 100%;
+    }
+    #yourOrder #yourOrderDiv{
+        background-color: #f1f1f1;
+        display: none;
+    }
+    #yourOrderTitle{
+        display: none;
+    }
+    .yourOrderValue{
+        text-align: end;
+        padding-right: 4%;
+    }
+    #yourOrderSummary div, #yourOrder h6, #yourOrder p{
+        font-size: 1.2rem;
+    }
+}
+@media (max-width:800px){
+    #yourOrderSummary div , #yourOrder h6, #yourOrder p{
+        font-size: 0.8rem;
+    }
+    #cheackoutContainer h3{
+        font-size: 1.4rem;
+    }
+}

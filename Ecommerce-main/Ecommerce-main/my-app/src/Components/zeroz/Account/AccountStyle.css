@@ -1,0 +1,82 @@
+input{
+  border: 0;
+}
+input:focus{
+  box-shadow: none !important;
+  border: 0;
+  text-shadow: none;
+}
+.loginActive{
+    transform: translateX(-100%);
+    z-index: 15;
+}
+.signupActive{
+    transform: translateX(100%);
+    z-index: 12;
+}
+.websiteLogo {
+    background: linear-gradient(90deg,#4F4D36, #A49D76, #EAE7DC);
+    background-size: 300%;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: animate-gradient 5s normal ease-in-out infinite;
+  }
+  @keyframes animate-gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  @media (max-width: 1300px) {
+    .logReg, .logRegTitle{
+        width: 40vw;
+    }
+  }
+  @media (max-width: 800px) {
+    .logReg, .logRegTitle{
+        width: 45vw;
+        height: 50vh;
+    }
+    .logRegTitle h1{
+        font-size: 2.5rem;
+    }
+    .logReg h2{
+        font-size: 1.6rem;
+    }
+  }
+  @media (max-width: 600px) {
+    .mainAccountContainer{
+      background-color: #262b2c;
+    }
+    .logReg{
+        position: absolute;
+        border: 1px solid black;
+        border-radius: 10px;  
+        width: 70vw;
+        height: 70vh;
+      }
+    .loginActive, .signupActive{
+        transform: translateX(0);
+    }
+    #logRegActive{
+        z-index: 15;
+    }
+}
+@media (max-width:400px){
+  .logReg{
+    width: 80vw;
+    padding: 3%;
+  }
+  .changeBtn{
+    width: 80vw;
+  }
+  .logReg input{
+    margin-bottom: 6%;
+    padding: 3%;
+  }
+}

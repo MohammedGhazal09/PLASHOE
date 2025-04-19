@@ -1,0 +1,165 @@
+*{
+    box-sizing: border-box;
+}
+.betterForDiv{
+    height: 60vh;
+    background-image: url('../../Imgs/zeroz/betterForImg.jpg');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.betterForDiv h1{
+    font-size: 4.2rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 0px 15px;
+}
+.betterForDiv p{
+    font-size: 1.2rem;
+    padding-top: 15px;
+    text-align: center;
+    padding: 0px 15px;
+}
+.betterForDiv button{
+    margin-top: 30px;
+}
+
+.pros{
+    margin: 0 10%;
+}
+.pros div{
+    padding: 0 10%;
+    margin: 50px 0;
+}
+.pros div p{
+    font-size: 1.2rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.pros .icons{
+    font-size: 20px;
+    margin-top: 5px;
+    margin-right: 20px;
+}
+
+.footerContainer{
+    margin: 30px 0;
+    gap: 0 10%;
+    padding-left: 5%;
+    flex-wrap: wrap;
+}
+.footerContainer div{
+    width: 15%;
+}
+.footerContainer div p{
+    font-size: 1.2rem;
+}
+.footerContainer div h2{
+    margin-bottom: 15%;
+}
+.footerContainer div li{
+    font-size: 1.1rem;
+    padding: 5px 0;
+    color: #6e7051;
+    font-weight: 400;
+}
+.footerRouteContainer .iconsContainer a:hover{
+    color: #f6aa28;
+}
+
+.copyRightContainer{
+    background-color: #f1f1ef;
+}
+
+@media (max-width: 1100px) {
+    .pros{
+        margin: 0;
+        flex-direction: column;
+        align-items: center;
+        padding: 5%;
+    }
+    .pros div{
+        border: none;
+        margin: 10px 0;
+    }
+    .pros div p ,.pros .icons{
+        font-size: 1rem;
+    }
+    .footerContainer{
+        padding-left: 20%;
+
+    }
+    .footerContainer .iconsContainer{
+        margin-top: 13%;
+    }
+    .footerContainer .footerRouteContainer{
+        width: 40%;
+        margin-bottom: 8%;
+    }
+}
+@media (max-width: 950px) {
+    .betterForDiv{
+        height: 40vh;
+    }
+}
+@media (max-width: 800px) {
+    .betterForDiv{
+        height: 30vh;
+    }
+    .betterForDiv h1{
+        font-size: 2rem;
+    }
+    .betterForDiv p{
+        font-size: 1rem;
+    }
+    .betterForDiv div{
+        flex-direction: column;
+    }
+    .betterForDiv button{
+        padding: 10px 0;
+        width: 90vw;
+    }
+    .footerContainer{
+        padding: 0;
+        margin-bottom: 0;
+    }
+    .footerContainer .footerRouteContainer{
+        width: 50%;
+        height: 25vh;
+        min-height: fit-content;
+        margin-bottom: 15%;
+        text-align: center;
+    }
+    .footerRouteContainer .iconsContainer{
+        width: 100%;
+        justify-content: center;
+        margin-top: 5%;
+    }
+    .footerContainer div p {
+        font-size: 1rem;
+    }
+    .footerContainer div li{
+        font-size: 1rem;
+        padding: 0;
+    }
+    .copyRightContainer{
+        flex-direction: column;
+        align-items: center;
+         padding-left: 5%; 
+         padding-right: 5%;
+    }
+    .copyRightContainer img{
+        width: 300px;
+        margin-top: 20px;
+    }
+}
+@media (max-width: 485px) {
+    .betterForDiv {
+        height: 38vh;
+    }
+}
+@media (max-height: 900px) {
+    .betterForDiv{
+        height: 50vh;
+    }
+}

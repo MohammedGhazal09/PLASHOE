@@ -1,0 +1,397 @@
+*{
+    box-sizing: border-box;
+}
+.homeFirstDiv{
+    background-image: url('../../Imgs/zeroz/homePage.jpg');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    height: 95vh;
+    padding-left: 15%;
+    padding-top: 12%;
+    margin: 1.5%;
+}
+
+.asSeenIn{
+    margin: 0 50px;
+}
+
+.aboutUs{
+    margin: 0 5%;
+}
+.aboutUs img{
+    width: 40vw;
+}
+.aboutUs div{
+    width: 50vw;
+}
+.aboutUs button:hover{
+    border-color: #262b2c;
+    transition: 0.8s;
+}
+
+.seeHowMadeDiv{
+    margin: 1.5%;
+    background-color: #f1f1ef;
+}
+
+.quickViewContainer{
+    position:fixed;
+    background-color: transparent;
+    z-index: 5;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+}
+.quickViewContainer .quickViewBg{
+    position: absolute;
+    background-color: black;
+    opacity: 0.3;
+    z-index: 10;
+    width: 100vw;
+    height: 100vh;
+}
+.quickViewContainer .quickViewDiv{
+    position: absolute;
+    width: 70vw;
+    height: fit-content;
+    background-color: white;
+    z-index: 100;
+    margin-left: 15%;
+    margin-top: 150px;
+}
+
+.homeShoes{
+    margin: 0 15%;
+}
+
+.mainGrid .sale{
+    position: absolute;
+    top: -10px;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    left: 90.8%;
+    color: white;
+    padding-top: 10px;
+    padding-left: 1px;
+    font-weight: 500;
+    /* z-index: 50; */
+}
+.quickViewDiv .quickViewCloseBtn{
+    left: 97%;
+    top: 10px;
+    font-size: 1.2rem;
+    color: #262b2c;
+    cursor: pointer;;
+}
+
+.menOrWomenRoute{
+    width: 100vw;
+    height: 70vh;
+    max-width: 100%;
+}
+.menOrWomenRoute #menRoute{
+    width: 100%;
+    background-image: url('../../Imgs/zeroz//menRoute.jpg');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.menOrWomenRoute #womenRoute{
+    width: 100%;
+    background-image: url('../../Imgs/zeroz//womenRoute.jpg');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.menOrWomenRoute div button:hover{
+    color: black;
+    background-color: white;
+    transition: 0.5s;
+}
+@media (max-width:1200px) {
+    .homeFirstDiv{
+        padding-top: 7%;
+        padding-left: 9%;
+        margin: 0;
+        height: 55vh;
+    }
+    .homeFirstDiv h1{
+        font-size: 3.5rem;
+        width: 60%;
+    }
+    .homeFirstDiv p{
+        width: 50%;
+    }
+
+    .asSeenIn{
+        display: block;
+        text-align: center;
+        margin: 0 5%;
+    }
+    .asSeenIn p{
+        margin-top: 40px;
+    }
+    .asSeenIn div{
+        margin: 0 2%;
+    }
+    .asSeenIn div img{
+        width: 19.5vw;
+    }
+    .homeShoes .mainGrid{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .quickViewContainer .quickViewDiv{
+        flex-direction: column;
+        margin: 0;  
+        height: 100vh;
+        overflow-y: scroll;
+        width: 80vw;
+        margin-left: 10%;
+    }
+    .quickViewContainer .quickViewDiv .quickViewContent{
+        width: 100%;
+    }
+    .quickViewContainer .quickViewDiv .quickViewImg{
+        width: 75%;
+        margin-bottom: 5%;
+    }
+    .menOrWomenRoute{
+        gap: 0;
+        padding: 0;
+        height: 50vh;
+
+    }
+}
+@media (max-width:800px){
+    .homeFirstDiv{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-left: 0;
+        height: fit-content;
+    }
+    .homeFirstDiv h1{
+        font-size: 2.5rem;
+        width: 100%;
+        text-align: center;
+        padding: 0 15px;
+        margin-bottom: 10px;
+
+    }
+    .homeFirstDiv p{
+        width: 100%;
+        font-size: 1rem;
+        text-align: center;
+        padding: 0 15px;
+        margin-bottom: 15px;
+
+    }
+    .homeFirstDiv div{
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin: 0;
+        margin-bottom: 0%;
+    }
+    .homeFirstDiv div button{
+        margin: 0;
+        margin-bottom: 20px;
+        width: 90%;
+        padding: 8px;
+    }
+    .asSeenIn div{
+        display: block;
+        margin: auto;
+        width: fit-content;
+    }
+    .asSeenIn div img{
+        width: 25vw;
+    }
+
+    .aboutUs{
+        flex-direction: column;
+        text-align: center;
+        padding: 5%;
+    }
+    .aboutUs img{
+        padding-top: 0;
+        padding-bottom: 0;
+        width: 70vw;
+    }
+    .aboutUs div{
+        width: 97vw;
+        padding: 0 5%;
+    }
+    .aboutUs h6{
+        font-size: 2rem;
+
+    }
+    .aboutUs h2{
+        font-size: 2.5rem;
+    }
+    .aboutUs p{
+        font-size: 0.8rem;
+        padding: 0 5%;
+    }
+    .seeHowMadeDiv{
+        padding: 0 3%;
+        margin: 0;
+        padding-bottom: 5%;
+    }
+    .seeHowMadeDiv h2{
+        font-size: 2rem;
+    }
+    .seeHowMadeDiv > p{
+        font-size: 0.9rem;
+        font-weight: normal;
+    }
+    .makingContainer div p{
+        font-size: 0.8rem;
+    } 
+    .makingContainer{
+        display: block;
+    }
+    .makingContainer .beforeImg{
+        margin-left: 5%;
+        width: 60vw;
+    }
+    .makingContainer .afterImg{
+        margin-right: 5%;
+        width: 60vw;
+    }
+    .makingContainer .shoes{
+        display: flex;
+        justify-content: center;
+    }
+    .homeShoes .mainGrid div h5{
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    .homeShoes .mainGrid div p{
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    .mainGrid .sale{
+        width: 40px;
+        height: 40px;
+        padding-top: 8px;
+        font-weight: 400;
+    }
+    .quickViewContainer .quickViewDiv .quickViewImg{
+        width: 100%;
+        margin-bottom: 5%;
+    }
+    
+    .quickViewContainer .quickViewContent{
+        width: fit-content;
+    }
+    .quickViewContainer .addToCartContainer{
+        flex-direction: column;
+        align-items: center;
+    }
+    .quickViewContainer .addToCartContainer div{
+        justify-content: center;
+        align-items: center;
+        padding-bottom: 5%;
+    }
+    .quickViewContainer .addToCartContainer button{
+        width: fit-content;
+        padding: 3%;
+    }
+    .quickViewContainer .addToCartContainer div div{
+        height: 45px;
+    }
+    .quickViewDiv .quickViewCloseBtn{
+        left: 94%;
+        top: 15px;
+        font-size: 1.1rem;
+    }
+
+    .shoesEmv{
+        flex-direction: column-reverse;
+        height: fit-content;
+        padding-bottom: 10%;
+        text-align: center;
+        padding: 1.5%;
+    }
+    .shoesEmv div{
+        padding: 0;
+        margin-bottom: 5%;
+    }
+    .shoesEmvImgContainer{
+        width: 100%;
+    }
+    .shoesEmv div p{
+        font-size: 1rem;
+    }
+    .customersSpeak{
+        flex-direction: column;
+    }
+    .customersSpeak .customersSpeakDiv{
+        width: 100%;
+        margin-bottom: 3%;
+    }
+
+}
+@media (max-width:600px){ 
+    .homeShoes .mainGrid{
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .homeShoes .headerDiv{
+        display: block;
+        text-align: center;
+    }
+    .homeShoes .headerDiv h4{
+        padding-bottom: 10px;
+        font-size: 1.4rem;
+    }
+    .mainGrid .sale{
+        left: 92%;
+    }
+    .productShare{
+        gap: 0px 10px;
+        justify-content: center;
+    }
+    .quickViewContainer .quickViewContent{
+        padding: 1.5%;
+        width: 100%;
+    }
+    .quickViewContainer .quickViewDiv .quickViewImg{
+        width: 100%;
+        margin-bottom: 5%;
+    }
+    .quickViewContainer .addToCartContainer button{
+        width: fit-content;
+        padding: 2.5%;
+    }
+    .quickViewContainer .addToCartContainer div div{
+        height: 50px;
+    }
+    /* .quickViewContainer .quickViewDiv{
+        padding: 1.5%;
+    } */
+
+    .menOrWomenRoute{
+        flex-direction: column;
+    }
+    .menOrWomenRoute > div{
+        height: 100%;
+    }
+    
+
+}
+@media (max-width:430px){
+    .mainGrid .sale{
+        left: 89%;
+    }
+    .quickViewDiv .quickViewCloseBtn{
+        left: 90%;
+    }
+    .shoesEmv .shoesEmvImgContainer img{
+        width: 50%;
+
+    }
+}

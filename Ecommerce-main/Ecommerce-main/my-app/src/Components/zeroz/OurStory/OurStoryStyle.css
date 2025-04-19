@@ -1,0 +1,95 @@
+@media (max-width: 1400px){
+    .veganRecycledHandmadeContainer{
+        padding: 3% 0;
+
+    }
+}
+@media (max-width: 1100px){
+    .missionVisionContainer{
+        margin: 0;
+    }
+    .missionVisionContainer > div{
+        margin: 5%;
+        column-gap: 20%;
+    }
+    .veganRecycledHandmadeContainer{
+        flex-direction: column; 
+        align-items: center;
+    }
+    .veganRecycledHandmadeContainer > div{
+        margin-top: 3%;
+        width: 50%;
+        min-width: fit-content;
+    }
+    .veganRecycledHandmadeContainer > p{
+        width: 100%;
+        text-align: center;
+    }
+    .veganRecycledHandmadeContainer > div > img{
+        width: 25%;
+        height: 25%;
+    }
+}
+@media (max-width: 800px){
+    .ourStoryTitle{
+        font-size: 3rem;
+        margin-bottom: 30px;
+    }
+    .ourStorySideHeader{
+        font-size: 1.2rem;
+        line-height: 1.2;
+    }
+
+    .ourStorySpecs{
+        margin: 2.5% 5%;
+    }
+    .ourStorySpecs > div{
+        flex-direction: column;
+    }
+    .ourStorySpecs > div > div{
+        margin-bottom: 10%;
+    }
+    .missionVisionContainer > div{
+        flex-direction: column;
+    }
+    .missionVisionContainer > div > div{
+        margin-top: 3%;
+        font-size: 1rem;
+    }
+    .seeHowMadeDiv{
+        padding: 0 3%;
+        margin: 0;
+        padding-bottom: 5%;
+    }
+    .seeHowMadeDiv h2{
+        font-size: 2rem;
+    }
+    .seeHowMadeDiv > p{
+        font-size: 0.9rem;
+        font-weight: normal;
+    }
+    .makingContainer div p{
+        font-size: 0.8rem;
+    } 
+    .makingContainer{
+        display: block;
+    }
+    .makingContainer .beforeImg{
+        margin-left: 5%;
+        width: 60vw;
+    }
+    .makingContainer .afterImg{
+        margin-right: 5%;
+        width: 60vw;
+    }
+    .makingContainer .shoes{
+        display: flex;
+        justify-content: center;
+    }
+}
+@media (max-width: 600px){ 
+    .veganRecycledHandmadeContainer > p{
+        font-size: 1rem;
+    }
+    
+}

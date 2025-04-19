@@ -1,0 +1,41 @@
+html .contBody {
+    background-color: white !important;
+}
+
+@media (max-width: 900px) {
+    .bigDiv {
+        margin: 0 ;
+    }
+    .contactDiv {
+        flex-direction: column;
+    }
+    .infoContainer {
+        width: 100% ;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        }
+    .contactDiv div  p {
+        padding: 0;
+    }
+    .contactDiv > span {
+        width: 100% !important;
+        height: 1px !important;
+        margin-bottom: 16px;
+    }
+    .contactDiv > div > div {
+        width: 100% !important;
+    }
+    .formContainer {
+        width: 90% !important;
+    }
+    .contactDiv:last-child form {
+        width: 100% !important;
+    }
+    .contactDiv:last-child form input {
+        width: 100% !important;
+    }
+    form textarea {
+        width: 100% !important;
+    }
+}

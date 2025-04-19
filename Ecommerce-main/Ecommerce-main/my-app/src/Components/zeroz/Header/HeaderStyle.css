@@ -1,0 +1,208 @@
+*{
+    box-sizing: border-box;
+}
+p,h5,h6{
+    user-select: none;
+}
+.icons .count{
+    position: absolute;
+    margin-top: -55px;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    margin-left: 1%;
+}
+.shipping{
+    background-color: #f1f1ef !important;
+}
+.sidebarContainer{
+    z-index: 5;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+}
+.sidebarContainer .sidebarDiv{
+    position: absolute;
+    z-index: 10;
+    background-color: white;
+    min-width: 85vw;
+    height: 100vh;
+}
+.sidebarDiv .sidebarSections{
+    margin-top: 100px;
+}
+.sidebarDiv .closeBtn{
+    margin-left: 96%;
+    margin-top: 3%;
+    cursor: pointer;
+}
+.sidebarDiv .closeBtn:active{
+    border: 1px dotted gray;
+    padding: 3px;
+}
+.sidebarBg{
+    position: absolute;
+    background-color: black;
+    opacity: 0.3;
+    z-index: -1;
+    width: 100vw;
+    height: 100vh;
+}
+.shoppingContainer{
+    position: fixed;
+    z-index: 5;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: scroll;
+}
+.shoppingContainer .shoppingDiv{
+    z-index: 10;
+    background-color: white;
+    height: 100vh;
+}
+.shoppingContainer .shoppingBg{
+    background-color: black;
+    opacity: 0.3;
+    z-index: -1;
+    height: 100vh;
+}
+.shoppingDiv .noElement{
+    color: #abaeae;
+    
+}
+.shoppingDiv .shoppingBtn{
+    background-color: #6e7051;
+    transition: 0.5s;
+}
+.shoppingDiv .shoppingBtn:hover{
+    background-color: #262b2c;
+}
+/* @media (max-height: 800px) {
+    .shoppingDiv .shoppingBtn{
+        margin-top: 81vh;
+    }
+}
+@media (max-height: 600px) {
+    .shoppingDiv .shoppingBtn{
+        margin-top: 78vh;
+    }
+} */
+@media (min-width: 1100px){
+    .sidebarContainer{
+    display: none;
+    }
+}
+@media (max-width: 1450px) {
+    .headerLinks .ourStory{
+        margin-left: 70%;
+    }
+}
+@media (max-width: 1300px) {
+    .headerLinks .ourStory{
+        margin-left: 65%;
+    }
+}
+@media (max-width: 1100px) {
+    .headerLinks ul .leftLinks, .headerLinks ul .rightLinks{
+        display: none;
+    }
+    .headerLinks ul{
+        width: 100%;
+        justify-content: end;
+    }
+    .ShippingHeader{
+        display: flex;
+        justify-content: center;
+        background-color: white;
+    }
+    .ShippingHeader button{
+        position: absolute;
+        z-index: 1;
+    }
+    .ShippingHeader #sidebar{
+        display: block;
+    }
+    .shoppingContainer .shoppingDiv{
+        width: 70vw;
+    }
+    .shoppingContainer .shoppingBg{
+        width: 30vw;
+    }
+}
+@media (max-width: 1000px) {
+    .headerLinks .icons{
+        font-size: 18px;
+        
+    }
+    .headerLinks .icons:first-child{
+        font-size: 20px;
+        /* margin-left: ; */
+    }
+    .icons .count{
+        margin-top: -42px;
+        margin-left: 1.5%;
+        width: 15px;
+        height: 15px;
+        font-size: 10px;
+        line-height: 15px;
+
+    }
+}
+@media (max-width: 830px) {
+        /* .headerLinks .cart{
+        margin-left: 160%;
+    } */
+    /* .shoppingContainer .shoppingDiv{
+        width: 58.5vw;
+        margin-left: 40%;
+    } */
+}
+@media (max-width: 720px) {
+        /* .headerLinks .cart{
+        margin-left: 120%;
+    } */
+    .sidebarDiv .closeBtn{
+        margin-left: 95%;
+        margin-top: 3%;
+        cursor: pointer;
+    }
+}
+@media (max-width: 620px) {
+    .header{
+        margin-left: 2%;
+        margin-right: 2%;
+    }
+}
+@media (max-width: 500px) {
+        /* .headerLinks .cart{
+        margin-left: 50%;
+        margin-right: -25%;
+    } */
+    .headerLinks .icons{
+        font-size: 16px;
+    }
+    .icons .count{
+        width: 12px;
+        height: 12px;
+        font-size:9px;
+        margin-top: -37px;
+        margin-left: 4%;
+        /* padding-right: 0%; */
+        line-height: 1.5;
+    }
+    .header button{
+        /* margin-left: -10%; */
+        width: 120px;
+    }
+    .sidebarDiv .closeBtn{
+        margin-left: 90%;
+    }
+    .shoppingContainer .shoppingDiv{
+        width: 100vw;
+        margin-left: 0;
+        font-size: 0.7rem;
+    }
+    .shoppingContainer .shoppingBg{
+        width: 0;
+    }
+}
