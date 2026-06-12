@@ -21,7 +21,7 @@ const createIdempotencyKey = () => {
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items, discount, couponCode, applyCoupon, clearCart, syncCart } = useCartStore();
+  const { items, discount, couponCode, applyCoupon, syncCart } = useCartStore();
   const subtotal = useCartStore(selectSubtotal);
   const total = useCartStore(selectTotal);
   const { isAuthenticated, user } = useAuthStore();
@@ -117,13 +117,12 @@ export default function Checkout() {
 
       // Submit to API
       const response = await ordersApi.create(orderData, checkoutAttemptKeyRef.current);
-      if (response.success) {
+      const checkoutUrl = response?.data?.payment?.checkoutUrl;
+      if (response.success && checkoutUrl) {
         checkoutAttemptKeyRef.current = null;
-        await clearCart();
-        toast.success('Order placed successfully!');
-        navigate('/account', { state: { tab: 'orders' } });
+        window.location.assign(checkoutUrl);
       } else {
-        toast.error(response.message || 'Failed to place order');
+        toast.error(response.message || 'Failed to start payment');
       }
     } catch (error) {
       console.error('Checkout error:', error);
@@ -278,14 +277,14 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* Payment Info (Mock) */}
+          {/* Payment Info */}
           <h2 className="text-xl font-semibold mt-10 mb-6">Payment Method</h2>
           <div className="bg-[#f1f1ef] p-6 rounded">
             <p className="text-gray-600">
-              💳 This is a demo store. No real payment will be processed.
+              Card payment opens in a secure hosted checkout.
             </p>
             <p className="text-gray-500 text-sm mt-2">
-              Your order will be automatically confirmed.
+              Your order updates after payment confirmation.
             </p>
           </div>
         </div>
@@ -365,7 +364,7 @@ export default function Checkout() {
               disabled={loading}
               className="w-full bg-[#6e7051] text-white py-4 font-semibold mt-6 hover:bg-[#262b2c] transition-colors disabled:opacity-50"
             >
-              {loading ? 'PROCESSING...' : 'PLACE ORDER'}
+              {loading ? 'PROCESSING...' : 'CONTINUE TO PAYMENT'}
             </button>
           </div>
         </div>

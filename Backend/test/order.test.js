@@ -1,12 +1,16 @@
 import mongoose from "mongoose";
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import app from "../app.js";
 import Cart from "../models/Cart.js";
 import Coupon from "../models/Coupon.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { createCheckoutFromCart } from "../services/checkoutService.js";
+import {
+  resetPaymentProviderOverride,
+  setPaymentProviderOverride,
+} from "../services/paymentProvider.js";
 import { authHeader } from "./helpers/auth.js";
 import {
   createCartForUser,
@@ -29,6 +33,29 @@ const postCheckout = (user, idempotencyKey, body = {}) =>
       shippingAddress: validShippingAddress(),
       ...body,
     });
+
+const createFakePaymentProvider = () => ({
+  createCheckoutSession: vi.fn(async ({ order }) => ({
+    id: `session-${order._id}`,
+    url: `https://checkout.example.test/pay/${order._id}`,
+    payment_intent: `intent-${order._id}`,
+    customer: "customer-placeholder",
+  })),
+});
+
+let fakePaymentProvider;
+
+beforeEach(() => {
+  fakePaymentProvider = createFakePaymentProvider();
+  setPaymentProviderOverride(fakePaymentProvider);
+});
+
+afterEach(() => {
+  resetPaymentProviderOverride();
+});
+
+const responseOrder = (response) => response.body.data.order;
+const responsePayment = (response) => response.body.data.payment;
 
 describe("order routes", () => {
   it("rejects order creation without a token", async () => {
@@ -94,7 +121,7 @@ describe("order routes", () => {
     });
   });
 
-  it("creates an order from the cart, applies coupon totals, decrements stock, and clears the cart", async () => {
+  it("starts payment from the cart, applies coupon totals, decrements stock, and clears the cart", async () => {
     const user = await createUser();
     const product = await createProduct({ stock: 10 });
     const coupon = await createCoupon({ code: "SAVE20", discountPercentage: 20 });
@@ -109,21 +136,24 @@ describe("order routes", () => {
 
     expect(response.body).toMatchObject({
       success: true,
-      message: "Order placed successfully",
+      message: "Payment started",
     });
-    expect(response.body.data).toMatchObject({
+    expect(responseOrder(response)).toMatchObject({
       subtotal: 200,
       discount: 20,
       total: 160,
       couponCode: "SAVE20",
-      status: "processing",
+      status: "pending",
+      paymentStatus: "payment_pending",
+      paymentProvider: "stripe",
       notes: "Leave at reception",
+      inventoryDecremented: true,
     });
-    expect(response.body.data.idempotencyKey).toBeTruthy();
-    expect(response.body.data.cartFingerprint).toBeTruthy();
-    expect(response.body.data.orderNumber).toMatch(/^PLS-/);
-    expect(response.body.data.items).toHaveLength(1);
-    expect(response.body.data.items[0]).toMatchObject({
+    expect(responseOrder(response).idempotencyKey).toBeTruthy();
+    expect(responseOrder(response).cartFingerprint).toBeTruthy();
+    expect(responseOrder(response).orderNumber).toMatch(/^PLS-/);
+    expect(responseOrder(response).items).toHaveLength(1);
+    expect(responseOrder(response).items[0]).toMatchObject({
       product: product._id.toString(),
       name: product.name,
       image: product.image,
@@ -131,6 +161,23 @@ describe("order routes", () => {
       size: 42,
       price: product.price.current,
     });
+    expect(responsePayment(response)).toMatchObject({
+      provider: "stripe",
+      checkoutUrl: `https://checkout.example.test/pay/${responseOrder(response)._id}`,
+      sessionId: `session-${responseOrder(response)._id}`,
+      paymentIntentId: `intent-${responseOrder(response)._id}`,
+    });
+
+    expect(fakePaymentProvider.createCheckoutSession).toHaveBeenCalledTimes(1);
+    const providerRequest = fakePaymentProvider.createCheckoutSession.mock.calls[0][0];
+    expect(providerRequest.order.total).toBe(160);
+    expect(providerRequest.metadata).toMatchObject({
+      orderId: responseOrder(response)._id,
+      orderNumber: responseOrder(response).orderNumber,
+      userId: user._id.toString(),
+    });
+    expect(providerRequest.metadata.idempotencyKey).toBeTruthy();
+    expect(providerRequest.idempotencyKey).toMatch(/^checkout-[a-f0-9]{64}$/);
 
     const updatedCoupon = await Coupon.findById(coupon._id);
     expect(updatedCoupon.usedCount).toBe(1);
@@ -163,12 +210,39 @@ describe("order routes", () => {
 
     expect(second.body).toMatchObject({
       success: true,
-      message: "Order already placed",
+      message: "Payment already started",
     });
-    expect(second.body.data._id).toBe(first.body.data._id);
+    expect(responseOrder(second)._id).toBe(responseOrder(first)._id);
+    expect(responsePayment(second).checkoutUrl).toBe(responsePayment(first).checkoutUrl);
+    expect(fakePaymentProvider.createCheckoutSession).toHaveBeenCalledTimes(1);
     expect(await Order.countDocuments({ user: user._id })).toBe(1);
     expect((await Coupon.findById(coupon._id)).usedCount).toBe(1);
     expect((await Product.findById(product._id)).stock).toBe(8);
+  });
+
+  it("compensates checkout side effects when provider session creation fails", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 10 });
+    const coupon = await createCoupon({ code: "FAILPAY", discountPercentage: 15 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }], {
+      couponCode: coupon.code,
+      discount: coupon.discountPercentage,
+    });
+    fakePaymentProvider.createCheckoutSession.mockRejectedValueOnce(new Error("provider down"));
+
+    const response = await postCheckout(user, nextIdempotencyKey()).expect(424);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Payment could not be started. Please try again.",
+    });
+    expect(await Order.countDocuments({ user: user._id })).toBe(0);
+    expect((await Product.findById(product._id)).stock).toBe(10);
+    expect((await Coupon.findById(coupon._id)).usedCount).toBe(0);
+    const cart = await Cart.findOne({ user: user._id });
+    expect(cart.items).toHaveLength(1);
+    expect(cart.couponCode).toBe(coupon.code);
+    expect(cart.discount).toBe(coupon.discountPercentage);
   });
 
   it("rejects stale idempotency-key reuse for a changed non-empty cart", async () => {
@@ -203,6 +277,25 @@ describe("order routes", () => {
       ],
     });
     expect(await Order.countDocuments({ user: user._id })).toBe(1);
+  });
+
+  it("rejects client-supplied totals, line items, or payment fields", async () => {
+    const user = await createUser();
+    await createCartForUser(user);
+
+    const response = await postCheckout(user, nextIdempotencyKey(), {
+      total: 1,
+      items: [],
+      paymentStatus: "paid",
+      paymentProviderSessionId: "client-session",
+    }).expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+    expect(fakePaymentProvider.createCheckoutSession).not.toHaveBeenCalled();
+    expect(await Order.countDocuments({ user: user._id })).toBe(0);
   });
 
   it("rejects insufficient checkout stock without creating an order or clearing the cart", async () => {
@@ -250,6 +343,7 @@ describe("order routes", () => {
         {
           code: "PRODUCT_UNAVAILABLE",
           resource: "product",
+          productId: product._id.toString(),
           requested: 1,
           available: 0,
         },
@@ -362,7 +456,37 @@ describe("order routes", () => {
     });
   }
 
-  it("cancels a processing order, restores stock once, and treats repeated cancellation as idempotent", async () => {
+  it("cancels a checkout-created order, restores stock once, and treats repeated cancellation as idempotent", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 5 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }]);
+    const checkout = await postCheckout(user, nextIdempotencyKey()).expect(201);
+    const orderId = responseOrder(checkout)._id;
+
+    expect((await Product.findById(product._id)).stock).toBe(3);
+
+    const first = await request(app)
+      .put(`/api/orders/${orderId}/cancel`)
+      .set(authHeader(user))
+      .expect(200);
+
+    expect(first.body).toMatchObject({
+      success: true,
+      message: "Order cancelled",
+    });
+    expect(first.body.data.status).toBe("cancelled");
+    expect(first.body.data.inventoryDecremented).toBe(false);
+    expect((await Product.findById(product._id)).stock).toBe(5);
+
+    await request(app)
+      .put(`/api/orders/${orderId}/cancel`)
+      .set(authHeader(user))
+      .expect(200);
+
+    expect((await Product.findById(product._id)).stock).toBe(5);
+  });
+
+  it("cancels a legacy processing order without restoring stock", async () => {
     const user = await createUser();
     const product = await createProduct({ stock: 5 });
     const order = await createOrder(user, {
@@ -379,6 +503,7 @@ describe("order routes", () => {
       subtotal: 200,
       total: 200,
       status: "processing",
+      inventoryDecremented: false,
     });
 
     const first = await request(app)
@@ -391,14 +516,39 @@ describe("order routes", () => {
       message: "Order cancelled",
     });
     expect(first.body.data.status).toBe("cancelled");
-    expect((await Product.findById(product._id)).stock).toBe(7);
+    expect(first.body.data.inventoryDecremented).toBe(false);
+    expect((await Product.findById(product._id)).stock).toBe(5);
+  });
 
-    await request(app)
+  it("blocks customer cancellation after payment capture", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 5 });
+    const order = await createOrder(user, {
+      items: [
+        {
+          product: product._id,
+          name: product.name,
+          image: product.image,
+          quantity: 1,
+          size: 42,
+          price: product.price.current,
+        },
+      ],
+      status: "processing",
+      paymentStatus: "paid",
+      inventoryDecremented: true,
+    });
+
+    const response = await request(app)
       .put(`/api/orders/${order._id}/cancel`)
       .set(authHeader(user))
-      .expect(200);
+      .expect(400);
 
-    expect((await Product.findById(product._id)).stock).toBe(7);
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Cannot cancel an order after payment has been captured",
+    });
+    expect((await Product.findById(product._id)).stock).toBe(5);
   });
 
   it("keeps shipped cancellation rejected and unauthorized cancellation forbidden", async () => {

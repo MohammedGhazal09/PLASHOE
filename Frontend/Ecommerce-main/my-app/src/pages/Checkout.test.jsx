@@ -8,6 +8,7 @@ import { normalizeCartItem, useCartStore } from '../store/cartStore';
 import Checkout from './Checkout';
 
 const mockNavigate = jest.fn();
+const assignMock = jest.fn();
 
 jest.mock('react-router-dom', () => {
   return {
@@ -116,6 +117,16 @@ const fillShippingForm = (container) => {
 
 beforeEach(() => {
   resetStores();
+  assignMock.mockClear();
+});
+
+beforeAll(() => {
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: {
+      assign: assignMock,
+    },
+  });
 });
 
 test('applies a coupon, shows success, and clears the coupon input', async () => {
@@ -157,12 +168,21 @@ test('preserves coupon input when coupon application fails', async () => {
   expect(couponInput).toHaveValue('MISSING');
 });
 
-test('submits authenticated orders with shipping information', async () => {
-  ordersApi.create.mockResolvedValue({ success: true });
+test('submits authenticated checkout-start and redirects to hosted payment', async () => {
+  ordersApi.create.mockResolvedValue({
+    success: true,
+    data: {
+      payment: {
+        checkoutUrl: 'https://checkout.example.test/pay/session-1',
+      },
+    },
+  });
   const { container } = await renderCheckout();
 
   fillShippingForm(container);
-  userEvent.click(screen.getByRole('button', { name: /place order/i }));
+  expect(screen.queryByText(new RegExp('no real payment will be ' + 'processed', 'i'))).not.toBeInTheDocument();
+  expect(screen.queryByText(new RegExp('automatically ' + 'confirmed', 'i'))).not.toBeInTheDocument();
+  userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
 
   await waitFor(() => {
     expect(ordersApi.create).toHaveBeenCalledWith(
@@ -182,8 +202,23 @@ test('submits authenticated orders with shipping information', async () => {
       expect.any(String)
     );
   });
-  expect(toast.success).toHaveBeenCalledWith('Order placed successfully!');
-  expect(cartApi.clearCart).toHaveBeenCalled();
+  expect(assignMock).toHaveBeenCalledWith('https://checkout.example.test/pay/session-1');
+  expect(toast.success).not.toHaveBeenCalled();
+  expect(cartApi.clearCart).not.toHaveBeenCalled();
+  expect(mockNavigate).not.toHaveBeenCalledWith('/account', { state: { tab: 'orders' } });
+});
+
+test('shows an error when checkout-start succeeds without a payment URL', async () => {
+  ordersApi.create.mockResolvedValue({ success: true, data: { payment: {} } });
+  const { container } = await renderCheckout();
+
+  fillShippingForm(container);
+  userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
+
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith('Failed to start payment');
+  });
+  expect(assignMock).not.toHaveBeenCalled();
 });
 
 test('keeps cart state and syncs after checkout conflict responses', async () => {
@@ -196,13 +231,14 @@ test('keeps cart state and syncs after checkout conflict responses', async () =>
   const { container } = await renderCheckout();
 
   fillShippingForm(container);
-  userEvent.click(screen.getByRole('button', { name: /place order/i }));
+  userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
 
   await waitFor(() => {
   expect(toast.error).toHaveBeenCalledWith('Insufficient stock for one or more cart items');
   });
   expect(cartApi.clearCart).not.toHaveBeenCalled();
   expect(cartApi.getCart).toHaveBeenCalledTimes(3);
+  expect(assignMock).not.toHaveBeenCalled();
   expect(mockNavigate).not.toHaveBeenCalledWith('/account', { state: { tab: 'orders' } });
 });
 
@@ -222,7 +258,7 @@ test('defensively redirects unauthenticated submit attempts to account', async (
   const { container } = await renderCheckout();
 
   fillShippingForm(container);
-  userEvent.click(screen.getByRole('button', { name: /place order/i }));
+  userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
 
   await waitFor(() => {
     expect(toast.error).toHaveBeenCalledWith('Please log in to checkout');

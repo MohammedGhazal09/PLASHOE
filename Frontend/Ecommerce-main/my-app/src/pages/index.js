@@ -5,6 +5,7 @@ export { default as Collection } from './Collection';
 export { default as Sale } from './Sale';
 export { default as Cart } from './Cart';
 export { default as Checkout } from './Checkout';
+export { default as CheckoutReturn } from './CheckoutReturn';
 export { default as Account } from './Account';
 export { default as Contact } from './Contact';
 export { default as LookBook } from './LookBook';

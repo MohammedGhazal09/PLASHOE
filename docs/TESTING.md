@@ -5,7 +5,8 @@ PLASHOE now has local automated coverage for the stabilized purchase-path, Phase
 
 - Backend API route tests run with Vitest, Supertest, and MongoMemoryReplSet.
 - Frontend behavior tests run through the existing Create React App Jest setup.
-- Frontend build, backend/frontend suites, and the static checker are part of the Phase 4 gate.
+- Phase 5 payment tests use mocked provider seams and locally signed webhook payloads; they do not call live Stripe services.
+- Frontend build, backend/frontend suites, and the static checker are part of the Phase 5 gate.
 - The static core-flow contract checker remains as a root-level safety check.
 
 ## Current Test State
@@ -67,11 +68,25 @@ cd Backend
 npm test -- order.test.js cart.test.js
 ```
 
+Run Phase 5 focused backend payment tests:
+
+```bash
+cd Backend
+npm test -- order.test.js payment-state.test.js payment-webhook.test.js
+```
+
 Run Phase 4 focused frontend cart/checkout tests:
 
 ```bash
 cd Frontend/Ecommerce-main/my-app
 npm test -- cartStore.test.js Checkout.test.jsx ordersApi.test.js --watchAll=false
+```
+
+Run Phase 5 focused frontend payment tests:
+
+```bash
+cd Frontend/Ecommerce-main/my-app
+npm test -- Checkout.test.jsx CheckoutReturn.test.jsx ordersApi.test.js --watchAll=false
 ```
 
 Run the frontend production build:
@@ -114,6 +129,17 @@ Latest Phase 4 focused evidence:
 | `cd Frontend/Ecommerce-main/my-app && npm run build` | Passed with the existing `OrderDetail.jsx` hook dependency warning plus CRA/Browserslist toolchain notices |
 | `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` | Passed with 8 `PASS`, 1 `WARN`, and no `FAIL` findings |
 
+Latest Phase 5 focused evidence:
+
+| Command | Result |
+| --- | --- |
+| `cd Backend && npm test -- order.test.js payment-state.test.js payment-webhook.test.js security-config.test.js` | Passed: 4 test files, 45 tests |
+| `cd Frontend/Ecommerce-main/my-app && npm test -- Checkout.test.jsx CheckoutReturn.test.jsx ordersApi.test.js --watchAll=false` | Passed: 3 test suites, 14 tests |
+| `cd Backend && npm test` | Passed: 11 test files, 92 tests |
+| `cd Frontend/Ecommerce-main/my-app && npm test -- --watchAll=false` | Passed: 9 test suites, 35 tests |
+| `cd Frontend/Ecommerce-main/my-app && npm run build` | Passed with the existing `OrderDetail.jsx` hook dependency warning plus CRA/Browserslist toolchain notices |
+| `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` | Passed with 8 `PASS`, 1 inventory heuristic `WARN`, and no `FAIL` findings |
+
 The frontend test command currently emits React 18 deprecation/act warnings from the older CRA/React Testing Library stack. They do not fail the suite. The frontend build also emits an existing `OrderDetail.jsx` hook dependency warning.
 
 ## Backend Test Setup
@@ -133,7 +159,9 @@ Backend test files:
 | `Backend/test/app.test.js` | Importable app health smoke |
 | `Backend/test/auth.test.js` | Register, duplicate register, login, invalid login, current user, missing token, invalid token |
 | `Backend/test/cart.test.js` | Protected cart access, cart creation, stock-conflict add/update behavior, item add/update/remove/clear, coupon success/failure/minimum, no-cart coupon removal |
-| `Backend/test/order.test.js` | Missing token, idempotency header validation, empty cart, missing shipping field, transactional checkout, exact retry, stale-key conflict, rollback failure seams, stock conflict, deleted product conflict, coupon max-use/concurrency, cancellation stock restore, and concurrent `PLS-` order-number uniqueness |
+| `Backend/test/order.test.js` | Missing token, idempotency header validation, empty cart, missing shipping field, transactional checkout, exact retry, stale-key conflict, rollback failure seams, stock conflict, deleted product conflict details, coupon max-use/concurrency, checkout-created cancellation stock restore, legacy cancellation no-restore guard, and concurrent `PLS-` order-number uniqueness |
+| `Backend/test/payment-state.test.js` | Payment status persistence, legacy `not_required` defaults, provider event uniqueness, paid/failure/cancellation/refund transition behavior, and one-time inventory restoration |
+| `Backend/test/payment-webhook.test.js` | Raw-body signed Stripe webhook route coverage, invalid signatures, duplicate event no-ops, unresolved retry failures, success/failure/expiry reconciliation, related payment-intent lookup, and full/partial refund events |
 | `Backend/test/contact.test.js` | Public contact success and required-field rejection |
 | `Backend/test/security-config.test.js` | Runtime config validation, JWT secret length, JWT expiry format, and startup defaults |
 | `Backend/test/security-middleware.test.js` | Rate limits, request-size caps, and stable security envelopes |
@@ -154,7 +182,18 @@ Frontend test files:
 | `Frontend/Ecommerce-main/my-app/src/components/ProtectedRoute.test.jsx` | Authenticated and unauthenticated route guard behavior |
 | `Frontend/Ecommerce-main/my-app/src/api/ordersApi.test.js` | `Idempotency-Key` header propagation for checkout creation |
 | `Frontend/Ecommerce-main/my-app/src/pages/Checkout.test.jsx` | Coupon success/failure, idempotent order submission, checkout `409` conflict cart preservation/sync, empty cart, unauthenticated submit guard |
+| `Frontend/Ecommerce-main/my-app/src/pages/CheckoutReturn.test.jsx` | Checkout success/cancel return states, authoritative order refetch, paid/pending/failed/canceled labels, and recovery actions |
 | `Frontend/Ecommerce-main/my-app/src/pages/Contact.test.jsx` | Required-field validation, successful submit clear, failed submit preservation |
+
+## Payment Testing Notes
+
+Automated payment tests are deterministic:
+
+- Checkout-start tests inject a fake provider through `Backend/services/paymentProvider.js` and assert amount, metadata, retry, and compensation behavior.
+- Webhook tests sign JSON payloads locally with HMAC and exercise the real Express route at `/api/webhooks/stripe`.
+- Frontend payment tests mock `ordersApi` and browser navigation; no Stripe script, frontend Stripe key, live backend, or network call is required.
+
+Optional manual local webhook exploration can use the Stripe CLI to forward events to `/api/webhooks/stripe`, but that is not an automated gate for this project.
 
 Use Jest module mocks for API wrappers, toast calls, and Leaflet. Route-oriented tests should use the real `react-router-dom` test routers. Do not require a live backend or browser map service for these tests.
 

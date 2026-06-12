@@ -1,8 +1,8 @@
 import Order from '../models/Order.js';
 import {
   cancelOrderWithStockRestore,
-  createCheckoutFromCart,
 } from '../services/checkoutService.js';
+import { startCheckoutPayment } from '../services/paymentService.js';
 
 // @desc    Create order from cart (checkout)
 // @route   POST /api/orders
@@ -11,8 +11,8 @@ export const createOrder = async (req, res, next) => {
     const { shippingAddress, notes } = req.body;
     const idempotencyKey = req.get('Idempotency-Key');
 
-    const result = await createCheckoutFromCart({
-      userId: req.user._id,
+    const result = await startCheckoutPayment({
+      user: req.user,
       shippingAddress,
       notes,
       idempotencyKey
@@ -20,8 +20,11 @@ export const createOrder = async (req, res, next) => {
 
     res.status(result.statusCode).json({
       success: true,
-      message: result.replayed ? 'Order already placed' : 'Order placed successfully',
-      data: result.order
+      message: result.replayed ? 'Payment already started' : 'Payment started',
+      data: {
+        order: result.order,
+        payment: result.payment
+      }
     });
   } catch (error) {
     next(error);

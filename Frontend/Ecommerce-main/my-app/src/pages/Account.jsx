@@ -5,6 +5,7 @@ import { faUser, faBox, faHeart, faSignOutAlt, faCog, faChevronRight, faFilter }
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { ordersApi } from '../api/ordersApi';
+import { getPaymentStatusLabel } from '../utils/paymentStatus';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -294,6 +295,11 @@ export default function Account() {
                           <p className="text-gray-500 text-sm">
                             {new Date(order.createdAt).toLocaleDateString()}
                           </p>
+                          {order.paymentStatus && (
+                            <p className="text-gray-500 text-sm">
+                              {getPaymentStatusLabel(order.paymentStatus)}
+                            </p>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <span

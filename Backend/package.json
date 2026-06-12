@@ -20,6 +20,7 @@
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.24.0",
+    "stripe": "^22.2.0",
     "zod": "^4.4.3"
   },
   "keywords": [

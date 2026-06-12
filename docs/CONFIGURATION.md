@@ -19,6 +19,11 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 | `JWT_EXPIRE` | Optional | `1h` | Token lifetime passed to `jsonwebtoken.sign`. Values must match a `jsonwebtoken` duration such as `30m`, `1h`, or `2h`. |
 | `FRONTEND_URL` | Required | None | CORS origin allowed by the Express server. Startup validation requires a valid `http` or `https` URL. <!-- VERIFY: production FRONTEND_URL value --> |
 | `PORT` | Optional | `5000` | Port used by `app.listen` in `Backend/server.js`. Startup validation requires a positive integer from `1` to `65535` when set. |
+| `PAYMENTS_ENABLED` | Optional | Enabled outside tests; disabled by default in tests | Enables Stripe-backed checkout unless set exactly to `false`. When enabled, the Stripe and payment return URL variables below are required. |
+| `STRIPE_SECRET_KEY` | Required when payments enabled | None | Backend-only Stripe API secret used by `Backend/services/paymentProvider.js`. Do not expose this in frontend config. |
+| `STRIPE_WEBHOOK_SECRET` | Required when payments enabled | None | Stripe webhook endpoint signing secret used to verify `POST /api/webhooks/stripe`. |
+| `PAYMENT_SUCCESS_URL` | Required when payments enabled | None | Frontend return URL for successful hosted checkout redirects, usually `/checkout/success`. Must be `http` or `https`. |
+| `PAYMENT_CANCEL_URL` | Required when payments enabled | None | Frontend return URL for canceled hosted checkout redirects, usually `/checkout/cancel`. Must be `http` or `https`. |
 
 ### Frontend
 
@@ -61,6 +66,11 @@ JWT_SECRET=replace-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRE=1h
 FRONTEND_URL=http://localhost:3000
 PORT=5000
+PAYMENTS_ENABLED=true
+STRIPE_SECRET_KEY=stripe_secret_key_placeholder
+STRIPE_WEBHOOK_SECRET=stripe_webhook_secret_placeholder
+PAYMENT_SUCCESS_URL=http://localhost:3000/checkout/success
+PAYMENT_CANCEL_URL=http://localhost:3000/checkout/cancel
 ```
 
 Frontend `.env` format:
@@ -85,6 +95,8 @@ Create React App only exposes custom browser variables that start with `REACT_AP
 
 - Backend startup validation is implemented in `Backend/config/env.js` and is called from `Backend/server.js` before `connectDB()` and `app.listen(...)`.
 - `MONGO_URI`, `JWT_SECRET`, and `FRONTEND_URL` are required for backend startup.
+- `PAYMENTS_ENABLED` defaults to enabled outside tests. Set it to exactly `false` for local backend work that intentionally avoids payment setup.
+- When payments are enabled, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENT_SUCCESS_URL`, and `PAYMENT_CANCEL_URL` are required and validated at startup.
 - `JWT_SECRET` must be at least 32 characters, JWT verification allows HS256 only, and the default token lifetime is `1h`.
 - `PORT` and `JWT_EXPIRE` are optional but validated when present.
 - Frontend display, external URL, map, and feature-flag variables have fallback behavior in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
@@ -125,4 +137,5 @@ No `.env.development`, `.env.production`, or `.env.test` files are checked in. U
 - Local backend: `Backend/.env`
 - Local frontend: `Frontend/Ecommerce-main/my-app/.env`
 - Production backend: configure `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRE`, `FRONTEND_URL`, and `PORT` in the backend host secret/config manager. <!-- VERIFY: production backend environment is configured in the hosting platform -->
+- Production payment setup: configure backend-only Stripe secret variables and public frontend return URLs in the backend host secret/config manager. Create a Stripe webhook endpoint that points to `/api/webhooks/stripe`. <!-- VERIFY: production Stripe endpoint and return URLs are configured -->
 - Production frontend: configure `REACT_APP_API_URL` and any public display, map, social, company, and feature-flag values before running `npm run build`. If MapTiler tiles are used, set `REACT_APP_MAPTILER_API_KEY` to a domain-restricted public key. <!-- VERIFY: production frontend build environment is configured in the hosting platform -->

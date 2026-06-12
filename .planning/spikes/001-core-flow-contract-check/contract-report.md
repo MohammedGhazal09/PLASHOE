@@ -1,6 +1,6 @@
 # Core Flow Contract Check Report
 
-Generated: 2026-06-12T15:51:33.706Z
+Generated: 2026-06-12T19:25:51.466Z
 
 Verdict: VALIDATED
 
@@ -14,5 +14,5 @@ Verdict: VALIDATED
 | PASS | Checkout order summary treats coupon discount as a percentage | Checkout computes a discount amount from subtotal and percentage. | Render the order-summary discount as subtotal * discount / 100 and label the percentage separately. |
 | PASS | Removing a coupon handles a missing cart | removeCoupon returns a successful empty-cart response before populate when no cart exists. | Return a successful empty-cart response when no cart exists, or create/load a cart before populating. |
 | PASS | Core route auth boundaries match the intended storefront flow | Cart and order routers apply router.use(protect); contact POST remains public in Backend/routes/contactRoutes.js. | Keep cart and order routes protected, and keep public contact submission separate from admin contact routes. |
-| PASS | Checkout has a production payment state | Checkout announces demo payment behavior in Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:285; orders are created without a payment provider. | Add a payment provider contract before production: payment intent creation, confirmation, failure handling, order payment status, and refund path. |
+| PASS | Checkout has a production payment state | Payment artifacts detected: checkout redirect=true, payment state=true, provider checkout=true, webhook=true, event idempotency=true. | Keep hosted checkout redirect, independent payment state, raw-body webhook verification, and provider-event idempotency in sync. |
 

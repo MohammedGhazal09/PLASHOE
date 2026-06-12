@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-12T15:51:33.706Z",
+  "generated_at": "2026-06-12T19:25:51.466Z",
   "spike": "001-core-flow-contract-check",
   "verdict": "VALIDATED",
   "counts": {
@@ -60,8 +60,8 @@
       "id": "payment-production-readiness",
       "title": "Checkout has a production payment state",
       "status": "PASS",
-      "evidence": "Checkout announces demo payment behavior in Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:285; orders are created without a payment provider.",
-      "recommendation": "Add a payment provider contract before production: payment intent creation, confirmation, failure handling, order payment status, and refund path."
+      "evidence": "Payment artifacts detected: checkout redirect=true, payment state=true, provider checkout=true, webhook=true, event idempotency=true.",
+      "recommendation": "Keep hosted checkout redirect, independent payment state, raw-body webhook verification, and provider-event idempotency in sync."
     },
     {
       "id": "inventory-enforcement",

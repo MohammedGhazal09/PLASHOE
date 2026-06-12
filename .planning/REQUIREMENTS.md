@@ -37,10 +37,10 @@
 
 ### Payments
 
-- [ ] **PAY-01**: Demo payment copy is replaced by a real payment flow.
-- [ ] **PAY-02**: Orders track payment status separately from fulfillment status.
-- [ ] **PAY-03**: Payment confirmation, failure, cancellation, and refund paths are represented.
-- [ ] **PAY-04**: Payment webhook handling is covered by tests.
+- [x] **PAY-01**: Demo payment copy is replaced by a real payment flow.
+- [x] **PAY-02**: Orders track payment status separately from fulfillment status.
+- [x] **PAY-03**: Payment confirmation, failure, cancellation, and refund paths are represented.
+- [x] **PAY-04**: Payment webhook handling is covered by tests.
 
 ### Admin Fulfillment
 
@@ -100,10 +100,10 @@
 | CHK-02 | Phase 4 | Complete |
 | CHK-03 | Phase 4 | Complete |
 | CHK-04 | Phase 4 | Complete |
-| PAY-01 | Phase 5 | Pending |
-| PAY-02 | Phase 5 | Pending |
-| PAY-03 | Phase 5 | Pending |
-| PAY-04 | Phase 5 | Pending |
+| PAY-01 | Phase 5 | Complete |
+| PAY-02 | Phase 5 | Complete |
+| PAY-03 | Phase 5 | Complete |
+| PAY-04 | Phase 5 | Complete |
 | ADM-01 | Phase 6 | Pending |
 | ADM-02 | Phase 6 | Pending |
 | ADM-03 | Phase 6 | Pending |

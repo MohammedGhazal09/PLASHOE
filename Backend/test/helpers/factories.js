@@ -111,6 +111,17 @@ export const createOrder = async (user, overrides = {}) => {
   });
 };
 
+export const createProviderBackedOrder = async (user, overrides = {}) =>
+  createOrder(user, {
+    status: "pending",
+    paymentStatus: "payment_pending",
+    paymentProvider: "stripe",
+    paymentProviderSessionId: `session-${nextId()}`,
+    paymentCheckoutUrl: "https://checkout.example.test/session",
+    inventoryDecremented: true,
+    ...overrides,
+  });
+
 export const createContactMessage = async (overrides = {}) =>
   ContactMessage.create({
     name: "Contact User",

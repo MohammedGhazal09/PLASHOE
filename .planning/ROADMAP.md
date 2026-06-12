@@ -15,7 +15,7 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 2: Automated Test Foundation** - Add backend/frontend automated tests around the stabilized purchase path. (completed 2026-06-12)
 - [x] **Phase 3: API Security and Validation** - Add API hardening, config validation, dependency remediation, and request allowlists. (completed 2026-06-12)
 - [x] **Phase 4: Checkout Data Integrity and Inventory** - Make order creation, coupons, carts, stock, and order numbers consistent under real usage. (completed 2026-06-12)
-- [ ] **Phase 5: Production Payments** - Replace demo checkout with a real payment flow and payment-state model.
+- [x] **Phase 5: Production Payments** - Replace demo checkout with a real payment flow and payment-state model. (completed 2026-06-12)
 - [ ] **Phase 6: Admin Fulfillment Operations** - Add admin order fulfillment APIs and operational views.
 - [ ] **Phase 7: Catalog and Frontend Architecture Cleanup** - Normalize product/cart data and reduce fragile frontend/API structure.
 - [ ] **Phase 8: CI/CD, Observability, and Deployment Readiness** - Add pipeline checks, deployment readiness, logging, and environment verification.
@@ -175,23 +175,23 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 05-01: Payment state, configuration, and provider seam.
+- [x] 05-01: Payment state, configuration, and provider seam.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 05-02: Checkout-start payment session integration.
+- [x] 05-02: Checkout-start payment session integration.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 05-03: Webhook reconciliation and refund handling.
+- [x] 05-03: Webhook reconciliation and refund handling.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-04: Frontend payment redirect and return states.
+- [x] 05-04: Frontend payment redirect and return states.
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 05-05: Payment docs, static checker, and final verification.
+- [x] 05-05: Payment docs, static checker, and final verification.
 
 ### Phase 6: Admin Fulfillment Operations
 
@@ -266,13 +266,13 @@ Plans:
 | 2. Automated Test Foundation | 4/4 | Complete | 2026-06-12 |
 | 3. API Security and Validation | 3/3 | Complete | 2026-06-12 |
 | 4. Checkout Data Integrity and Inventory | 3/3 | Complete   | 2026-06-12 |
-| 5. Production Payments | 0/5 | Ready to execute | - |
+| 5. Production Payments | 5/5 | Complete    | 2026-06-12 |
 | 6. Admin Fulfillment Operations | 0/3 | Not started | - |
 | 7. Catalog and Frontend Architecture Cleanup | 0/3 | Not started | - |
 | 8. CI/CD, Observability, and Deployment Readiness | 0/3 | Not started | - |
 
 ## Recommendations
 
-- Execute Phase 5 next so the current demo payment path is replaced with hosted Stripe Checkout and webhook-backed payment state.
-- Keep payment execution after checkout integrity; real payments amplify inconsistent order/cart/stock behavior.
+- Start Phase 6 next so paid orders can move into safe admin fulfillment operations.
+- Keep fulfillment operations after payments; operator workflows should only act on authoritative payment state.
 - Keep CI/CD after tests exist; otherwise CI has too little signal.

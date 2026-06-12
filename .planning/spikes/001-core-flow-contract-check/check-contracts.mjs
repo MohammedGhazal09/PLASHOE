@@ -7,6 +7,7 @@ const root = path.resolve(spikeDir, '../../..');
 
 const rel = {
   app: 'Frontend/Ecommerce-main/my-app/src/App.js',
+  backendApp: 'Backend/app.js',
   contactPage: 'Frontend/Ecommerce-main/my-app/src/pages/Contact.jsx',
   checkoutPage: 'Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx',
   ordersApi: 'Frontend/Ecommerce-main/my-app/src/api/ordersApi.js',
@@ -15,6 +16,11 @@ const rel = {
   orderController: 'Backend/controllers/orderController.js',
   cartRoutes: 'Backend/routes/cartRoutes.js',
   orderRoutes: 'Backend/routes/orderRoutes.js',
+  webhookRoutes: 'Backend/routes/webhookRoutes.js',
+  webhookController: 'Backend/controllers/webhookController.js',
+  paymentProvider: 'Backend/services/paymentProvider.js',
+  orderModel: 'Backend/models/Order.js',
+  paymentEventModel: 'Backend/models/PaymentEvent.js',
   contactRoutes: 'Backend/routes/contactRoutes.js',
   productModel: 'Backend/models/Product.js',
 };
@@ -47,6 +53,7 @@ function check(id, title, status, evidence, recommendation) {
 }
 
 const app = read('app');
+const backendApp = read('backendApp');
 const contactPage = read('contactPage');
 const checkoutPage = read('checkoutPage');
 const ordersApi = read('ordersApi');
@@ -55,6 +62,11 @@ const cartController = read('cartController');
 const orderController = read('orderController');
 const cartRoutes = read('cartRoutes');
 const orderRoutes = read('orderRoutes');
+const webhookRoutes = read('webhookRoutes');
+const webhookController = read('webhookController');
+const paymentProvider = read('paymentProvider');
+const orderModel = read('orderModel');
+const paymentEventModel = read('paymentEventModel');
 const contactRoutes = read('contactRoutes');
 const productModel = read('productModel');
 
@@ -150,15 +162,30 @@ checks.push(check(
 ));
 
 const checkoutStatesDemoPayment = /No real payment will be processed|automatically confirmed/.test(checkoutPage);
-const orderAutoProcessing = /status:\s*'processing'|status.*processing/.test(orderController);
+const checkoutRedirectsToPayment = /payment\?\.checkoutUrl|payment\.checkoutUrl|checkoutUrl/.test(checkoutPage) && /window\.location\.assign/.test(checkoutPage);
+const hasPaymentState = /paymentStatus/.test(orderModel) && /payment_pending/.test(orderModel) && /paid/.test(orderModel);
+const hasProviderCheckout = /createCheckoutSession/.test(paymentProvider) && /checkout\.sessions\.create/.test(paymentProvider);
+const hasWebhookRoute =
+  /express\.raw/.test(backendApp) &&
+  /webhookRoutes/.test(backendApp) &&
+  /\/stripe/.test(webhookRoutes) &&
+  /handleStripeWebhook/.test(webhookController);
+const hasPaymentEventIdempotency = /providerEventId/.test(paymentEventModel) && /unique:\s*true/.test(paymentEventModel);
 checks.push(check(
   'payment-production-readiness',
   'Checkout has a production payment state',
-  checkoutStatesDemoPayment && orderAutoProcessing ? 'WARN' : 'PASS',
+  !checkoutStatesDemoPayment &&
+    checkoutRedirectsToPayment &&
+    hasPaymentState &&
+    hasProviderCheckout &&
+    hasWebhookRoute &&
+    hasPaymentEventIdempotency
+    ? 'PASS'
+    : 'WARN',
   checkoutStatesDemoPayment
-    ? `Checkout announces demo payment behavior in ${rel.checkoutPage}:${lineOf(checkoutPage, 'No real payment')}; orders are created without a payment provider.`
-    : 'No demo payment copy detected in checkout.',
-  'Add a payment provider contract before production: payment intent creation, confirmation, failure handling, order payment status, and refund path.'
+    ? `Checkout still announces demo payment behavior in ${rel.checkoutPage}:${lineOf(checkoutPage, 'No real payment')}.`
+    : `Payment artifacts detected: checkout redirect=${checkoutRedirectsToPayment}, payment state=${hasPaymentState}, provider checkout=${hasProviderCheckout}, webhook=${hasWebhookRoute}, event idempotency=${hasPaymentEventIdempotency}.`,
+  'Keep hosted checkout redirect, independent payment state, raw-body webhook verification, and provider-event idempotency in sync.'
 ));
 
 const productHasStock = /stock\s*:/.test(productModel);

@@ -78,6 +78,7 @@ const createNotFound = (message) => new CheckoutError(message, 404);
 const createForbidden = (message) => new CheckoutError(message, 403);
 
 const createBadRequest = (message) => new CheckoutError(message, 400);
+const createFailedDependency = (message) => new CheckoutError(message, 424);
 
 const getCart = (userId, session) =>
   Cart.findOne({ user: userId })
@@ -132,10 +133,14 @@ const calculateTotals = (cart) => {
   };
 };
 
+const getCartItemProductId = (item) =>
+  toIdString(item.product) ||
+  toIdString(typeof item.populated === 'function' ? item.populated('product') : null);
+
 const productConflict = ({ code, item, requested, available = 0 }) => ({
   code,
   resource: 'product',
-  productId: toIdString(item.product),
+  productId: getCartItemProductId(item),
   cartItemId: toIdString(item._id),
   requested,
   available,
@@ -329,6 +334,9 @@ export const createCheckoutFromCart = async ({
   shippingAddress,
   notes,
   idempotencyKey,
+  orderStatus = 'processing',
+  paymentStatus,
+  paymentProvider,
   hooks,
 }) => {
   const key = validateIdempotencyKey(idempotencyKey);
@@ -374,10 +382,13 @@ export const createCheckoutFromCart = async ({
           discount,
           total,
           couponCode: cart.couponCode,
-          status: 'processing',
+          status: orderStatus,
+          paymentStatus,
+          paymentProvider,
           notes,
           idempotencyKey: key,
           cartFingerprint,
+          inventoryDecremented: true,
         },
       ],
       { session }
@@ -397,6 +408,60 @@ export const createCheckoutFromCart = async ({
     };
   });
 };
+
+export const compensateCheckoutSideEffects = async ({ userId, orderId }) =>
+  mongoose.connection.transaction(async (session) => {
+    const order = await Order.findOne({ _id: orderId, user: userId }).session(session);
+
+    if (!order) {
+      return { compensated: false };
+    }
+
+    if (order.inventoryDecremented === true) {
+      for (const item of order.items) {
+        await Product.updateOne(
+          { _id: item.product },
+          { $inc: { stock: item.quantity } },
+          { session }
+        );
+      }
+    }
+
+    if (order.couponCode) {
+      await Coupon.updateOne(
+        { code: order.couponCode, usedCount: { $gt: 0 } },
+        { $inc: { usedCount: -1 } },
+        { session }
+      );
+    }
+
+    let cart = await Cart.findOne({ user: userId }).session(session);
+
+    if (!cart) {
+      cart = new Cart({ user: userId, items: [] });
+    }
+
+    cart.items = order.items.map((item) => ({
+      product: item.product,
+      quantity: item.quantity,
+      size: item.size,
+      priceAtAdd: item.price,
+    }));
+    cart.couponCode = order.couponCode || undefined;
+    cart.discount = order.discount || 0;
+    await cart.save({ session });
+
+    order.inventoryDecremented = false;
+    order.status = 'cancelled';
+    order.paymentStatus = 'requires_payment';
+    await order.save({ session });
+    await Order.deleteOne({ _id: order._id }).session(session);
+
+    return { compensated: true };
+  });
+
+export const createPaymentStartError = () =>
+  createFailedDependency('Payment could not be started. Please try again.');
 
 export const cancelOrderWithStockRestore = async ({ userId, orderId }) =>
   mongoose.connection.transaction(async (session) => {
@@ -418,17 +483,22 @@ export const cancelOrderWithStockRestore = async ({ userId, orderId }) =>
       return { order, alreadyCancelled: true };
     }
 
+    if (['paid', 'refunded', 'partially_refunded'].includes(order.paymentStatus)) {
+      throw createBadRequest('Cannot cancel an order after payment has been captured');
+    }
+
     if (!['pending', 'processing'].includes(order.status)) {
       throw createBadRequest('Order cannot be cancelled');
     }
 
+    const shouldRestoreInventory = order.inventoryDecremented === true;
     const transition = await Order.updateOne(
       {
         _id: order._id,
         user: userId,
         status: { $in: ['pending', 'processing'] },
       },
-      { $set: { status: 'cancelled' } },
+      { $set: { status: 'cancelled', inventoryDecremented: false } },
       { session }
     );
 
@@ -437,14 +507,17 @@ export const cancelOrderWithStockRestore = async ({ userId, orderId }) =>
       return { order: currentOrder, alreadyCancelled: true };
     }
 
-    for (const item of order.items) {
-      await Product.updateOne(
-        { _id: item.product },
-        { $inc: { stock: item.quantity } },
-        { session }
-      );
+    if (shouldRestoreInventory) {
+      for (const item of order.items) {
+        await Product.updateOne(
+          { _id: item.product },
+          { $inc: { stock: item.quantity } },
+          { session }
+        );
+      }
     }
 
     order.status = 'cancelled';
+    order.inventoryDecremented = false;
     return { order, alreadyCancelled: false };
   });

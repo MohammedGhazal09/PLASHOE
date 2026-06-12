@@ -1,0 +1,263 @@
+import Order from '../models/Order.js';
+import PaymentEvent from '../models/PaymentEvent.js';
+import * as paymentProvider from '../services/paymentProvider.js';
+import { transitionOrderPaymentState } from '../services/paymentState.js';
+
+const PROVIDER = 'stripe';
+
+class WebhookReconciliationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'WebhookReconciliationError';
+  }
+}
+
+const getStripeObject = (event) => event?.data?.object || {};
+
+const getMetadata = (value) => value?.metadata || {};
+
+const getObjectId = (value) => (typeof value === 'string' ? value : value?.id || null);
+
+const findOrderFromMetadata = async (metadata = {}) => {
+  if (metadata.orderId) {
+    const order = await Order.findById(metadata.orderId);
+    if (order) return order;
+  }
+
+  if (metadata.orderNumber) {
+    const order = await Order.findOne({ orderNumber: metadata.orderNumber });
+    if (order) return order;
+  }
+
+  return null;
+};
+
+const findOrderByProviderIds = async (stripeObject) => {
+  const sessionId = stripeObject.object === 'checkout.session' ? stripeObject.id : null;
+  const intentId =
+    stripeObject.object === 'payment_intent'
+      ? stripeObject.id
+      : getObjectId(stripeObject.payment_intent);
+
+  if (sessionId) {
+    const order = await Order.findOne({ paymentProviderSessionId: sessionId });
+    if (order) return order;
+  }
+
+  if (intentId) {
+    const order = await Order.findOne({ paymentProviderIntentId: intentId });
+    if (order) return order;
+  }
+
+  return null;
+};
+
+const retrieveRelatedPaymentIntent = async (stripeObject) => {
+  const paymentIntentId = getObjectId(stripeObject.payment_intent);
+
+  if (!paymentIntentId) {
+    return null;
+  }
+
+  return paymentProvider.retrievePaymentIntent({ paymentIntentId });
+};
+
+const resolveOrder = async (event) => {
+  const stripeObject = getStripeObject(event);
+  const directMetadata = getMetadata(stripeObject);
+  const byMetadata = await findOrderFromMetadata(directMetadata);
+
+  if (byMetadata) {
+    return byMetadata;
+  }
+
+  const byProviderId = await findOrderByProviderIds(stripeObject);
+
+  if (byProviderId) {
+    return byProviderId;
+  }
+
+  const relatedPaymentIntent = await retrieveRelatedPaymentIntent(stripeObject);
+
+  if (relatedPaymentIntent) {
+    const byRelatedMetadata = await findOrderFromMetadata(getMetadata(relatedPaymentIntent));
+    if (byRelatedMetadata) return byRelatedMetadata;
+
+    const byRelatedIntent = await Order.findOne({ paymentProviderIntentId: relatedPaymentIntent.id });
+    if (byRelatedIntent) return byRelatedIntent;
+  }
+
+  throw new WebhookReconciliationError('Webhook event could not be reconciled to a local order');
+};
+
+const syncProviderFields = async (order, stripeObject) => {
+  const updates = {};
+
+  if (stripeObject.object === 'checkout.session') {
+    updates.paymentProviderSessionId = stripeObject.id || order.paymentProviderSessionId;
+    updates.paymentProviderIntentId =
+      getObjectId(stripeObject.payment_intent) || order.paymentProviderIntentId;
+    updates.paymentProviderCustomerId = getObjectId(stripeObject.customer) || order.paymentProviderCustomerId;
+  } else if (stripeObject.object === 'payment_intent') {
+    updates.paymentProviderIntentId = stripeObject.id || order.paymentProviderIntentId;
+    updates.paymentProviderCustomerId = getObjectId(stripeObject.customer) || order.paymentProviderCustomerId;
+  } else if (stripeObject.payment_intent) {
+    updates.paymentProviderIntentId =
+      getObjectId(stripeObject.payment_intent) || order.paymentProviderIntentId;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await Order.updateOne({ _id: order._id }, { $set: updates });
+  }
+};
+
+const getFailureReason = (stripeObject) =>
+  stripeObject.last_payment_error?.message ||
+  stripeObject.last_payment_error?.code ||
+  stripeObject.cancellation_reason ||
+  stripeObject.status ||
+  null;
+
+const amountFromMinorUnits = (amount) => Number(amount || 0) / 100;
+
+const handleSuccess = async (event) => {
+  const stripeObject = getStripeObject(event);
+  const order = await resolveOrder(event);
+  await syncProviderFields(order, stripeObject);
+
+  return transitionOrderPaymentState({
+    orderId: order._id,
+    targetStatus: 'paid',
+    providerIntentId:
+      stripeObject.object === 'payment_intent'
+        ? stripeObject.id
+        : getObjectId(stripeObject.payment_intent) || order.paymentProviderIntentId,
+  });
+};
+
+const handleFailure = async (event) => {
+  const stripeObject = getStripeObject(event);
+  const order = await resolveOrder(event);
+  await syncProviderFields(order, stripeObject);
+
+  return transitionOrderPaymentState({
+    orderId: order._id,
+    targetStatus: 'payment_failed',
+    providerIntentId:
+      stripeObject.object === 'payment_intent'
+        ? stripeObject.id
+        : getObjectId(stripeObject.payment_intent) || order.paymentProviderIntentId,
+    failureReason: getFailureReason(stripeObject),
+  });
+};
+
+const handleExpired = async (event) => {
+  const stripeObject = getStripeObject(event);
+  const order = await resolveOrder(event);
+  await syncProviderFields(order, stripeObject);
+
+  return transitionOrderPaymentState({
+    orderId: order._id,
+    targetStatus: 'payment_canceled',
+    providerIntentId: getObjectId(stripeObject.payment_intent) || order.paymentProviderIntentId,
+    failureReason: 'checkout.session.expired',
+  });
+};
+
+const handleRefund = async (event) => {
+  const stripeObject = getStripeObject(event);
+  const order = await resolveOrder(event);
+  const isChargeRefund = event.type === 'charge.refunded';
+  const refundAmount = isChargeRefund
+    ? amountFromMinorUnits(stripeObject.amount_refunded)
+    : Math.min(order.total, Number(order.refundAmount || 0) + amountFromMinorUnits(stripeObject.amount));
+  const fullAmount = isChargeRefund
+    ? amountFromMinorUnits(stripeObject.amount_refunded) >= amountFromMinorUnits(stripeObject.amount)
+    : refundAmount >= order.total;
+
+  return transitionOrderPaymentState({
+    orderId: order._id,
+    targetStatus: fullAmount ? 'refunded' : 'partially_refunded',
+    providerIntentId: getObjectId(stripeObject.payment_intent) || order.paymentProviderIntentId,
+    refundAmount,
+  });
+};
+
+const dispatchEvent = async (event) => {
+  switch (event.type) {
+    case 'checkout.session.completed':
+    case 'payment_intent.succeeded':
+      return handleSuccess(event);
+    case 'payment_intent.payment_failed':
+      return handleFailure(event);
+    case 'checkout.session.expired':
+      return handleExpired(event);
+    case 'charge.refunded':
+    case 'refund.updated':
+      return handleRefund(event);
+    default:
+      return null;
+  }
+};
+
+export const handleStripeWebhook = async (req, res) => {
+  const signature = req.get('Stripe-Signature');
+  let event;
+
+  try {
+    event = paymentProvider.constructWebhookEvent({
+      payload: req.body,
+      signature,
+    });
+  } catch {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid Stripe webhook signature',
+    });
+  }
+
+  const existingEvent = await PaymentEvent.findOne({
+    provider: PROVIDER,
+    providerEventId: event.id,
+  });
+
+  if (existingEvent?.status === 'processed') {
+    return res.json({
+      success: true,
+      message: 'Webhook event already processed',
+      data: {
+        received: true,
+        duplicate: true,
+      },
+    });
+  }
+
+  try {
+    const order = await dispatchEvent(event);
+
+    await PaymentEvent.create({
+      provider: PROVIDER,
+      providerEventId: event.id,
+      eventType: event.type,
+      order: order?._id || null,
+      status: 'processed',
+      processedAt: new Date(),
+    });
+
+    return res.json({
+      success: true,
+      message: 'Webhook accepted',
+      data: {
+        received: true,
+        eventId: event.id,
+        eventType: event.type,
+      },
+    });
+  } catch (error) {
+    console.error(error?.stack || error);
+    return res.status(500).json({
+      success: false,
+      message: 'Webhook processing failed',
+    });
+  }
+};

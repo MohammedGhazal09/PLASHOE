@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import webhookRoutes from "./routes/webhookRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import {
@@ -29,6 +30,7 @@ const corsOptions = {
 
 app.use(securityHeaders);
 app.use(cors(corsOptions));
+app.use("/api/webhooks", express.raw({ type: "application/json" }), webhookRoutes);
 app.use("/api", apiLimiter);
 
 app.use("/api/auth", strictJsonParser, authRoutes);

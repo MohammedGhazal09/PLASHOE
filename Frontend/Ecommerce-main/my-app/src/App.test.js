@@ -32,6 +32,7 @@ jest.mock('./pages', () => ({
   Sale: () => <section>Sale page</section>,
   Cart: () => <section>Cart page</section>,
   Checkout: () => <section>Checkout page</section>,
+  CheckoutReturn: () => <section>Checkout return page</section>,
   Account: () => <section>Account page</section>,
   Contact: () => <section>Contact page</section>,
   LookBook: () => <section>Lookbook page</section>,

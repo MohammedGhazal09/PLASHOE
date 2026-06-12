@@ -13,6 +13,17 @@ const orderItemSchema = new mongoose.Schema({
   price: Number
 });
 
+export const PAYMENT_STATUSES = [
+  'requires_payment',
+  'payment_pending',
+  'paid',
+  'payment_failed',
+  'payment_canceled',
+  'refunded',
+  'partially_refunded',
+  'not_required',
+];
+
 const orderSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -28,6 +39,10 @@ const orderSchema = new mongoose.Schema({
     trim: true
   },
   cartFingerprint: String,
+  inventoryDecremented: {
+    type: Boolean,
+    default: false
+  },
   items: [orderItemSchema],
   shippingAddress: {
     firstName: { type: String, required: true },
@@ -58,6 +73,49 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
     default: 'processing' // Auto-confirm
+  },
+  paymentStatus: {
+    type: String,
+    enum: PAYMENT_STATUSES,
+    default: 'not_required',
+    get: (value) => value || 'not_required'
+  },
+  paymentProvider: {
+    type: String,
+    default: null
+  },
+  paymentProviderSessionId: {
+    type: String,
+    default: null
+  },
+  paymentProviderIntentId: {
+    type: String,
+    default: null
+  },
+  paymentProviderCustomerId: {
+    type: String,
+    default: null
+  },
+  paymentCheckoutUrl: {
+    type: String,
+    default: null
+  },
+  paidAt: {
+    type: Date,
+    default: null
+  },
+  paymentFailureReason: {
+    type: String,
+    default: null
+  },
+  refundedAt: {
+    type: Date,
+    default: null
+  },
+  refundAmount: {
+    type: Number,
+    default: 0,
+    min: 0
   },
   notes: String,
   // Shipment tracking fields
@@ -100,7 +158,9 @@ const orderSchema = new mongoose.Schema({
     location: String
   }]
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { getters: true },
+  toObject: { getters: true }
 });
 
 orderSchema.index(

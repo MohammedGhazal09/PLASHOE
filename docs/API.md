@@ -43,10 +43,11 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | DELETE | `/api/cart` | Clear cart items and coupon data. | Bearer JWT | `cartApi.clearCart()` |
 | POST | `/api/cart/coupon` | Apply a coupon to the current user's cart. | Bearer JWT | `cartApi.applyCoupon(code)` |
 | DELETE | `/api/cart/coupon` | Remove coupon data from the current user's cart. | Bearer JWT | `cartApi.removeCoupon()` |
-| POST | `/api/orders` | Transactionally create an order from the current user's cart, decrement stock, consume coupon usage, and clear the cart. | Bearer JWT + `Idempotency-Key` | `ordersApi.create(orderData, idempotencyKey)` |
+| POST | `/api/orders` | Start hosted Stripe Checkout from the current user's cart, returning an order plus payment redirect data. | Bearer JWT + `Idempotency-Key` | `ordersApi.create(orderData, idempotencyKey)` |
 | GET | `/api/orders` | List the current user's orders sorted newest first. | Bearer JWT | `ordersApi.getAll()` |
 | GET | `/api/orders/:id` | Return one order if owned by the user or requested by an admin. | Bearer JWT, owner or admin | `ordersApi.getById(id)` |
 | PUT | `/api/orders/:id/cancel` | Cancel an owned order unless it is shipped or delivered. | Bearer JWT, owner only | `ordersApi.cancel(id)` |
+| POST | `/api/webhooks/stripe` | Receive Stripe payment events through a raw-body signature-verified webhook. | Stripe signature | None |
 | POST | `/api/coupons/validate` | Validate a coupon code and return discount details. | No | `couponApi.validate(code)` |
 | GET | `/api/coupons` | List all coupons sorted newest first. | Admin bearer JWT | None |
 | POST | `/api/coupons` | Create a coupon. | Admin bearer JWT | None |
@@ -315,27 +316,49 @@ Cart responses return a cart document with populated `items.product` fields `nam
 }
 ```
 
-Order creation returns status `201`, a success message, and the created order. An exact retry with the same `Idempotency-Key` returns status `200`, `message: "Order already placed"`, and the existing order. Missing `Idempotency-Key` returns `400`. Reusing the key for a changed non-empty cart/request state returns `409`.
+Order checkout-start returns status `201`, `message: "Payment started"`, and `data.order` plus `data.payment`. An exact retry with the same `Idempotency-Key` returns status `200`, `message: "Payment already started"`, the same order, and the stored pending payment URL. Missing `Idempotency-Key` returns `400`. Reusing the key for a changed non-empty cart/request state returns `409`.
 
-The backend calculates order items, subtotal, discount, total, coupon usage, stock decrement, and sets `status` to `processing`. Order numbers are unique display identifiers beginning with `PLS-`; they are not strict sequences.
+The backend calculates order items, subtotal, discount, total, coupon usage, and stock decrement from the authenticated cart. Provider-backed orders start with fulfillment `status: "pending"` and payment state `payment_pending`; verified webhook success is the only path that moves fulfillment to `processing` and `paymentStatus` to `paid`. Order numbers are unique display identifiers beginning with `PLS-`; they are not strict sequences.
 
 ```json
 {
   "success": true,
-  "message": "Order placed successfully",
+  "message": "Payment started",
   "data": {
-    "orderNumber": "PLS-MJ1R67E8-4F2C9B81AA",
-    "idempotencyKey": "checkout-key-123",
-    "cartFingerprint": "5a6d...",
-    "items": [],
-    "shippingAddress": {},
-    "subtotal": 240,
-    "discount": 10,
-    "total": 216,
-    "status": "processing"
+    "order": {
+      "orderNumber": "PLS-MJ1R67E8-4F2C9B81AA",
+      "idempotencyKey": "checkout-key-123",
+      "cartFingerprint": "5a6d...",
+      "items": [],
+      "shippingAddress": {},
+      "subtotal": 240,
+      "discount": 10,
+      "total": 216,
+      "status": "pending",
+      "paymentStatus": "payment_pending"
+    },
+    "payment": {
+      "provider": "stripe",
+      "checkoutUrl": "https://checkout.stripe.example/session",
+      "sessionId": "provider_session_id",
+      "paymentIntentId": "provider_payment_intent_id"
+    }
   }
 }
 ```
+
+Payment status values:
+
+| Status | Meaning |
+| --- | --- |
+| `requires_payment` | A provider-backed local order exists before a provider checkout session has been attached. |
+| `payment_pending` | Hosted checkout session exists and payment has not been confirmed by webhook yet. |
+| `paid` | Verified provider event captured payment and moved fulfillment to `processing`. |
+| `payment_failed` | Provider payment failed; inventory is restored once when it had been decremented. |
+| `payment_canceled` | Hosted checkout expired or was canceled; inventory is restored once when it had been decremented. |
+| `refunded` | Provider-origin full refund was received. |
+| `partially_refunded` | Provider-origin partial refund was received. |
+| `not_required` | Legacy/non-provider order default. |
 
 Cart stock, checkout stock, coupon usage, and stale idempotency conflicts return `409` with a machine-readable `errors` array:
 
@@ -358,7 +381,20 @@ Cart stock, checkout stock, coupon usage, and stale idempotency conflicts return
 
 Possible conflict `code` values include `INSUFFICIENT_STOCK`, `PRODUCT_UNAVAILABLE`, `COUPON_USAGE_LIMIT_REACHED`, `COUPON_UNAVAILABLE`, `COUPON_MINIMUM_NOT_MET`, and `IDEMPOTENCY_KEY_CONFLICT`.
 
-Cancelling an owned `pending` or `processing` order restores ordered product stock once. Repeating cancellation for an already cancelled order returns success without restoring stock again. `shipped` and `delivered` orders still return `400`.
+Cancelling an owned `pending` or `processing` order restores ordered product stock once when that order was created by the checkout path and marked as inventory-decremented. Legacy or manually-created cancellable orders without the inventory marker are cancelled without changing stock. Repeating cancellation for an already cancelled order returns success without restoring stock again. Orders with `paymentStatus` of `paid`, `refunded`, or `partially_refunded` cannot be customer-cancelled. `shipped` and `delivered` orders still return `400`.
+
+### Stripe Webhooks
+
+`POST /api/webhooks/stripe` is public to Stripe but protected by `Stripe-Signature` verification over the raw request body. It does not use JWT auth and must be mounted before JSON parsers mutate the body.
+
+Handled event types:
+
+- `checkout.session.completed` and `payment_intent.succeeded`: mark the order `paid`, set `paidAt`, persist provider ids, and move fulfillment status to `processing`.
+- `payment_intent.payment_failed`: mark the order `payment_failed`, store a failure reason when available, and restore inventory once.
+- `checkout.session.expired`: mark the order `payment_canceled` and restore inventory once.
+- `charge.refunded` and `refund.updated`: update full or partial refund state and refund amount without adding a PLASHOE admin refund initiation endpoint.
+
+Duplicate provider event ids are successful no-ops. Invalid signatures return `400`. Events that cannot be safely reconciled to one local order return `500` so Stripe can retry, and they are not recorded as processed.
 
 Delete and state-change responses may return only a message:
 

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { ordersApi } from '../api/ordersApi';
 import { useAuthStore } from '../store/authStore';
 import TrackingTimeline from '../components/TrackingTimeline';
+import { getPaymentStatusLabel, isPaymentCancellationLocked } from '../utils/paymentStatus';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -61,7 +62,10 @@ export default function OrderDetail() {
     }
   };
 
-  const canCancel = order && !['shipped', 'delivered', 'cancelled'].includes(order.status);
+  const canCancel =
+    order &&
+    !['shipped', 'delivered', 'cancelled'].includes(order.status) &&
+    !isPaymentCancellationLocked(order.paymentStatus);
 
   if (loading) {
     return (
@@ -225,6 +229,12 @@ export default function OrderDetail() {
                 <span>Total</span>
                 <span>${order.total.toFixed(2)}</span>
               </div>
+              {order.paymentStatus && (
+                <div className="flex justify-between pt-3 border-t">
+                  <span className="text-gray-500">Payment</span>
+                  <span>{getPaymentStatusLabel(order.paymentStatus)}</span>
+                </div>
+              )}
             </div>
           </div>
 

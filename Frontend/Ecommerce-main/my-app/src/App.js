@@ -12,6 +12,7 @@ import {
   Sale,
   Cart,
   Checkout,
+  CheckoutReturn,
   Account,
   Contact,
   LookBook,
@@ -75,6 +76,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Checkout />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="checkout/success"
+              element={
+                <ProtectedRoute>
+                  <CheckoutReturn variant="success" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="checkout/cancel"
+              element={
+                <ProtectedRoute>
+                  <CheckoutReturn variant="cancel" />
                 </ProtectedRoute>
               }
             />

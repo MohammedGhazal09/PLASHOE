@@ -41,6 +41,16 @@ const parsePort = (value, errors) => {
   return port;
 };
 
+const parsePaymentsEnabled = (env) => {
+  const raw = getTrimmed(env, 'PAYMENTS_ENABLED');
+
+  if (!raw && env.NODE_ENV === 'test') {
+    return false;
+  }
+
+  return raw.toLowerCase() !== 'false';
+};
+
 export const validateRuntimeEnv = (env = process.env) => {
   const errors = [];
   const mongoUri = getTrimmed(env, 'MONGO_URI');
@@ -48,6 +58,11 @@ export const validateRuntimeEnv = (env = process.env) => {
   const frontendUrl = getTrimmed(env, 'FRONTEND_URL');
   const jwtExpire = getTrimmed(env, 'JWT_EXPIRE') || JWT_SECURITY.defaultExpiresIn;
   const portValue = getTrimmed(env, 'PORT');
+  const paymentsEnabled = parsePaymentsEnabled(env);
+  const stripeSecretKey = getTrimmed(env, 'STRIPE_SECRET_KEY');
+  const stripeWebhookSecret = getTrimmed(env, 'STRIPE_WEBHOOK_SECRET');
+  const paymentSuccessUrl = getTrimmed(env, 'PAYMENT_SUCCESS_URL');
+  const paymentCancelUrl = getTrimmed(env, 'PAYMENT_CANCEL_URL');
 
   if (!mongoUri) {
     errors.push('MONGO_URI is required');
@@ -72,6 +87,31 @@ export const validateRuntimeEnv = (env = process.env) => {
 
   const port = parsePort(portValue, errors);
 
+  let normalizedPaymentSuccessUrl = paymentSuccessUrl;
+  let normalizedPaymentCancelUrl = paymentCancelUrl;
+
+  if (paymentsEnabled) {
+    if (!stripeSecretKey) {
+      errors.push('STRIPE_SECRET_KEY is required when payments are enabled');
+    }
+
+    if (!stripeWebhookSecret) {
+      errors.push('STRIPE_WEBHOOK_SECRET is required when payments are enabled');
+    }
+
+    if (!paymentSuccessUrl) {
+      errors.push('PAYMENT_SUCCESS_URL is required when payments are enabled');
+    } else {
+      normalizedPaymentSuccessUrl = validateUrl(paymentSuccessUrl, 'PAYMENT_SUCCESS_URL', errors);
+    }
+
+    if (!paymentCancelUrl) {
+      errors.push('PAYMENT_CANCEL_URL is required when payments are enabled');
+    } else {
+      normalizedPaymentCancelUrl = validateUrl(paymentCancelUrl, 'PAYMENT_CANCEL_URL', errors);
+    }
+  }
+
   if (errors.length > 0) {
     const error = new Error(`Invalid runtime configuration: ${errors.join('; ')}`);
     error.details = errors;
@@ -84,5 +124,10 @@ export const validateRuntimeEnv = (env = process.env) => {
     jwtExpire,
     frontendUrl: normalizedFrontendUrl,
     port,
+    paymentsEnabled,
+    stripeSecretKey,
+    stripeWebhookSecret,
+    paymentSuccessUrl: normalizedPaymentSuccessUrl,
+    paymentCancelUrl: normalizedPaymentCancelUrl,
   };
 };
