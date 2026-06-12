@@ -117,8 +117,8 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | `category` | Filters by product category. Model enum values are `Training`, `Running`, `Sneaker`, and `Classic`. |
 | `sale` | When set to `true`, filters products where `isOnSale` is true. |
 | `sort` | Supports `price-asc`, `price-desc`, `rating`, and `newest`. |
-| `limit` | Maximum products returned. Defaults to `20`. |
-| `page` | Page number. Defaults to `1`. |
+| `limit` | Maximum products returned. Defaults to `20` and is capped at `100`. |
+| `page` | Page number. Defaults to `1` and must be at least `1`. |
 
 Admin `POST /api/products` and `PUT /api/products/:id` accept product fields from the `Product` model:
 
@@ -340,19 +340,55 @@ Error responses use `success: false` and a message:
 }
 ```
 
+Validator failures include an `errors` array with field-level details:
+
+```json
+{
+  "success": false,
+  "message": "Invalid request",
+  "errors": [
+    {
+      "path": "email",
+      "message": "Invalid email address"
+    }
+  ]
+}
+```
+
 ## Error Codes
 
 | Status | Source | Meaning |
 | --- | --- | --- |
-| `400` | Controllers and Mongoose validation | Invalid request body, duplicate user, invalid coupon, invalid cart quantity or size, empty cart, missing shipping fields, or an order that can no longer be cancelled. |
-| `401` | `protect` middleware and login controller | Missing token, failed token verification, missing authenticated user, or invalid login credentials. |
+| `400` | Zod validators, controllers, and Mongoose validation | Invalid request body/query/params, unknown write fields, duplicate user, invalid coupon, invalid cart quantity or size, empty cart, missing shipping fields, or an order that can no longer be cancelled. |
+| `401` | `protect` middleware and login controller | Missing token, failed token verification with the allowed HS256 algorithm, missing authenticated user, or invalid login credentials. |
 | `403` | `admin` middleware and order ownership checks | Authenticated user is not an admin, or the user is not authorized to access the requested order. |
 | `404` | Controllers | Product, cart, cart item, order, coupon, or contact message was not found. |
-| `500` | Controllers and global error handler | Unexpected server error. |
+| `413` | JSON body parser | Request body exceeded the configured JSON limit and returns `Request body too large`. |
+| `429` | Rate-limit middleware | The request exceeded the global or route-specific limit. |
+| `500` | Controllers and global error handler | Unexpected server error; errors routed through the global handler return a generic `Server Error` message. |
 
 ## Rate Limits
 
-No rate-limiting middleware or rate-limit dependency is configured in `Backend/package.json`, `Backend/server.js`, or `Backend/routes`.
+The backend uses `express-rate-limit` with JSON error envelopes. In automated tests, rate limits are skipped unless a request includes the `x-rate-limit-test` header.
+
+| Scope | Limit | Window | Response |
+| --- | --- | --- | --- |
+| Global `/api` | 300 requests per IP | 15 minutes | `429` with `Too many API requests, please try again later` |
+| `POST /api/auth/register` | 5 requests per IP | 15 minutes | `429` with `Too many authentication attempts, please try again later` |
+| `POST /api/auth/login` | 5 requests per IP | 15 minutes | `429` with `Too many authentication attempts, please try again later` |
+| `POST /api/contact` | 5 requests per IP | 1 hour | `429` with `Too many contact requests, please try again later` |
+| `POST /api/coupons/validate` | 30 requests per IP | 15 minutes | `429` with `Too many coupon validation requests, please try again later` |
+
+## Request Size Limits
+
+JSON bodies are capped before route handlers run.
+
+| Scope | Limit |
+| --- | --- |
+| `/api/auth/*` | `8kb` |
+| `/api/coupons/validate` | `8kb` |
+| `/api/contact` | `8kb` |
+| Other mounted API routes | `64kb` |
 
 ## Frontend Wrapper Mappings
 

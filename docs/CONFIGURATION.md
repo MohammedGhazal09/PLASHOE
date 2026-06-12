@@ -14,11 +14,11 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
-| `MONGO_URI` | Required for database-backed features | None | MongoDB connection string used by `Backend/config/db.js` and `Backend/utils/seedData.js`. Missing or invalid values are caught and logged, but product, user, cart, order, coupon, and contact persistence will not work correctly without a database connection. |
-| `JWT_SECRET` | Required for authentication | None | Secret used to sign login/register tokens in `Backend/controllers/authController.js` and verify bearer tokens in `Backend/middleware/auth.js`. Missing values break token signing and protected-route verification. |
-| `JWT_EXPIRE` | Optional | `7d` | Token lifetime passed to `jsonwebtoken.sign`. |
-| `FRONTEND_URL` | Optional | `http://localhost:5173` | CORS origin allowed by the Express server. Set this to the deployed frontend origin in production. <!-- VERIFY: production FRONTEND_URL value --> |
-| `PORT` | Optional | `5000` | Port used by `app.listen` in `Backend/server.js`. |
+| `MONGO_URI` | Required | None | MongoDB connection string used by `Backend/config/db.js` and `Backend/utils/seedData.js`. `Backend/server.js` validates this before connecting to MongoDB or opening the listener. |
+| `JWT_SECRET` | Required | None | Secret used to sign login/register tokens in `Backend/controllers/authController.js` and verify bearer tokens in `Backend/middleware/auth.js`. Startup validation requires at least 32 characters. |
+| `JWT_EXPIRE` | Optional | `1h` | Token lifetime passed to `jsonwebtoken.sign`. Values must match a `jsonwebtoken` duration such as `30m`, `1h`, or `2h`. |
+| `FRONTEND_URL` | Required | None | CORS origin allowed by the Express server. Startup validation requires a valid `http` or `https` URL. <!-- VERIFY: production FRONTEND_URL value --> |
+| `PORT` | Optional | `5000` | Port used by `app.listen` in `Backend/server.js`. Startup validation requires a positive integer from `1` to `65535` when set. |
 
 ### Frontend
 
@@ -28,7 +28,7 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 | `REACT_APP_NAME` | Optional | `PLASHOE` | Display name exposed through the frontend config object. |
 | `REACT_APP_DESCRIPTION` | Optional | `Sustainable Footwear for a Better Tomorrow` | Display description exposed through the frontend config object. |
 | `REACT_APP_UNSPLASH_BASE_URL` | Optional | `https://images.unsplash.com` | Base URL configured for Unsplash image assets. |
-| `REACT_APP_MAPTILER_API_KEY` | Optional in code, required for your MapTiler account | Source fallback value | MapTiler API key used by the map configuration. Replace the source fallback with an environment-specific key before production use. <!-- VERIFY: production MapTiler API key is configured outside source control --> |
+| `REACT_APP_MAPTILER_API_KEY` | Optional in code, required for MapTiler tiles | Empty string | Public browser key used by the contact map. When missing, the contact page falls back to OpenStreetMap tiles. For production MapTiler usage, provide a domain-restricted public key at build time. <!-- VERIFY: production MapTiler API key is configured outside source control --> |
 | `REACT_APP_MAP_CENTER_LAT` | Optional | `24.7136` | Default map center latitude, parsed with `parseFloat`. |
 | `REACT_APP_MAP_CENTER_LNG` | Optional | `46.6753` | Default map center longitude, parsed with `parseFloat`. |
 | `REACT_APP_MAP_ZOOM` | Optional | `14` | Default map zoom level, parsed with `parseInt`. |
@@ -57,8 +57,8 @@ Backend `.env` format:
 
 ```bash
 MONGO_URI=mongodb://localhost:27017/plashoe
-JWT_SECRET=replace-with-a-long-random-secret
-JWT_EXPIRE=7d
+JWT_SECRET=replace-with-a-long-random-secret-at-least-32-characters
+JWT_EXPIRE=1h
 FRONTEND_URL=http://localhost:3000
 PORT=5000
 ```
@@ -83,26 +83,27 @@ Create React App only exposes custom browser variables that start with `REACT_AP
 
 ## Required vs Optional Settings
 
-No source-level startup validation is present for missing environment variables.
-
-- `MONGO_URI` is needed for database-backed backend features. `connectDB()` catches connection errors and allows the Express process to continue, but most API features depend on MongoDB models.
-- `JWT_SECRET` is needed for authentication. Register and login responses call `jwt.sign`, and protected routes call `jwt.verify`.
-- `PORT`, `FRONTEND_URL`, and `JWT_EXPIRE` have runtime defaults.
-- Frontend display, external URL, map, and feature-flag variables all have fallback behavior in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
+- Backend startup validation is implemented in `Backend/config/env.js` and is called from `Backend/server.js` before `connectDB()` and `app.listen(...)`.
+- `MONGO_URI`, `JWT_SECRET`, and `FRONTEND_URL` are required for backend startup.
+- `JWT_SECRET` must be at least 32 characters, JWT verification allows HS256 only, and the default token lifetime is `1h`.
+- `PORT` and `JWT_EXPIRE` are optional but validated when present.
+- Frontend display, external URL, map, and feature-flag variables have fallback behavior in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
+- Auth persistence uses browser `sessionStorage` through the `auth-storage` Zustand key. Bearer tokens remain XSS-sensitive while the tab/session is alive; the current compensating controls are the shorter JWT lifetime, logout-on-401 behavior, and no localStorage persistence.
+- `REACT_APP_MAPTILER_API_KEY` is browser-visible and must be treated as a public, domain-restricted key, not a server secret.
 - Boolean feature flags are enabled only by the exact string `true`; missing values are treated as disabled.
 
 ## Defaults
 
 | Setting | Default | Defined in |
 | --- | --- | --- |
-| `PORT` | `5000` | `Backend/server.js` |
-| `FRONTEND_URL` | `http://localhost:5173` | `Backend/server.js` |
-| `JWT_EXPIRE` | `7d` | `Backend/controllers/authController.js` |
+| `PORT` | `5000` | `Backend/config/env.js` |
+| `FRONTEND_URL` | Required for startup | `Backend/config/env.js` |
+| `JWT_EXPIRE` | `1h` | `Backend/config/security.js` |
 | `REACT_APP_API_URL` | `http://localhost:5000/api` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 | `REACT_APP_NAME` | `PLASHOE` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 | `REACT_APP_DESCRIPTION` | `Sustainable Footwear for a Better Tomorrow` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 | `REACT_APP_UNSPLASH_BASE_URL` | `https://images.unsplash.com` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
-| `REACT_APP_MAPTILER_API_KEY` | Hard-coded fallback value in source; override per environment | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
+| `REACT_APP_MAPTILER_API_KEY` | Empty string; contact map falls back to OpenStreetMap tiles | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 | `REACT_APP_MAP_CENTER_LAT` | `24.7136` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 | `REACT_APP_MAP_CENTER_LNG` | `46.6753` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 | `REACT_APP_MAP_ZOOM` | `14` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
@@ -124,4 +125,4 @@ No `.env.development`, `.env.production`, or `.env.test` files are checked in. U
 - Local backend: `Backend/.env`
 - Local frontend: `Frontend/Ecommerce-main/my-app/.env`
 - Production backend: configure `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRE`, `FRONTEND_URL`, and `PORT` in the backend host secret/config manager. <!-- VERIFY: production backend environment is configured in the hosting platform -->
-- Production frontend: configure `REACT_APP_API_URL` and any public display, map, social, company, and feature-flag values before running `npm run build`. <!-- VERIFY: production frontend build environment is configured in the hosting platform -->
+- Production frontend: configure `REACT_APP_API_URL` and any public display, map, social, company, and feature-flag values before running `npm run build`. If MapTiler tiles are used, set `REACT_APP_MAPTILER_API_KEY` to a domain-restricted public key. <!-- VERIFY: production frontend build environment is configured in the hosting platform -->
