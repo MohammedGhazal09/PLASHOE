@@ -57,7 +57,12 @@ export default function Contact() {
 
     setLoading(true);
     try {
-      const response = await contactApi.send(formData);
+      const response = await contactApi.submit(
+        formData.name,
+        formData.email,
+        formData.subject,
+        formData.message
+      );
       if (response.success) {
         toast.success('Message sent successfully!');
         setFormData({ name: '', email: '', subject: '', message: '' });
@@ -65,9 +70,8 @@ export default function Contact() {
         toast.error(response.message || 'Failed to send message');
       }
     } catch (error) {
-      // Still show success for demo
-      toast.success('Message sent successfully!');
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      const message = error.response?.data?.message || error.message || 'Failed to send message';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
