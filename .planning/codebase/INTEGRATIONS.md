@@ -36,6 +36,7 @@
   - Connection: `MONGO_URI` read in `Backend/config/db.js` and `Backend/utils/seedData.js`.
   - Client: `mongoose` in `Backend/package.json`.
   - Models: `Backend/models/User.js`, `Backend/models/Product.js`, `Backend/models/Cart.js`, `Backend/models/Order.js`, `Backend/models/Coupon.js`, `Backend/models/ContactMessage.js`.
+  - Transactional checkout requires a replica set or Atlas-compatible topology. Local tests use `MongoMemoryReplSet` with `wiredTiger` in `Backend/test/setup.js`.
 
 **File Storage:**
 - Local/static repository assets only.
@@ -46,6 +47,7 @@
 **Caching:**
 - No server-side cache service detected.
 - Browser persistence uses Zustand `persist` middleware in `Frontend/Ecommerce-main/my-app/src/store/authStore.js` and `Frontend/Ecommerce-main/my-app/src/store/cartStore.js`.
+- Cart persistence is versioned and migrated through `normalizeCartItem` in `Frontend/Ecommerce-main/my-app/src/store/cartStore.js`.
 
 ## Authentication & Identity
 

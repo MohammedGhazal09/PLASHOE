@@ -14,6 +14,7 @@ PLASHOE/
 │   ├── middleware/                    # Express middleware for auth/authorization
 │   ├── models/                        # Mongoose schemas and model behavior
 │   ├── routes/                        # Express routers mounted under `/api/*`
+│   ├── services/                      # Cross-model domain services and transactions
 │   ├── utils/                         # Backend utility scripts such as seeding
 │   ├── package.json                   # Backend package metadata and scripts
 │   ├── package-lock.json              # Backend npm lockfile
@@ -76,6 +77,11 @@ PLASHOE/
 - Purpose: Operational utility scripts for backend data.
 - Contains: Seed data script.
 - Key files: `Backend/utils/seedData.js`
+
+**`Backend/services`:**
+- Purpose: Cross-model backend workflows that need explicit orchestration outside controllers.
+- Contains: Transactional checkout service logic.
+- Key files: `Backend/services/checkoutService.js`
 
 **`Frontend/Ecommerce-main`:**
 - Purpose: Wrapper directory containing the actual React app under a nested `my-app` folder.
@@ -146,6 +152,7 @@ PLASHOE/
 **Core Backend Logic:**
 - `Backend/routes/*.js`: Add or modify API paths here.
 - `Backend/controllers/*.js`: Add or modify API behavior here.
+- `Backend/services/*.js`: Add or modify cross-model domain services here.
 - `Backend/models/*.js`: Add or modify persisted entities and schema behavior here.
 - `Backend/middleware/auth.js`: Modify authentication and admin authorization here.
 
@@ -194,6 +201,7 @@ PLASHOE/
 **New Backend Endpoint on Existing Resource:**
 - Route declaration: Add path/method in the relevant `Backend/routes/*Routes.js`.
 - Behavior: Add named controller export in the matching `Backend/controllers/*Controller.js`.
+- Cross-model workflow: Add a focused service in `Backend/services` when behavior spans multiple models or requires a transaction.
 - Persistence changes: Update the relevant schema in `Backend/models/*.js`.
 
 **New Frontend Page:**

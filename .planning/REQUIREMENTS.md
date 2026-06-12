@@ -30,10 +30,10 @@
 
 ### Checkout Integrity
 
-- [ ] **CHK-01**: Order creation is idempotent or transactional across order, cart, coupon, and inventory updates.
-- [ ] **CHK-02**: Product stock is validated before cart/order mutation and decremented or reserved during checkout.
-- [ ] **CHK-03**: Order numbers are collision-safe under concurrent checkout.
-- [ ] **CHK-04**: Cart item data is normalized at store/API boundaries.
+- [x] **CHK-01**: Order creation is idempotent or transactional across order, cart, coupon, and inventory updates.
+- [x] **CHK-02**: Product stock is validated before cart/order mutation and decremented or reserved during checkout.
+- [x] **CHK-03**: Order numbers are collision-safe under concurrent checkout.
+- [x] **CHK-04**: Cart item data is normalized at store/API boundaries.
 
 ### Payments
 
@@ -96,10 +96,10 @@
 | SEC-03 | Phase 3 | Complete |
 | SEC-04 | Phase 3 | Complete |
 | SEC-05 | Phase 3 | Complete |
-| CHK-01 | Phase 4 | Pending |
-| CHK-02 | Phase 4 | Pending |
-| CHK-03 | Phase 4 | Pending |
-| CHK-04 | Phase 4 | Pending |
+| CHK-01 | Phase 4 | Complete |
+| CHK-02 | Phase 4 | Complete |
+| CHK-03 | Phase 4 | Complete |
+| CHK-04 | Phase 4 | Complete |
 | PAY-01 | Phase 5 | Pending |
 | PAY-02 | Phase 5 | Pending |
 | PAY-03 | Phase 5 | Pending |

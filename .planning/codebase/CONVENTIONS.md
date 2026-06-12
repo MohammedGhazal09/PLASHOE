@@ -14,6 +14,7 @@
 **Functions:**
 - Backend controller handlers use lower camelCase named exports: `register`, `login`, `getProducts`, `createOrder` in `Backend/controllers/authController.js`, `Backend/controllers/productController.js`, and `Backend/controllers/orderController.js`.
 - Backend route middleware uses lower camelCase named exports: `protect` and `admin` in `Backend/middleware/auth.js`.
+- Backend service functions use lower camelCase named exports: `createCheckoutFromCart` and `cancelOrderWithStockRestore` in `Backend/services/checkoutService.js`.
 - Frontend components use PascalCase default exports: `ProductCard` in `Frontend/Ecommerce-main/my-app/src/components/ProductCard.jsx`, `Cart` in `Frontend/Ecommerce-main/my-app/src/pages/Cart.jsx`, `App` in `Frontend/Ecommerce-main/my-app/src/App.js`.
 - Frontend event handlers and local helpers use lower camelCase names with intent prefixes: `handleAddToCart`, `renderStars`, `getItemPrice`, `getItemDetails` in `Frontend/Ecommerce-main/my-app/src/components/ProductCard.jsx` and `Frontend/Ecommerce-main/my-app/src/pages/Cart.jsx`.
 - Zustand store actions use imperative lower camelCase names: `addItem`, `removeItem`, `syncCart`, `applyCoupon`, `fetchUser` in `Frontend/Ecommerce-main/my-app/src/store/cartStore.js` and `Frontend/Ecommerce-main/my-app/src/store/authStore.js`.
@@ -54,9 +55,9 @@
 ## Error Handling
 
 **Patterns:**
-- Backend async controllers wrap database work in `try`/`catch` and return JSON responses shaped as `{ success: false, message: error.message }`: `Backend/controllers/authController.js`, `Backend/controllers/productController.js`, `Backend/controllers/orderController.js`.
+- Backend async controllers wrap database work in `try`/`catch`; newer controllers pass unexpected/domain errors to the centralized handler with `next(error)`.
 - Backend missing-resource and authorization failures return early with appropriate status codes before normal success responses: `Backend/controllers/productController.js`, `Backend/controllers/orderController.js`, `Backend/middleware/auth.js`.
-- Backend global Express error handling exists at the end of `Backend/server.js`, but most controller errors are handled locally instead of calling `next(error)`.
+- Backend global Express error handling in `Backend/middleware/security.js` serializes `{ success: false, message }` and preserves non-500 `errors` arrays from service/domain errors.
 - Frontend axios response errors are passed through with `Promise.reject(error)` and 401 responses trigger logout in `Frontend/Ecommerce-main/my-app/src/api/axios.js`.
 - Frontend stores catch API errors, persist a user-facing `error` string, clear `isLoading`, and return `{ success: false, message }` from actions in `Frontend/Ecommerce-main/my-app/src/store/authStore.js` and `Frontend/Ecommerce-main/my-app/src/store/cartStore.js`.
 - Frontend pages that load product lists fall back to local/public JSON data after API failure: `Frontend/Ecommerce-main/my-app/src/pages/Home.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/Men.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/Women.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/Sale.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/Collection.jsx`.

@@ -6,8 +6,8 @@
 
 **Runner:**
 - Frontend: Jest through Create React App `react-scripts test` from `Frontend/Ecommerce-main/my-app/package.json`.
-- Backend: Not detected. `Backend/package.json` defines `start`, `dev`, and `seed`, but no `test` script and no backend test framework dependency.
-- Config: CRA-managed Jest configuration through `react-scripts`; no standalone `jest.config.*` or `vitest.config.*` detected.
+- Backend: Vitest through `npm test` from `Backend/package.json`.
+- Config: CRA-managed Jest configuration through `react-scripts`; backend uses `Backend/vitest.config.js` and shared setup in `Backend/test/setup.js`.
 
 **Assertion Library:**
 - Frontend: Jest assertions plus `@testing-library/jest-dom` matchers configured in `Frontend/Ecommerce-main/my-app/src/setupTests.js`.
@@ -15,6 +15,8 @@
 
 **Run Commands:**
 ```bash
+cd Backend && npm test
+cd Backend && npm test -- order.test.js cart.test.js
 cd Frontend/Ecommerce-main/my-app && npm test              # Run frontend Jest tests in CRA watch mode
 cd Frontend/Ecommerce-main/my-app && npm test -- --watchAll=false              # Run frontend tests once
 cd Frontend/Ecommerce-main/my-app && npm test -- --coverage --watchAll=false   # Run frontend coverage
@@ -24,18 +26,23 @@ cd Frontend/Ecommerce-main/my-app && npm test -- --coverage --watchAll=false   #
 
 **Location:**
 - Frontend tests are co-located with source files under `Frontend/Ecommerce-main/my-app/src`.
-- The only detected test file is `Frontend/Ecommerce-main/my-app/src/App.test.js`.
+- Frontend tests are co-located under `Frontend/Ecommerce-main/my-app/src/**/*.test.*`.
 - Shared test setup lives in `Frontend/Ecommerce-main/my-app/src/setupTests.js`.
-- Backend tests are not present under `Backend`.
+- Backend tests live under `Backend/test`.
 
 **Naming:**
 - Use CRA/Jest naming with `.test.js` for frontend tests, as in `Frontend/Ecommerce-main/my-app/src/App.test.js`.
-- No `.spec.js`, `.test.jsx`, or backend test naming pattern is currently established.
+- Backend tests use `.test.js` under `Backend/test`.
 
 **Structure:**
 ```text
+Backend/test/
+├── setup.js           # MongoMemoryReplSet setup and collection cleanup
+├── helpers/           # Auth and factory helpers
+└── *.test.js          # Vitest/Supertest route and service behavior tests
+
 Frontend/Ecommerce-main/my-app/src/
-├── App.test.js        # Co-located CRA/Jest test
+├── **/*.test.js       # Co-located CRA/Jest tests
 └── setupTests.js      # Global Testing Library matcher setup
 ```
 
@@ -110,11 +117,11 @@ cd Frontend/Ecommerce-main/my-app && npm test -- --coverage --watchAll=false
 
 **Unit Tests:**
 - Frontend unit/component testing is available through Jest and React Testing Library in `Frontend/Ecommerce-main/my-app/src/App.test.js`.
-- Backend unit tests are not configured. Adding backend tests requires introducing a test runner and script in `Backend/package.json`.
+- Backend route/service tests are configured with Vitest, Supertest, and Mongoose.
 
 **Integration Tests:**
-- No backend API integration tests are present for Express routes in `Backend/routes/authRoutes.js`, `Backend/routes/productRoutes.js`, `Backend/routes/orderRoutes.js`, or related controllers.
-- No frontend integration tests are present for router flows in `Frontend/Ecommerce-main/my-app/src/App.js` or store/API interactions in `Frontend/Ecommerce-main/my-app/src/store/cartStore.js`.
+- Backend API integration tests cover Express routes through the importable app in `Backend/app.js`.
+- Frontend store/API interaction coverage exists for auth, cart normalization, checkout, and contact flows. Router guard behavior is covered by `Frontend/Ecommerce-main/my-app/src/components/ProtectedRoute.test.jsx`.
 
 **E2E Tests:**
 - Not used. No Playwright, Cypress, or Selenium dependency/configuration detected in `Backend/package.json` or `Frontend/Ecommerce-main/my-app/package.json`.

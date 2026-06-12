@@ -14,7 +14,7 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 1: Core Flow Stabilization** - Fix the current contact, coupon, checkout, and cart contract defects. (completed 2026-06-12)
 - [x] **Phase 2: Automated Test Foundation** - Add backend/frontend automated tests around the stabilized purchase path. (completed 2026-06-12)
 - [x] **Phase 3: API Security and Validation** - Add API hardening, config validation, dependency remediation, and request allowlists. (completed 2026-06-12)
-- [ ] **Phase 4: Checkout Data Integrity and Inventory** - Make order creation, coupons, carts, stock, and order numbers consistent under real usage.
+- [x] **Phase 4: Checkout Data Integrity and Inventory** - Make order creation, coupons, carts, stock, and order numbers consistent under real usage. (completed 2026-06-12)
 - [ ] **Phase 5: Production Payments** - Replace demo checkout with a real payment flow and payment-state model.
 - [ ] **Phase 6: Admin Fulfillment Operations** - Add admin order fulfillment APIs and operational views.
 - [ ] **Phase 7: Catalog and Frontend Architecture Cleanup** - Normalize product/cart data and reduce fragile frontend/API structure.
@@ -143,15 +143,15 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 04-01: Transactional checkout and idempotency foundation.
+- [x] 04-01: Transactional checkout and idempotency foundation.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 04-02: Inventory, coupon, and cancellation consistency.
+- [x] 04-02: Inventory, coupon, and cancellation consistency.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 04-03: Frontend cart normalization and contract documentation.
+- [x] 04-03: Frontend cart normalization and contract documentation.
 
 **Cross-cutting constraints:**
 
@@ -251,7 +251,7 @@ Plans:
 | 1. Core Flow Stabilization | 3/3 | Complete | 2026-06-12 |
 | 2. Automated Test Foundation | 4/4 | Complete | 2026-06-12 |
 | 3. API Security and Validation | 3/3 | Complete | 2026-06-12 |
-| 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
+| 4. Checkout Data Integrity and Inventory | 3/3 | Complete   | 2026-06-12 |
 | 5. Production Payments | 0/3 | Not started | - |
 | 6. Admin Fulfillment Operations | 0/3 | Not started | - |
 | 7. Catalog and Frontend Architecture Cleanup | 0/3 | Not started | - |

@@ -26,6 +26,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                    Express API Backend                       │
 │ `Backend/server.js` → `Backend/routes` → `Backend/controllers`│
+│                                  ↘ `Backend/services`         │
 └────────────────────────────┬────────────────────────────────┘
                              │ Mongoose queries
                              ▼
@@ -43,7 +44,8 @@
 | Database connector | Opens the Mongoose connection from `MONGO_URI` and logs connection failures without terminating the process. | `Backend/config/db.js` |
 | Auth middleware | Validates bearer JWTs, loads `req.user`, and gates admin-only routes. | `Backend/middleware/auth.js` |
 | API routers | Bind HTTP paths and methods to controller functions; use `protect` and `admin` at route or router level. | `Backend/routes/*.js` |
-| Controllers | Own request validation, domain orchestration, Mongoose calls, and JSON response shape. | `Backend/controllers/*.js` |
+| Controllers | Own HTTP request/response mapping and delegate cross-model workflows to services when orchestration spans resources. | `Backend/controllers/*.js` |
+| Backend services | Own cross-model domain orchestration such as transactional checkout, stock/coupon consistency, and cancellation stock restore. | `Backend/services/*.js` |
 | Mongoose models | Define persisted schemas, relationships, virtuals, hooks, and document methods. | `Backend/models/*.js` |
 | Frontend bootstrap | Mounts React under `#root`, wraps `App` in strict mode, and starts web-vitals reporting. | `Frontend/Ecommerce-main/my-app/src/index.js` |
 | Frontend route shell | Defines browser routes, Material UI theme, protected checkout/order pages, and global toast container. | `Frontend/Ecommerce-main/my-app/src/App.js` |
@@ -99,11 +101,18 @@
 - Used by: `Backend/server.js`.
 
 **Backend Controller Layer:**
-- Purpose: Validate request payloads, call models, apply ecommerce rules, and return `{ success, data, message }` JSON responses.
+- Purpose: Map validated HTTP requests to resource behavior, call models or services, and return `{ success, data, message }` JSON responses.
 - Location: `Backend/controllers`
 - Contains: Auth, product, cart, order, coupon, and contact controllers.
 - Depends on: Mongoose models in `Backend/models` and JWT helpers in `Backend/controllers/authController.js`.
 - Used by: Routers in `Backend/routes`.
+
+**Backend Service Layer:**
+- Purpose: Encapsulate cross-model workflows that need one transaction or shared domain rules.
+- Location: `Backend/services`
+- Contains: `Backend/services/checkoutService.js`
+- Depends on: Mongoose models in `Backend/models`.
+- Used by: `Backend/controllers/orderController.js`.
 
 **Backend Persistence Layer:**
 - Purpose: Define MongoDB document schemas, schema hooks, virtual fields, and model methods.
@@ -133,8 +142,9 @@
 5. `Backend/routes/cartRoutes.js` applies `router.use(protect)` before cart handlers.
 6. `Backend/middleware/auth.js` verifies JWT with `JWT_SECRET`, loads the `User` document, and sets `req.user`.
 7. `Backend/controllers/cartController.js` loads or mutates `Backend/models/Cart.js`, populating related product details from `Backend/models/Product.js`.
-8. On order submit, `Checkout.jsx` calls `ordersApi.create()` from `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js`.
-9. `Backend/routes/orderRoutes.js` applies `protect`, then `Backend/controllers/orderController.js` creates an `Order`, increments coupon usage, clears the cart, and returns the created order.
+8. On order submit, `Checkout.jsx` generates an `Idempotency-Key` and calls `ordersApi.create(orderData, idempotencyKey)` from `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js`.
+9. `Backend/routes/orderRoutes.js` applies `protect`, then `Backend/controllers/orderController.js` delegates checkout to `Backend/services/checkoutService.js`.
+10. `checkoutService.js` runs order creation, stock decrement, coupon usage increment, and cart clearing in one Mongoose transaction. Exact retries return the existing order; stale idempotency-key reuse and stock/coupon conflicts return structured `409` responses.
 
 ### Authentication Path
 
@@ -161,6 +171,11 @@
 - Purpose: Own API use cases and response contracts for each resource.
 - Examples: `Backend/controllers/cartController.js`, `Backend/controllers/orderController.js`, `Backend/controllers/authController.js`
 - Pattern: Named async exports with inline `try/catch`, explicit status codes, and JSON `{ success, data, message }` responses.
+
+**Services:**
+- Purpose: Own multi-model domain workflows that should not live inside route files or large controllers.
+- Examples: `Backend/services/checkoutService.js`
+- Pattern: Export focused async functions, pass Mongoose sessions explicitly, and throw errors with `statusCode` plus optional `errors` arrays for controller/global error handling.
 
 **Mongoose Models:**
 - Purpose: Persist domain entities and encapsulate schema-level behavior.
@@ -249,7 +264,8 @@
 **Strategy:** Controllers return explicit JSON error responses inside `try/catch`; Express has a final fallback error handler in `Backend/server.js`; frontend stores/pages convert API errors into state or toast messages.
 
 **Patterns:**
-- Backend validation failures return `400`, auth failures return `401`, authorization failures return `403`, missing records return `404`, and unexpected errors generally return `500` from controllers such as `Backend/controllers/cartController.js` and `Backend/controllers/orderController.js`.
+- Backend validation failures return `400`, auth failures return `401`, authorization failures return `403`, missing records return `404`, state conflicts return `409`, and unexpected errors generally return `500`.
+- Structured domain conflicts can include an `errors` array; `Backend/middleware/security.js` preserves that array for non-500 errors routed through the global handler.
 - `Backend/server.js` final error middleware logs `err.stack` and returns `{ success: false, message }`.
 - `Frontend/Ecommerce-main/my-app/src/api/axios.js` logs out on `401` by calling `useAuthStore.getState().logout()`.
 - UI workflows show user-facing failures through `react-hot-toast` in pages such as `Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx`.
