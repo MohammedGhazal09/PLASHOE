@@ -15,7 +15,7 @@
 
 ### Testing
 
-- [ ] **TEST-01**: Backend has an automated test runner and route-test setup.
+- [x] **TEST-01**: Backend has an automated test runner and route-test setup.
 - [ ] **TEST-02**: Auth, cart, coupon, checkout/order, and contact API paths have automated coverage.
 - [ ] **TEST-03**: Frontend starter test is replaced with PLASHOE-specific tests.
 - [ ] **TEST-04**: Core flow contract checker is retained or converted into tests.
@@ -87,7 +87,7 @@
 | CORE-03 | Phase 1 | Complete |
 | CORE-04 | Phase 1 | Complete |
 | CORE-05 | Phase 1 | Complete |
-| TEST-01 | Phase 2 | Pending |
+| TEST-01 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Pending |
 | TEST-03 | Phase 2 | Pending |
 | TEST-04 | Phase 2 | Pending |
@@ -122,6 +122,7 @@
 | V2-04 | Post-v1 | Deferred |
 
 **Coverage:**
+
 - v1 requirements: 34 total
 - Mapped to phases: 34
 - Unmapped: 0

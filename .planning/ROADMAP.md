@@ -72,7 +72,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 02-01: Add backend test runner and app-test structure.
+- [x] 02-01: Add backend test runner and app-test structure.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -225,7 +225,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Flow Stabilization | 3/3 | Complete | 2026-06-12 |
-| 2. Automated Test Foundation | 0/3 | Not started | - |
+| 2. Automated Test Foundation | 1/4 | In Progress | - |
 | 3. API Security and Validation | 0/3 | Not started | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
 | 5. Production Payments | 0/3 | Not started | - |
