@@ -12,7 +12,7 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - Decimal phases are reserved for urgent insertions.
 
 - [x] **Phase 1: Core Flow Stabilization** - Fix the current contact, coupon, checkout, and cart contract defects. (completed 2026-06-12)
-- [ ] **Phase 2: Automated Test Foundation** - Add backend/frontend automated tests around the stabilized purchase path.
+- [x] **Phase 2: Automated Test Foundation** - Add backend/frontend automated tests around the stabilized purchase path. (completed 2026-06-12)
 - [ ] **Phase 3: API Security and Validation** - Add API hardening, config validation, dependency remediation, and request allowlists.
 - [ ] **Phase 4: Checkout Data Integrity and Inventory** - Make order creation, coupons, carts, stock, and order numbers consistent under real usage.
 - [ ] **Phase 5: Production Payments** - Replace demo checkout with a real payment flow and payment-state model.
@@ -84,7 +84,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-04: Update testing docs, retain the contract checker, and run final verification.
+- [x] 02-04: Update testing docs, retain the contract checker, and run final verification.
 
 **Cross-cutting constraints:**
 
@@ -225,7 +225,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Flow Stabilization | 3/3 | Complete | 2026-06-12 |
-| 2. Automated Test Foundation | 3/4 | In Progress | - |
+| 2. Automated Test Foundation | 4/4 | Complete | 2026-06-12 |
 | 3. API Security and Validation | 0/3 | Not started | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
 | 5. Production Payments | 0/3 | Not started | - |

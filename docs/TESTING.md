@@ -1,47 +1,46 @@
 <!-- generated-by: gsd-doc-writer -->
 # Testing
 
-PLASHOE currently has frontend test tooling through Create React App and React Testing Library, but it does not have meaningful passing tests yet. The backend has no configured test framework or `npm test` script.
+PLASHOE now has local automated coverage for the stabilized Phase 1 purchase-path contracts:
+
+- Backend API route tests run with Vitest, Supertest, and MongoMemoryServer.
+- Frontend behavior tests run through the existing Create React App Jest setup.
+- The static core-flow contract checker remains as a root-level safety check.
 
 ## Current Test State
 
 | Area | Current state | Evidence |
 | --- | --- | --- |
+| Backend test runner | Configured with `vitest run` | `Backend/package.json`, `Backend/vitest.config.js` |
+| Backend API tests | Auth, cart/coupon, order, contact, and app health tests exist | `Backend/test/*.test.js` |
+| Backend database isolation | Uses `mongodb-memory-server` and clears collections after each test | `Backend/test/setup.js` |
 | Frontend test runner | Configured through `react-scripts test` | `Frontend/Ecommerce-main/my-app/package.json` |
-| Frontend test libraries | `@testing-library/react`, `@testing-library/jest-dom`, and `@testing-library/user-event` are dependencies | `Frontend/Ecommerce-main/my-app/package.json` |
-| Frontend test files | One test file exists: `Frontend/Ecommerce-main/my-app/src/App.test.js` | `Frontend/Ecommerce-main/my-app/src/App.test.js` |
-| Frontend setup file | jest-dom is loaded globally | `Frontend/Ecommerce-main/my-app/src/setupTests.js` |
-| Backend test runner | Not configured | `Backend/package.json` has `start`, `dev`, and `seed`, but no `test` script |
-| Backend test files | None detected | No `*.test.js` or `*.spec.js` files under `Backend` |
-| CI test execution | Not configured | No `.github/workflows` directory is present |
-| Coverage threshold | Not configured | No Jest/Vitest coverage threshold or `nyc`/`c8` config detected |
+| Frontend behavior tests | App shell, cart store, ProtectedRoute, Checkout, and Contact tests exist | `Frontend/Ecommerce-main/my-app/src/**/*.test.*` |
+| Static contract checker | Retained as a root command | `.planning/spikes/001-core-flow-contract-check/check-contracts.mjs` |
+| CI test execution | Not configured | No CI workflow is currently documented as present |
+| Coverage threshold | Not configured | No Jest/Vitest coverage threshold is configured |
 
-The existing frontend test is still the default CRA starter assertion:
+## Commands
 
-```javascript
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
-});
+Run backend tests once:
+
+```bash
+cd Backend
+npm test
 ```
 
-`Frontend/Ecommerce-main/my-app/src/App.js` now renders the ecommerce route shell and does not render "learn react", so this test should be replaced before the frontend suite is treated as useful.
+Run backend tests in watch mode:
 
-## Available Commands
+```bash
+cd Backend
+npm run test:watch
+```
 
-Run frontend dependency installation before test commands in a fresh checkout:
+Run frontend dependency installation before frontend test commands in a fresh checkout:
 
 ```bash
 cd Frontend/Ecommerce-main/my-app
 npm install
-```
-
-Run the frontend Jest suite in interactive watch mode:
-
-```bash
-cd Frontend/Ecommerce-main/my-app
-npm test
 ```
 
 Run the frontend Jest suite once:
@@ -51,13 +50,6 @@ cd Frontend/Ecommerce-main/my-app
 npm test -- --watchAll=false
 ```
 
-Run frontend coverage once:
-
-```bash
-cd Frontend/Ecommerce-main/my-app
-npm test -- --coverage --watchAll=false
-```
-
 Run one frontend test file:
 
 ```bash
@@ -65,126 +57,81 @@ cd Frontend/Ecommerce-main/my-app
 npm test -- App.test.js --watchAll=false
 ```
 
-There is no backend test command available today. `Backend/package.json` does not define a `test` script.
+Run the retained static contract checker from the repository root:
+
+```bash
+node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs
+```
 
 ## Verification Snapshot
 
-The frontend test command was checked from this checkout with no `node_modules` directory present:
+Latest Phase 2 gate evidence:
+
+| Command | Result |
+| --- | --- |
+| `cd Backend && npm test` | Passed: 5 test files, 25 tests |
+| `cd Frontend/Ecommerce-main/my-app && npm test -- --watchAll=false` | Passed: 5 test suites, 15 tests |
+| `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` | Passed with no `FAIL` findings; current checker counts are 7 `PASS`, 2 `WARN` |
+
+The frontend command currently emits React 18 deprecation/act warnings from the older CRA/React Testing Library stack. They do not fail the suite. Dependency audit remediation is intentionally deferred to Phase 3.
+
+## Backend Test Setup
+
+The backend test harness is intentionally route-level:
+
+- `Backend/app.js` exports the Express app without connecting to production MongoDB or opening a listener.
+- `Backend/server.js` remains responsible for runtime `dotenv`, `connectDB()`, and `app.listen(...)`.
+- `Backend/test/setup.js` starts MongoMemoryServer, connects Mongoose, clears all collections after each test, and disconnects after the suite.
+- `Backend/test/helpers/factories.js` creates users, products, carts, coupons, orders, contact messages, and shipping addresses.
+- `Backend/test/helpers/auth.js` creates JWT bearer headers for protected routes.
+
+Backend test files:
+
+| File | Coverage |
+| --- | --- |
+| `Backend/test/app.test.js` | Importable app health smoke |
+| `Backend/test/auth.test.js` | Register, duplicate register, login, invalid login, current user, missing token, invalid token |
+| `Backend/test/cart.test.js` | Protected cart access, cart creation, item add/update/remove/clear, coupon success/failure/minimum, no-cart coupon removal |
+| `Backend/test/order.test.js` | Missing token, empty cart, missing shipping field, successful cart checkout with coupon totals |
+| `Backend/test/contact.test.js` | Public contact success and required-field rejection |
+
+## Frontend Test Setup
+
+The frontend still uses the Jest configuration bundled with Create React App. Tests should stay user-facing and avoid implementation snapshots.
+
+Frontend test files:
+
+| File | Coverage |
+| --- | --- |
+| `Frontend/Ecommerce-main/my-app/src/App.test.js` | PLASHOE app shell smoke |
+| `Frontend/Ecommerce-main/my-app/src/store/cartStore.test.js` | Cart selectors, guest mutations, discount totals, and clear behavior |
+| `Frontend/Ecommerce-main/my-app/src/components/ProtectedRoute.test.jsx` | Authenticated and unauthenticated route guard behavior |
+| `Frontend/Ecommerce-main/my-app/src/pages/Checkout.test.jsx` | Coupon success/failure, order submission, empty cart, unauthenticated submit guard |
+| `Frontend/Ecommerce-main/my-app/src/pages/Contact.test.jsx` | Required-field validation, successful submit clear, failed submit preservation |
+
+Use Jest module mocks for API wrappers, toast calls, router behavior, and Leaflet. Do not require a live backend or browser map service for these tests.
+
+## Static Contract Checker
+
+The retained checker is not a replacement for route or UI tests. It is a fast source-level guard for known core-flow contract drift.
+
+Run it from the repository root:
 
 ```bash
-cd Frontend/Ecommerce-main/my-app
-npm test -- --watchAll=false
+node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs
 ```
 
-Current result:
+The checker writes:
 
-```text
-'react-scripts' is not recognized as an internal or external command,
-operable program or batch file.
-```
+- `.planning/spikes/001-core-flow-contract-check/results.json`
+- `.planning/spikes/001-core-flow-contract-check/contract-report.md`
 
-Install frontend dependencies first, then replace `Frontend/Ecommerce-main/my-app/src/App.test.js` with a real PLASHOE assertion before relying on the test run.
+Current expected status:
 
-The backend package was also checked and currently has no test script to run.
+- No `FAIL` findings.
+- `WARN` findings may remain for production payments and inventory enforcement because those are planned later phases.
 
-## Test Framework And Setup
-
-### Frontend
-
-The frontend uses the Jest configuration bundled with `react-scripts` from Create React App. There is no standalone `jest.config.*` or `vitest.config.*` file.
-
-Relevant files:
-
-- `Frontend/Ecommerce-main/my-app/package.json`: defines `test: react-scripts test`.
-- `Frontend/Ecommerce-main/my-app/src/setupTests.js`: imports `@testing-library/jest-dom`.
-- `Frontend/Ecommerce-main/my-app/src/App.test.js`: current starter test file.
-
-Use `.test.js` for frontend tests until the project adopts a different convention. Co-locate tests next to the code they cover, matching the current `Frontend/Ecommerce-main/my-app/src/App.test.js` pattern.
-
-### Backend
-
-The backend is an Express/Mongoose API with route files under `Backend/routes`, controllers under `Backend/controllers`, auth middleware in `Backend/middleware/auth.js`, and models under `Backend/models`.
-
-No backend testing dependencies are configured. There is no `supertest`, `jest`, `vitest`, `mocha`, `mongodb-memory-server`, or test script in `Backend/package.json`.
-
-## Running Tests
-
-| Command | What it runs | Current status |
-| --- | --- | --- |
-| `cd Frontend/Ecommerce-main/my-app && npm test` | CRA/Jest in watch mode | Available after `npm install`; current test content is stale |
-| `cd Frontend/Ecommerce-main/my-app && npm test -- --watchAll=false` | CRA/Jest once | Available after `npm install`; current checkout could not run because dependencies are not installed |
-| `cd Frontend/Ecommerce-main/my-app && npm test -- --coverage --watchAll=false` | CRA/Jest once with coverage | Available after `npm install`; no coverage thresholds configured |
-| Backend automated test command | Backend tests | Not available; `Backend/package.json` is missing a `test` script |
-
-## Writing New Frontend Tests
-
-Use React Testing Library for user-visible behavior, not implementation details. Prefer `screen.getByRole`, `screen.getByText`, and async `findBy*` queries when UI waits for data.
-
-Recommended near-term frontend test targets:
-
-1. Replace `Frontend/Ecommerce-main/my-app/src/App.test.js` with a route-shell smoke test that proves the app renders PLASHOE navigation or homepage content.
-2. Add a future cart store test near `Frontend/Ecommerce-main/my-app/src/store/cartStore.js` for `selectItemCount`, `selectSubtotal`, `selectTotal`, guest `addItem`, quantity updates, coupon state, and `clearCart`.
-3. Add component tests near `Frontend/Ecommerce-main/my-app/src/components/ProtectedRoute.jsx` to verify unauthenticated users redirect to `/account` and authenticated users see protected children.
-4. Add component tests near `Frontend/Ecommerce-main/my-app/src/components/ProductCard.jsx` to verify price display, sale state, size selection, `addItem`, `openCart`, and toast behavior with mocked stores.
-5. Add page tests near `Frontend/Ecommerce-main/my-app/src/pages/Cart.jsx` to cover empty cart, item totals, discount display, remove, quantity update, and checkout navigation.
-
-Example frontend test shape:
-
-```javascript
-import { render, screen } from '@testing-library/react';
-import App from './App';
-
-test('renders the storefront route shell', () => {
-  render(<App />);
-
-  expect(screen.getByAltText(/plashoe/i)).toBeInTheDocument();
-});
-```
-
-Adjust the assertion to match stable text or accessible labels that are actually rendered by the current component.
-
-## Missing Backend Testing
-
-Backend tests are the largest current gap. The API handles authentication, authorization, ecommerce data changes, and MongoDB persistence, but none of those paths are covered by automated tests.
-
-Recommended backend setup:
-
-```bash
-cd Backend
-npm install --save-dev vitest supertest mongodb-memory-server
-```
-
-Recommended `Backend/package.json` script after adding a test runner:
-
-```json
-{
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest"
-  }
-}
-```
-
-To make API tests straightforward, refactor `Backend/server.js` so the Express `app` can be imported without starting the listener. A common structure is:
-
-- Add a new backend app module that creates middleware, routes, and error handling, then exports `app`.
-- Keep `Backend/server.js` responsible for loading environment, connecting MongoDB, importing the app module, and calling `app.listen(...)`.
-
-Do this refactor before adding `supertest` route tests.
-
-## Recommended Tests By Priority
-
-| Priority | Test area | Why it matters | Suggested files |
-| --- | --- | --- | --- |
-| 1 | Backend auth register/login/me | JWT creation and protected user identity are core to checkout, cart, orders, and profile features | Future backend auth route test |
-| 2 | Backend auth middleware | `protect` and `admin` guard sensitive cart, order, and product write routes | Future backend auth middleware test |
-| 3 | Backend product routes | Product listing, category filters, sale filters, and admin product writes drive the storefront | Future backend product route test |
-| 4 | Backend cart routes | Cart add/update/remove/clear/coupon flows affect purchase totals and persistence | Future backend cart route test |
-| 5 | Backend order routes | Order creation, lookup, and cancellation are high-value ecommerce workflows | Future backend order route test |
-| 6 | Frontend cart store | Guest cart behavior and total calculations can be tested without network or browser complexity | Future cart store test near `Frontend/Ecommerce-main/my-app/src/store/cartStore.js` |
-| 7 | Frontend protected routes | Checkout and order detail access depend on auth state | Future route-guard test near `Frontend/Ecommerce-main/my-app/src/components/ProtectedRoute.jsx` |
-| 8 | Frontend product and cart UI | Product cards and cart page are the highest-touch shopping UI paths | Future UI tests near `Frontend/Ecommerce-main/my-app/src/components/ProductCard.jsx` and `Frontend/Ecommerce-main/my-app/src/pages/Cart.jsx` |
-| 9 | End-to-end checkout smoke | Full browser flow should cover browse, add to cart, login, checkout, and order confirmation after unit and API tests exist | Future browser checkout smoke test |
+If a future run changes only generated timestamps, do not commit that diff by itself.
 
 ## Coverage Requirements
 
@@ -197,17 +144,18 @@ No coverage thresholds are configured.
 | Functions | Not configured |
 | Lines | Not configured |
 
-When coverage gates are introduced, start with modest thresholds on newly added testable modules and raise them as backend and frontend coverage expands. Avoid enabling a repository-wide threshold before replacing the stale frontend starter test and adding backend tests.
+Do not add hard coverage thresholds in Phase 2. Add thresholds only after the project has broader stable coverage and CI enforcement.
 
 ## CI Integration
 
-No CI workflow is currently present. Add CI only after the local commands pass consistently.
+No CI workflow is currently present. The local commands above are the source of truth for Phase 2 verification.
 
-Recommended first CI shape:
+Recommended future CI shape after this phase:
 
-1. Install frontend dependencies in `Frontend/Ecommerce-main/my-app`.
-2. Run `npm test -- --watchAll=false`.
-3. Install backend dependencies in `Backend`.
-4. Add and run the backend test script after a backend test runner is installed.
+1. Install backend dependencies in `Backend`.
+2. Run `npm test`.
+3. Install frontend dependencies in `Frontend/Ecommerce-main/my-app`.
+4. Run `npm test -- --watchAll=false`.
+5. Run `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` from the repository root.
 
-Do not add a backend CI test step until `Backend/package.json` has a real `test` script.
+Keep dependency audit, production payment, inventory, admin fulfillment, browser E2E, and frontend tooling migration work in their planned later phases.
