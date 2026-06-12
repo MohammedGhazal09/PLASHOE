@@ -74,3 +74,16 @@ export const handleSecurityErrors = (err, req, res, next) => {
 
   next(err);
 };
+
+export const handleApplicationErrors = (err, req, res, next) => {
+  const status = err?.status || err?.statusCode || 500;
+
+  if (status >= 500) {
+    console.error(err?.stack || err);
+  }
+
+  res.status(status).json({
+    success: false,
+    message: status >= 500 ? 'Server Error' : err?.message || 'Server Error',
+  });
+};

@@ -1,4 +1,5 @@
 import request from "supertest";
+import jwt from "jsonwebtoken";
 import { describe, expect, it } from "vitest";
 import app from "../app.js";
 import { authHeader } from "./helpers/auth.js";
@@ -23,6 +24,10 @@ describe("auth routes", () => {
     });
     expect(response.body.data._id).toBeTruthy();
     expect(response.body.data.token).toEqual(expect.any(String));
+
+    const decoded = jwt.decode(response.body.data.token, { complete: true });
+    expect(decoded.header.alg).toBe("HS256");
+    expect(decoded.payload.exp - decoded.payload.iat).toBe(60 * 60);
   });
 
   it("rejects duplicate registration", async () => {
@@ -116,6 +121,24 @@ describe("auth routes", () => {
     const response = await request(app)
       .get("/api/auth/me")
       .set("Authorization", "Bearer invalid-token")
+      .expect(401);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Not authorized, token failed",
+    });
+  });
+
+  it("rejects bearer tokens signed with a disallowed algorithm", async () => {
+    const user = await createUser({ email: "wrong-algorithm@example.com" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      algorithm: "HS512",
+      expiresIn: "1h",
+    });
+
+    const response = await request(app)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${token}`)
       .expect(401);
 
     expect(response.body).toMatchObject({

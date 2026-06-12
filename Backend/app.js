@@ -10,6 +10,7 @@ import contactRoutes from "./routes/contactRoutes.js";
 import {
   apiLimiter,
   defaultJsonParser,
+  handleApplicationErrors,
   handleSecurityErrors,
   securityHeaders,
   strictJsonParser,
@@ -44,12 +45,6 @@ app.get("/api/health", (req, res) => {
 
 app.use(handleSecurityErrors);
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Server Error",
-  });
-});
+app.use(handleApplicationErrors);
 
 export default app;

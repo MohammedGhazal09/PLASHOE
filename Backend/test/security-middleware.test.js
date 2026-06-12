@@ -1,6 +1,7 @@
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import app from "../app.js";
+import { handleApplicationErrors } from "../middleware/security.js";
 
 const rateLimitHeader = "X-Rate-Limit-Test";
 
@@ -73,6 +74,20 @@ describe("security middleware", () => {
     expect(response.body).toEqual({
       success: false,
       message: "Too many API requests, please try again later",
+    });
+  });
+
+  it("hides unexpected 500 error details from client envelopes", () => {
+    const status = vi.fn().mockReturnThis();
+    const json = vi.fn();
+    const res = { status, json };
+
+    handleApplicationErrors(new Error("MongoServerError: raw database detail"), {}, res);
+
+    expect(status).toHaveBeenCalledWith(500);
+    expect(json).toHaveBeenCalledWith({
+      success: false,
+      message: "Server Error",
     });
   });
 });

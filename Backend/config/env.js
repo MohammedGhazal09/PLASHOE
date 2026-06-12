@@ -67,7 +67,7 @@ export const validateRuntimeEnv = (env = process.env) => {
   }
 
   if (!DURATION_PATTERN.test(jwtExpire)) {
-    errors.push('JWT_EXPIRE must be a jsonwebtoken duration such as 1h, 30m, or 7d');
+    errors.push('JWT_EXPIRE must be a jsonwebtoken duration such as 1h, 30m, or 2h');
   }
 
   const port = parsePort(portValue, errors);

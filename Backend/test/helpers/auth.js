@@ -1,7 +1,9 @@
 import jwt from "jsonwebtoken";
+import { JWT_SECURITY } from "../../config/security.js";
 
 export const authHeader = (user) => ({
   Authorization: `Bearer ${jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || "7d",
+    algorithm: JWT_SECURITY.algorithm,
+    expiresIn: process.env.JWT_EXPIRE || JWT_SECURITY.defaultExpiresIn,
   })}`,
 });
