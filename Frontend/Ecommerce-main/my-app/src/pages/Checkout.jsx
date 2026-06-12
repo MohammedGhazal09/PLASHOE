@@ -1,28 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useCartStore, selectSubtotal, selectTotal } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
 import { ordersApi } from '../api/ordersApi';
 
-// Helper to safely get price from cart item (handles different structures)
-const getItemPrice = (item) => {
-  if (typeof item.price === 'number') return item.price;
-  if (item.price?.current) return item.price.current;
-  if (item.priceAtAdd) return item.priceAtAdd;
-  if (item.product?.price?.current) return item.product.price.current;
-  return 0;
-};
+const createIdempotencyKey = () => {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
 
-// Helper to safely get item details
-const getItemDetails = (item) => ({
-  id: item.productId || item._id || item.product?._id,
-  name: item.name || item.product?.name || 'Product',
-  image: item.image || item.product?.image || '',
-  size: item.size || 'N/A',
-  quantity: item.quantity || 1,
-  price: getItemPrice(item),
-});
+  if (window.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  return `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -34,6 +29,7 @@ export default function Checkout() {
   const [couponInput, setCouponInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(true);
+  const checkoutAttemptKeyRef = useRef(null);
   const [formData, setFormData] = useState({
     firstName: user?.name?.split(' ')[0] || '',
     lastName: user?.name?.split(' ')[1] || '',
@@ -100,6 +96,9 @@ export default function Checkout() {
     try {
       // Sync cart with backend first to ensure consistency
       await syncCart();
+      if (!checkoutAttemptKeyRef.current) {
+        checkoutAttemptKeyRef.current = createIdempotencyKey();
+      }
 
       // Prepare order data - backend uses server-side cart, we just send shipping info
       const orderData = {
@@ -117,9 +116,10 @@ export default function Checkout() {
       };
 
       // Submit to API
-      const response = await ordersApi.create(orderData);
+      const response = await ordersApi.create(orderData, checkoutAttemptKeyRef.current);
       if (response.success) {
-        clearCart();
+        checkoutAttemptKeyRef.current = null;
+        await clearCart();
         toast.success('Order placed successfully!');
         navigate('/account', { state: { tab: 'orders' } });
       } else {
@@ -128,6 +128,10 @@ export default function Checkout() {
     } catch (error) {
       console.error('Checkout error:', error);
       const errorMessage = error.response?.data?.message || 'Something went wrong. Please try again.';
+      if (error.response?.status === 409) {
+        checkoutAttemptKeyRef.current = null;
+        await syncCart();
+      }
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -293,25 +297,22 @@ export default function Checkout() {
 
             {/* Items */}
             <div className="space-y-4 max-h-[300px] overflow-y-auto mb-6">
-              {items.map((item) => {
-                const details = getItemDetails(item);
-                return (
-                  <div key={`${details.id}-${details.size}`} className="flex gap-4">
-                    <img
-                      src={details.image}
-                      alt={details.name}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{details.name}</h4>
-                      <p className="text-gray-500 text-xs">
-                        Size: {details.size} | Qty: {details.quantity}
-                      </p>
-                    </div>
-                    <span className="font-medium">${(details.price * details.quantity).toFixed(2)}</span>
+              {items.map((item) => (
+                <div key={`${item.id}-${item.size}`} className="flex gap-4">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{item.name}</h4>
+                    <p className="text-gray-500 text-xs">
+                      Size: {item.size} | Qty: {item.quantity}
+                    </p>
                   </div>
-                );
-              })}
+                  <span className="font-medium">${item.lineTotal.toFixed(2)}</span>
+                </div>
+              ))}
             </div>
 
             {/* Coupon */}

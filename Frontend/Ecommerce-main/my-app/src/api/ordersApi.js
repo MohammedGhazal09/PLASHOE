@@ -1,8 +1,11 @@
 import api from './axios';
 
 export const ordersApi = {
-  create: async (orderData) => {
-    const { data } = await api.post('/orders', orderData);
+  create: async (orderData, idempotencyKey) => {
+    const config = idempotencyKey
+      ? { headers: { 'Idempotency-Key': idempotencyKey } }
+      : undefined;
+    const { data } = await api.post('/orders', orderData, config);
     return data;
   },
 

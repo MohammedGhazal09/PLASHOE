@@ -2,6 +2,7 @@ import { act } from '@testing-library/react';
 import { cartApi } from '../api/cartApi';
 import { useAuthStore } from './authStore';
 import {
+  normalizeCartItem,
   selectItemCount,
   selectSubtotal,
   selectTotal,
@@ -84,6 +85,53 @@ test('computes item count, subtotal, and discounted total', () => {
   expect(selectTotal(state)).toBe(224);
 });
 
+test('normalizes backend cart sync items into one view model', async () => {
+  useAuthStore.setState({ isAuthenticated: true, token: 'token' });
+  cartApi.getCart.mockResolvedValue({
+    success: true,
+    data: {
+      items: [
+        {
+          _id: 'cart-item-1',
+          product: {
+            _id: 'product-1',
+            name: 'Backend Runner',
+            image: '/runner.jpg',
+            price: { current: 125 },
+          },
+          quantity: 2,
+          size: 43,
+          priceAtAdd: 110,
+        },
+      ],
+      couponCode: 'SAVE10',
+      discount: 10,
+    },
+  });
+
+  await act(async () => {
+    await useCartStore.getState().syncCart();
+  });
+
+  expect(useCartStore.getState().items[0]).toMatchObject({
+    id: 'cart-item-1',
+    cartItemId: 'cart-item-1',
+    productId: 'product-1',
+    name: 'Backend Runner',
+    image: '/runner.jpg',
+    size: 43,
+    quantity: 2,
+    unitPrice: 110,
+    lineTotal: 220,
+    source: 'backend',
+  });
+  expect(useCartStore.getState()).toMatchObject({
+    couponCode: 'SAVE10',
+    discount: 10,
+    isLoading: false,
+  });
+});
+
 test('accumulates duplicate guest product and size quantities without API calls', async () => {
   await act(async () => {
     await useCartStore.getState().addItem(product, 1, 42);
@@ -94,10 +142,14 @@ test('accumulates duplicate guest product and size quantities without API calls'
 
   expect(state.items).toHaveLength(1);
   expect(state.items[0]).toMatchObject({
-    product,
+    productId: product._id,
+    name: product.name,
+    image: product.image,
     quantity: 3,
     size: 42,
-    priceAtAdd: 100,
+    unitPrice: 100,
+    lineTotal: 300,
+    source: 'local',
   });
   expect(cartApi.addItem).not.toHaveBeenCalled();
 });
@@ -107,7 +159,7 @@ test('updates and removes guest cart items locally', async () => {
     await useCartStore.getState().addItem(product, 1, 42);
   });
 
-  const itemId = useCartStore.getState().items[0]._id;
+  const itemId = useCartStore.getState().items[0].id;
 
   await act(async () => {
     await useCartStore.getState().updateItemQuantity(itemId, 4);
@@ -122,6 +174,56 @@ test('updates and removes guest cart items locally', async () => {
   expect(useCartStore.getState().items).toEqual([]);
   expect(cartApi.updateItem).not.toHaveBeenCalled();
   expect(cartApi.removeItem).not.toHaveBeenCalled();
+});
+
+test('migrates older persisted guest cart shapes instead of wiping them', async () => {
+  localStorage.setItem(
+    'cart-storage',
+    JSON.stringify({
+      state: {
+        items: [{ _id: 'local-old-1', product, quantity: 2, size: 41 }],
+        couponCode: 'OLD20',
+        discount: 20,
+      },
+      version: 0,
+    })
+  );
+
+  await act(async () => {
+    await useCartStore.persist.rehydrate();
+  });
+
+  expect(useCartStore.getState().items[0]).toMatchObject({
+    id: 'local-old-1',
+    productId: product._id,
+    name: product.name,
+    unitPrice: 100,
+    lineTotal: 200,
+    source: 'local',
+  });
+  expect(useCartStore.getState()).toMatchObject({
+    couponCode: 'OLD20',
+    discount: 20,
+  });
+});
+
+test('normalizes legacy item shapes directly', () => {
+  expect(
+    normalizeCartItem({
+      _id: 'cart-item-1',
+      product,
+      quantity: 2,
+      size: 42,
+      priceAtAdd: 90,
+    })
+  ).toMatchObject({
+    id: 'cart-item-1',
+    cartItemId: 'cart-item-1',
+    productId: product._id,
+    name: product.name,
+    unitPrice: 90,
+    lineTotal: 180,
+  });
 });
 
 test('clearCart resets items, coupon code, and discount', async () => {

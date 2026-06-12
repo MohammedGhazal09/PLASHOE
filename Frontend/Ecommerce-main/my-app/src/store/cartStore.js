@@ -3,14 +3,64 @@ import { persist } from 'zustand/middleware';
 import { cartApi } from '../api/cartApi';
 import { useAuthStore } from './authStore';
 
+const toId = (value) => {
+  if (!value) return null;
+  if (typeof value === 'object' && value._id) return String(value._id);
+  return String(value);
+};
+
+const toNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
+export const normalizeCartItem = (item = {}) => {
+  const rawProduct = item.product && typeof item.product === 'object' ? item.product : null;
+  const productId =
+    item.productId || toId(rawProduct) || (typeof item.product === 'string' ? item.product : null);
+  const rawId = item.id || item._id || item.cartItemId;
+  const cartItemId =
+    item.cartItemId || (rawId && !String(rawId).startsWith('local-') ? String(rawId) : null);
+  const id = String(rawId || cartItemId || `local-${productId || 'item'}-${item.size || 'any'}`);
+  const quantity = toNumber(item.quantity, 1);
+  const unitPrice = toNumber(
+    item.unitPrice ??
+      item.priceAtAdd ??
+      (typeof item.price === 'number' ? item.price : undefined) ??
+      item.price?.current ??
+      rawProduct?.price?.current,
+    0
+  );
+
+  return {
+    id,
+    cartItemId,
+    productId,
+    name: item.name || rawProduct?.name || 'Product',
+    image: item.image || rawProduct?.image || '',
+    size: item.size || 'N/A',
+    quantity,
+    unitPrice,
+    lineTotal: unitPrice * quantity,
+    source: item.source || (cartItemId ? 'backend' : 'local'),
+    raw: item.raw || item,
+  };
+};
+
+const normalizeCartItems = (items = []) => items.map(normalizeCartItem);
+
+const mutationIdFor = (item) => item.cartItemId || item.id || item._id;
+
+const serializeCartItem = ({ raw, ...item }) => item;
+
 // External selectors for computed values (more performant than getters)
 export const selectItemCount = (state) =>
   state.items.reduce((acc, item) => acc + item.quantity, 0);
 
 export const selectSubtotal = (state) =>
   state.items.reduce((acc, item) => {
-    const price = item.product?.price?.current || item.priceAtAdd || 0;
-    return acc + price * item.quantity;
+    const normalized = normalizeCartItem(item);
+    return acc + normalized.lineTotal;
   }, 0);
 
 export const selectTotal = (state) => {
@@ -43,11 +93,13 @@ export const useCartStore = create(
           const response = await cartApi.getCart();
           if (response.success) {
             set({
-              items: response.data.items || [],
+              items: normalizeCartItems(response.data.items || []),
               couponCode: response.data.couponCode || null,
               discount: response.data.discount || 0,
               isLoading: false,
             });
+          } else {
+            set({ isLoading: false });
           }
         } catch (error) {
           set({ isLoading: false });
@@ -65,11 +117,13 @@ export const useCartStore = create(
             const response = await cartApi.addItem(product._id, quantity, size);
             if (response.success) {
               set({
-                items: response.data.items || [],
+                items: normalizeCartItems(response.data.items || []),
                 isLoading: false,
               });
               return { success: true };
             }
+            set({ isLoading: false });
+            return { success: false, message: response.message };
           } catch (error) {
             set({ isLoading: false });
             return { success: false, message: error.response?.data?.message };
@@ -77,23 +131,31 @@ export const useCartStore = create(
         } else {
           // Local cart for guests
           const items = get().items;
-          const existingIndex = items.findIndex(
-            (item) => item.product?._id === product._id && item.size === size
-          );
+          const existingIndex = items.findIndex((item) => {
+            const normalized = normalizeCartItem(item);
+            return normalized.productId === product._id && normalized.size === size;
+          });
 
           if (existingIndex > -1) {
             const newItems = [...items];
-            newItems[existingIndex].quantity += quantity;
+            newItems[existingIndex] = normalizeCartItem({
+              ...newItems[existingIndex],
+              quantity: newItems[existingIndex].quantity + quantity,
+            });
             set({ items: newItems });
           } else {
             set({
-              items: [...items, {
-                _id: `local-${Date.now()}`,
-                product,
-                quantity,
-                size,
-                priceAtAdd: product.price.current,
-              }],
+              items: [
+                ...items,
+                normalizeCartItem({
+                  _id: `local-${Date.now()}`,
+                  product,
+                  quantity,
+                  size,
+                  priceAtAdd: product.price.current,
+                  source: 'local',
+                }),
+              ],
             });
           }
           return { success: true };
@@ -115,16 +177,18 @@ export const useCartStore = create(
             const response = await cartApi.updateItem(itemId, quantity);
             if (response.success) {
               set({
-                items: response.data.items || [],
+                items: normalizeCartItems(response.data.items || []),
                 isLoading: false,
               });
+            } else {
+              set({ isLoading: false });
             }
           } catch (error) {
             set({ isLoading: false });
           }
         } else {
           const items = get().items.map((item) =>
-            item._id === itemId ? { ...item, quantity } : item
+            mutationIdFor(item) === itemId ? normalizeCartItem({ ...item, quantity }) : item
           );
           set({ items });
         }
@@ -144,15 +208,17 @@ export const useCartStore = create(
             const response = await cartApi.removeItem(itemId);
             if (response.success) {
               set({
-                items: response.data.items || [],
+                items: normalizeCartItems(response.data.items || []),
                 isLoading: false,
               });
+            } else {
+              set({ isLoading: false });
             }
           } catch (error) {
             set({ isLoading: false });
           }
         } else {
-          const items = get().items.filter((item) => item._id !== itemId);
+          const items = get().items.filter((item) => mutationIdFor(item) !== itemId);
           set({ items });
         }
       },
@@ -229,8 +295,13 @@ export const useCartStore = create(
     }),
     {
       name: 'cart-storage',
+      version: 1,
+      migrate: (persistedState) => ({
+        ...persistedState,
+        items: normalizeCartItems(persistedState?.items || []),
+      }),
       partialize: (state) => ({
-        items: state.items,
+        items: state.items.map(serializeCartItem),
         couponCode: state.couponCode,
         discount: state.discount,
       }),

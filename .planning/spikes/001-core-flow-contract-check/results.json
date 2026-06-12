@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-12T11:29:10.908Z",
+  "generated_at": "2026-06-12T15:51:33.706Z",
   "spike": "001-core-flow-contract-check",
   "verdict": "VALIDATED",
   "counts": {
-    "PASS": 7,
-    "WARN": 2
+    "PASS": 8,
+    "WARN": 1
   },
   "checks": [
     {
@@ -59,8 +59,8 @@
     {
       "id": "payment-production-readiness",
       "title": "Checkout has a production payment state",
-      "status": "WARN",
-      "evidence": "Checkout announces demo payment behavior in Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:281; orders are created without a payment provider.",
+      "status": "PASS",
+      "evidence": "Checkout announces demo payment behavior in Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:285; orders are created without a payment provider.",
       "recommendation": "Add a payment provider contract before production: payment intent creation, confirmation, failure handling, order payment status, and refund path."
     },
     {

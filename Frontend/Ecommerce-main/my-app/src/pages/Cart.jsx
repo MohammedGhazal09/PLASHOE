@@ -3,25 +3,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faMinus, faPlus, faShoppingBag } from '@fortawesome/free-solid-svg-icons';
 import { useCartStore, selectSubtotal, selectTotal } from '../store/cartStore';
 
-// Helper to safely get price from cart item (handles different structures)
-const getItemPrice = (item) => {
-  if (typeof item.price === 'number') return item.price;
-  if (item.price?.current) return item.price.current;
-  if (item.priceAtAdd) return item.priceAtAdd;
-  if (item.product?.price?.current) return item.product.price.current;
-  return 0;
-};
-
-// Helper to safely get item details
-const getItemDetails = (item) => ({
-  id: item.productId || item._id || item.product?._id,
-  name: item.name || item.product?.name || 'Product',
-  image: item.image || item.product?.image || '',
-  size: item.size || 'N/A',
-  quantity: item.quantity || 1,
-  price: getItemPrice(item),
-});
-
 export default function Cart() {
   const { items, updateItemQuantity, removeItem, clearCart, discount } =
     useCartStore();
@@ -61,26 +42,26 @@ export default function Cart() {
           </div>
 
           {items.map((item) => {
-            const details = getItemDetails(item);
+            const mutationId = item.cartItemId || item.id;
             return (
             <div
-              key={`${details.id}-${details.size}`}
+              key={`${item.id}-${item.size}`}
               className="border-b py-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-center"
             >
               {/* Product Info */}
               <div className="md:col-span-5 flex gap-4">
                 <div className="w-24 h-24 flex-shrink-0 bg-light rounded overflow-hidden">
                   <img
-                    src={details.image}
-                    alt={details.name}
+                    src={item.image}
+                    alt={item.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="flex flex-col justify-center">
-                  <h3 className="font-semibold text-dark">{details.name}</h3>
-                  <p className="text-gray-500 text-sm mb-2">Size: {details.size}</p>
+                  <h3 className="font-semibold text-dark">{item.name}</h3>
+                  <p className="text-gray-500 text-sm mb-2">Size: {item.size}</p>
                   <button
-                    onClick={() => removeItem(details.id, details.size)}
+                    onClick={() => removeItem(mutationId)}
                     className="text-red-500 text-sm flex items-center gap-1 hover:text-red-700 transition-colors w-fit"
                   >
                     <FontAwesomeIcon icon={faTrash} className="text-xs" /> Remove
@@ -91,7 +72,7 @@ export default function Cart() {
               {/* Price */}
               <div className="md:col-span-2 flex md:justify-center items-center gap-2">
                 <span className="md:hidden text-gray-500 text-sm">Price:</span>
-                <span className="font-medium">${details.price.toFixed(2)}</span>
+                <span className="font-medium">${item.unitPrice.toFixed(2)}</span>
               </div>
 
               {/* Quantity */}
@@ -99,17 +80,17 @@ export default function Cart() {
                 <span className="md:hidden text-gray-500 text-sm mr-2">Qty:</span>
                 <button
                   onClick={() =>
-                    updateItemQuantity(item._id, details.quantity - 1)
+                    updateItemQuantity(mutationId, item.quantity - 1)
                   }
                   className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={details.quantity <= 1}
+                  disabled={item.quantity <= 1}
                 >
                   <FontAwesomeIcon icon={faMinus} className="text-xs" />
                 </button>
-                <span className="w-10 text-center font-medium">{details.quantity}</span>
+                <span className="w-10 text-center font-medium">{item.quantity}</span>
                 <button
                   onClick={() =>
-                    updateItemQuantity(item._id, details.quantity + 1)
+                    updateItemQuantity(mutationId, item.quantity + 1)
                   }
                   className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors"
                 >
@@ -120,7 +101,7 @@ export default function Cart() {
               {/* Total */}
               <div className="md:col-span-2 flex md:justify-end items-center gap-2">
                 <span className="md:hidden text-gray-500 text-sm">Total:</span>
-                <span className="font-bold text-dark">${(details.price * details.quantity).toFixed(2)}</span>
+                <span className="font-bold text-dark">${item.lineTotal.toFixed(2)}</span>
               </div>
             </div>
           );

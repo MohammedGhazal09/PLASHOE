@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { cartApi } from '../api/cartApi';
 import { ordersApi } from '../api/ordersApi';
 import { useAuthStore } from '../store/authStore';
-import { useCartStore } from '../store/cartStore';
+import { normalizeCartItem, useCartStore } from '../store/cartStore';
 import Checkout from './Checkout';
 
 const mockNavigate = jest.fn();
@@ -90,7 +90,7 @@ const resetStores = ({ authenticated = true, cart = cartData() } = {}) => {
     error: null,
   });
   useCartStore.setState({
-    items: cart.items,
+    items: cart.items.map(normalizeCartItem),
     couponCode: cart.couponCode,
     discount: cart.discount,
     isLoading: false,
@@ -165,21 +165,45 @@ test('submits authenticated orders with shipping information', async () => {
   userEvent.click(screen.getByRole('button', { name: /place order/i }));
 
   await waitFor(() => {
-    expect(ordersApi.create).toHaveBeenCalledWith({
-      shippingAddress: {
-        firstName: 'Test',
-        lastName: 'Buyer',
-        street: '123 Test Street',
-        city: 'Testville',
-        state: 'CA',
-        zipCode: '90210',
-        country: 'United States',
-        phone: '5551234567',
+    expect(ordersApi.create).toHaveBeenCalledWith(
+      {
+        shippingAddress: {
+          firstName: 'Test',
+          lastName: 'Buyer',
+          street: '123 Test Street',
+          city: 'Testville',
+          state: 'CA',
+          zipCode: '90210',
+          country: 'United States',
+          phone: '5551234567',
+        },
+        notes: undefined,
       },
-      notes: undefined,
-    });
+      expect.any(String)
+    );
   });
   expect(toast.success).toHaveBeenCalledWith('Order placed successfully!');
+  expect(cartApi.clearCart).toHaveBeenCalled();
+});
+
+test('keeps cart state and syncs after checkout conflict responses', async () => {
+  ordersApi.create.mockRejectedValue({
+    response: {
+      status: 409,
+      data: { message: 'Insufficient stock for one or more cart items' },
+    },
+  });
+  const { container } = await renderCheckout();
+
+  fillShippingForm(container);
+  userEvent.click(screen.getByRole('button', { name: /place order/i }));
+
+  await waitFor(() => {
+  expect(toast.error).toHaveBeenCalledWith('Insufficient stock for one or more cart items');
+  });
+  expect(cartApi.clearCart).not.toHaveBeenCalled();
+  expect(cartApi.getCart).toHaveBeenCalledTimes(3);
+  expect(mockNavigate).not.toHaveBeenCalledWith('/account', { state: { tab: 'orders' } });
 });
 
 test('shows the empty-cart message without calling the order API', async () => {

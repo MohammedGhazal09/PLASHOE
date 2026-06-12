@@ -35,31 +35,29 @@ export default function CartSidebar() {
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-4">
               <div className="flex flex-col gap-4">
-                {items.map((item, index) => {
-                  const product = item.product || item;
-                  const price = product.price?.current || item.priceAtAdd || 0;
-                  const originalPrice = product.price?.original || price;
-                  const hasDiscount = originalPrice > price;
-                  const image = product.image || item.img;
-                  const name = product.name || item.name;
+                {items.map((item) => {
+                  const mutationId = item.cartItemId || item.id;
+                  const originalPrice =
+                    item.raw?.product?.price?.original || item.raw?.price?.original || item.unitPrice;
+                  const hasDiscount = originalPrice > item.unitPrice;
 
                   return (
-                    <div key={item._id || index} className="flex gap-4 pb-4 border-b border-gray-100 last:border-0">
+                    <div key={`${item.id}-${item.size}`} className="flex gap-4 pb-4 border-b border-gray-100 last:border-0">
                       <div className="w-20 h-20 flex-shrink-0 bg-light rounded overflow-hidden">
                         <img
-                          src={`${process.env.PUBLIC_URL}${image}`}
-                          alt={name}
+                          src={`${process.env.PUBLIC_URL}${item.image}`}
+                          alt={item.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-dark truncate">{name}</h4>
+                        <h4 className="font-medium text-dark truncate">{item.name}</h4>
                         <p className="text-sm text-gray-500 mb-2">Size: {item.size}</p>
                         
                         {/* Quantity Controls */}
                         <div className="flex items-center gap-2 mb-2">
                           <button
-                            onClick={() => updateQuantity && updateQuantity(item._id, Math.max(1, item.quantity - 1))}
+                            onClick={() => updateQuantity && updateQuantity(mutationId, Math.max(1, item.quantity - 1))}
                             className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors"
                             aria-label="Decrease quantity"
                           >
@@ -67,7 +65,7 @@ export default function CartSidebar() {
                           </button>
                           <span className="w-8 text-center font-medium">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity && updateQuantity(item._id, item.quantity + 1)}
+                            onClick={() => updateQuantity && updateQuantity(mutationId, item.quantity + 1)}
                             className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors"
                             aria-label="Increase quantity"
                           >
@@ -83,12 +81,12 @@ export default function CartSidebar() {
                             </span>
                           )}
                           <span className="font-semibold text-dark">
-                            ${(price * item.quantity).toFixed(2)}
+                            ${item.lineTotal.toFixed(2)}
                           </span>
                         </div>
                       </div>
                       <button
-                        onClick={() => removeItem(item._id)}
+                        onClick={() => removeItem(mutationId)}
                         className="p-2 text-gray-400 hover:text-red-500 transition-colors self-start"
                         aria-label="Remove item"
                       >

@@ -1,12 +1,11 @@
 # Core Flow Contract Check Report
 
-Generated: 2026-06-12T11:29:10.908Z
+Generated: 2026-06-12T15:51:33.706Z
 
 Verdict: VALIDATED
 
 | Status | Check | Evidence | Recommendation |
 | --- | --- | --- | --- |
-| WARN | Checkout has a production payment state | Checkout announces demo payment behavior in Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:281; orders are created without a payment provider. | Add a payment provider contract before production: payment intent creation, confirmation, failure handling, order payment status, and refund path. |
 | WARN | Stock is enforced during cart and order workflows | Product stock exists in Backend/models/Product.js:36, but cart/order controllers do not consistently validate or decrement it. | Validate stock in cart add/update and atomically decrement or reserve stock during order creation. |
 | PASS | Contact page calls a method exported by the contact API wrapper | Contact page call matches the wrapper export. | Use contactApi.submit(name, email, subject, message), or add a send(formData) wrapper that calls POST /api/contact. |
 | PASS | Contact submission reports failures honestly | Contact catch path does not show success. | Show an error toast in the catch path and preserve form contents unless the POST succeeds. |
@@ -15,4 +14,5 @@ Verdict: VALIDATED
 | PASS | Checkout order summary treats coupon discount as a percentage | Checkout computes a discount amount from subtotal and percentage. | Render the order-summary discount as subtotal * discount / 100 and label the percentage separately. |
 | PASS | Removing a coupon handles a missing cart | removeCoupon returns a successful empty-cart response before populate when no cart exists. | Return a successful empty-cart response when no cart exists, or create/load a cart before populating. |
 | PASS | Core route auth boundaries match the intended storefront flow | Cart and order routers apply router.use(protect); contact POST remains public in Backend/routes/contactRoutes.js. | Keep cart and order routes protected, and keep public contact submission separate from admin contact routes. |
+| PASS | Checkout has a production payment state | Checkout announces demo payment behavior in Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:285; orders are created without a payment provider. | Add a payment provider contract before production: payment intent creation, confirmation, failure handling, order payment status, and refund path. |
 

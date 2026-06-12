@@ -37,13 +37,13 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | PUT | `/api/products/:id` | Update a product. | Admin bearer JWT | None |
 | DELETE | `/api/products/:id` | Delete a product. | Admin bearer JWT | None |
 | GET | `/api/cart` | Return the current user's cart, creating an empty cart if needed. | Bearer JWT | `cartApi.getCart()` |
-| POST | `/api/cart/items` | Add a product and size to the current user's cart. | Bearer JWT | `cartApi.addItem(productId, quantity, size)` |
-| PUT | `/api/cart/items/:itemId` | Update a cart item quantity. | Bearer JWT | `cartApi.updateItem(itemId, quantity)` |
+| POST | `/api/cart/items` | Add a product and size to the current user's cart after stock validation. | Bearer JWT | `cartApi.addItem(productId, quantity, size)` |
+| PUT | `/api/cart/items/:itemId` | Update a cart item quantity after stock validation. | Bearer JWT | `cartApi.updateItem(itemId, quantity)` |
 | DELETE | `/api/cart/items/:itemId` | Remove one cart item. | Bearer JWT | `cartApi.removeItem(itemId)` |
 | DELETE | `/api/cart` | Clear cart items and coupon data. | Bearer JWT | `cartApi.clearCart()` |
 | POST | `/api/cart/coupon` | Apply a coupon to the current user's cart. | Bearer JWT | `cartApi.applyCoupon(code)` |
 | DELETE | `/api/cart/coupon` | Remove coupon data from the current user's cart. | Bearer JWT | `cartApi.removeCoupon()` |
-| POST | `/api/orders` | Create an order from the current user's cart and clear the cart. | Bearer JWT | `ordersApi.create(orderData)` |
+| POST | `/api/orders` | Transactionally create an order from the current user's cart, decrement stock, consume coupon usage, and clear the cart. | Bearer JWT + `Idempotency-Key` | `ordersApi.create(orderData, idempotencyKey)` |
 | GET | `/api/orders` | List the current user's orders sorted newest first. | Bearer JWT | `ordersApi.getAll()` |
 | GET | `/api/orders/:id` | Return one order if owned by the user or requested by an admin. | Bearer JWT, owner or admin | `ordersApi.getById(id)` |
 | PUT | `/api/orders/:id/cancel` | Cancel an owned order unless it is shipped or delivered. | Bearer JWT, owner only | `ordersApi.cancel(id)` |
@@ -153,6 +153,7 @@ Admin `POST /api/products` and `PUT /api/products/:id` accept product fields fro
 ```
 
 `quantity` defaults to `1`. `size` is required and must be between `35` and `45`.
+If the requested final quantity exceeds `Product.stock`, the API returns `409` and leaves the cart unchanged.
 
 `PUT /api/cart/items/:itemId`
 
@@ -163,6 +164,7 @@ Admin `POST /api/products` and `PUT /api/products/:id` accept product fields fro
 ```
 
 `quantity` must be at least `1`.
+If the requested quantity exceeds `Product.stock`, the API returns `409` and leaves the cart unchanged.
 
 `POST /api/cart/coupon`
 
@@ -175,6 +177,13 @@ Admin `POST /api/products` and `PUT /api/products/:id` accept product fields fro
 ### Orders
 
 `POST /api/orders`
+
+Required headers:
+
+```http
+Authorization: Bearer <token>
+Idempotency-Key: <unique-checkout-attempt-key>
+```
 
 ```json
 {
@@ -195,6 +204,8 @@ Admin `POST /api/products` and `PUT /api/products/:id` accept product fields fro
 ```
 
 Required `shippingAddress` fields are `firstName`, `lastName`, `country`, `street`, `city`, `state`, `zipCode`, and `phone`. Orders are created from the authenticated user's cart; clients do not send line items or totals.
+
+`Idempotency-Key` is required for checkout. Generate a new high-entropy key for each new checkout attempt and reuse the same key only for retrying that exact attempt. The backend scopes the key to the authenticated user and stores a cart fingerprint on the order.
 
 ### Coupons
 
@@ -304,14 +315,18 @@ Cart responses return a cart document with populated `items.product` fields `nam
 }
 ```
 
-Order creation returns status `201`, a success message, and the created order. The backend calculates order items, subtotal, discount, total, coupon usage, and sets `status` to `processing`.
+Order creation returns status `201`, a success message, and the created order. An exact retry with the same `Idempotency-Key` returns status `200`, `message: "Order already placed"`, and the existing order. Missing `Idempotency-Key` returns `400`. Reusing the key for a changed non-empty cart/request state returns `409`.
+
+The backend calculates order items, subtotal, discount, total, coupon usage, stock decrement, and sets `status` to `processing`. Order numbers are unique display identifiers beginning with `PLS-`; they are not strict sequences.
 
 ```json
 {
   "success": true,
   "message": "Order placed successfully",
   "data": {
-    "orderNumber": "PLS-1760000000000-1",
+    "orderNumber": "PLS-MJ1R67E8-4F2C9B81AA",
+    "idempotencyKey": "checkout-key-123",
+    "cartFingerprint": "5a6d...",
     "items": [],
     "shippingAddress": {},
     "subtotal": 240,
@@ -321,6 +336,29 @@ Order creation returns status `201`, a success message, and the created order. T
   }
 }
 ```
+
+Cart stock, checkout stock, coupon usage, and stale idempotency conflicts return `409` with a machine-readable `errors` array:
+
+```json
+{
+  "success": false,
+  "message": "Insufficient stock for one or more cart items",
+  "errors": [
+    {
+      "code": "INSUFFICIENT_STOCK",
+      "resource": "product",
+      "productId": "665000000000000000000002",
+      "cartItemId": "665000000000000000000003",
+      "requested": 4,
+      "available": 3
+    }
+  ]
+}
+```
+
+Possible conflict `code` values include `INSUFFICIENT_STOCK`, `PRODUCT_UNAVAILABLE`, `COUPON_USAGE_LIMIT_REACHED`, `COUPON_UNAVAILABLE`, `COUPON_MINIMUM_NOT_MET`, and `IDEMPOTENCY_KEY_CONFLICT`.
+
+Cancelling an owned `pending` or `processing` order restores ordered product stock once. Repeating cancellation for an already cancelled order returns success without restoring stock again. `shipped` and `delivered` orders still return `400`.
 
 Delete and state-change responses may return only a message:
 
@@ -359,10 +397,11 @@ Validator failures include an `errors` array with field-level details:
 
 | Status | Source | Meaning |
 | --- | --- | --- |
-| `400` | Zod validators, controllers, and Mongoose validation | Invalid request body/query/params, unknown write fields, duplicate user, invalid coupon, invalid cart quantity or size, empty cart, missing shipping fields, or an order that can no longer be cancelled. |
+| `400` | Zod validators, controllers, and Mongoose validation | Invalid request body/query/params, unknown write fields, duplicate user, invalid coupon, invalid cart quantity or size, empty cart, missing shipping fields, missing/invalid `Idempotency-Key`, or an order that can no longer be cancelled. |
 | `401` | `protect` middleware and login controller | Missing token, failed token verification with the allowed HS256 algorithm, missing authenticated user, or invalid login credentials. |
 | `403` | `admin` middleware and order ownership checks | Authenticated user is not an admin, or the user is not authorized to access the requested order. |
 | `404` | Controllers | Product, cart, cart item, order, coupon, or contact message was not found. |
+| `409` | Cart and checkout conflict handling | Requested stock is unavailable, a cart product was deleted, coupon usage is exhausted, coupon rules changed, or an idempotency key was reused for a different checkout state. |
 | `413` | JSON body parser | Request body exceeded the configured JSON limit and returns `Request body too large`. |
 | `429` | Rate-limit middleware | The request exceeded the global or route-specific limit. |
 | `500` | Controllers and global error handler | Unexpected server error; errors routed through the global handler return a generic `Server Error` message. |
@@ -399,7 +438,7 @@ The frontend wrappers are relative to the configured axios `baseURL`; with the d
 | `Frontend/Ecommerce-main/my-app/src/api/authApi.js` | `authApi` | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `PUT /api/auth/profile`, `POST /api/auth/addresses`, `DELETE /api/auth/addresses/:id` |
 | `Frontend/Ecommerce-main/my-app/src/api/productsApi.js` | `productsApi` | Public product read endpoints only: `GET /api/products`, `GET /api/products/:id`, `GET /api/products/men`, `GET /api/products/women`, `GET /api/products/sale`, `GET /api/products/bestsellers`, `GET /api/products/categories` |
 | `Frontend/Ecommerce-main/my-app/src/api/cartApi.js` | `cartApi` | `GET /api/cart`, `POST /api/cart/items`, `PUT /api/cart/items/:itemId`, `DELETE /api/cart/items/:itemId`, `DELETE /api/cart`, `POST /api/cart/coupon`, `DELETE /api/cart/coupon` |
-| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `ordersApi` | `POST /api/orders`, `GET /api/orders`, `GET /api/orders/:id`, `PUT /api/orders/:id/cancel` |
+| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `ordersApi` | `POST /api/orders` with optional `Idempotency-Key`, `GET /api/orders`, `GET /api/orders/:id`, `PUT /api/orders/:id/cancel` |
 | `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `contactApi` | `POST /api/contact` |
 | `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `couponApi` | `POST /api/coupons/validate` |
 
