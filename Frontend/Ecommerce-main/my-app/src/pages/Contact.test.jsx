@@ -8,9 +8,9 @@ jest.mock('leaflet', () => {
     remove() {},
   };
   const mockTileLayer = {
-    addTo() {
+    addTo: jest.fn(() => {
       return mockTileLayer;
-    },
+    }),
   };
   const mockMarker = {
     addTo() {
@@ -27,12 +27,13 @@ jest.mock('leaflet', () => {
     map() {
       return mockMap;
     },
-    tileLayer() {
+    tileLayer: jest.fn(() => {
       return mockTileLayer;
-    },
+    }),
     marker() {
       return mockMarker;
     },
+    __mockTileLayer: mockTileLayer,
   };
 
   return {
@@ -54,8 +55,9 @@ jest.mock('../api/ordersApi', () => ({
 }));
 
 const toast = require('react-hot-toast');
+const L = require('leaflet').default;
 const { contactApi } = require('../api/ordersApi');
-const Contact = require('./Contact').default;
+const { default: Contact, getContactTileLayer } = require('./Contact');
 
 const fillContactForm = (container) => {
   fireEvent.change(container.querySelector('input[name="name"]'), {
@@ -74,6 +76,7 @@ const fillContactForm = (container) => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  L.tileLayer.mockImplementation(() => L.__mockTileLayer);
 });
 
 test('validates required fields before submitting', () => {
@@ -83,6 +86,17 @@ test('validates required fields before submitting', () => {
 
   expect(toast.error).toHaveBeenCalledWith('Please fill in all required fields');
   expect(contactApi.submit).not.toHaveBeenCalled();
+});
+
+test('uses OpenStreetMap tiles when no MapTiler key is configured', () => {
+  const tileLayer = getContactTileLayer({
+    apiKey: '',
+  });
+
+  expect(tileLayer).toMatchObject({
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: expect.stringContaining('OpenStreetMap'),
+  });
 });
 
 test('submits contact details and clears fields on success', async () => {

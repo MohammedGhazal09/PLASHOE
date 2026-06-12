@@ -1,0 +1,112 @@
+import { act } from '@testing-library/react';
+import axiosInstance from '../api/axios';
+import { authApi } from '../api/authApi';
+import { useAuthStore } from './authStore';
+
+jest.mock('../api/authApi', () => ({
+  authApi: {
+    register: jest.fn(),
+    login: jest.fn(),
+    getMe: jest.fn(),
+    updateProfile: jest.fn(),
+    addAddress: jest.fn(),
+    deleteAddress: jest.fn(),
+  },
+}));
+
+const resetAuthStore = () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  jest.clearAllMocks();
+  useAuthStore.setState({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null,
+  });
+};
+
+beforeEach(resetAuthStore);
+
+test('persists authenticated state to session storage only', async () => {
+  const user = {
+    _id: 'user-1',
+    name: 'Session User',
+    email: 'session@example.com',
+    token: 'session-token',
+  };
+  authApi.login.mockResolvedValue({ success: true, data: user });
+
+  await act(async () => {
+    await useAuthStore.getState().login('session@example.com', 'secret123');
+  });
+
+  const persisted = JSON.parse(sessionStorage.getItem('auth-storage'));
+
+  expect(localStorage.getItem('auth-storage')).toBeNull();
+  expect(persisted.state).toMatchObject({
+    token: 'session-token',
+    user,
+    isAuthenticated: true,
+  });
+});
+
+test('logout clears authenticated state in store and session storage', async () => {
+  authApi.login.mockResolvedValue({
+    success: true,
+    data: {
+      _id: 'user-1',
+      name: 'Session User',
+      email: 'session@example.com',
+      token: 'session-token',
+    },
+  });
+
+  await act(async () => {
+    await useAuthStore.getState().login('session@example.com', 'secret123');
+    useAuthStore.getState().logout();
+  });
+
+  const persisted = JSON.parse(sessionStorage.getItem('auth-storage'));
+
+  expect(useAuthStore.getState()).toMatchObject({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+  });
+  expect(persisted.state).toMatchObject({
+    token: null,
+    user: null,
+    isAuthenticated: false,
+  });
+});
+
+test('axios request interceptor attaches bearer token from the auth store', () => {
+  useAuthStore.setState({
+    user: { _id: 'user-1' },
+    token: 'session-token',
+    isAuthenticated: true,
+  });
+
+  const request = axiosInstance.interceptors.request.handlers[0].fulfilled({ headers: {} });
+
+  expect(request.headers.Authorization).toBe('Bearer session-token');
+});
+
+test('axios response interceptor logs out on 401 responses', async () => {
+  useAuthStore.setState({
+    user: { _id: 'user-1' },
+    token: 'session-token',
+    isAuthenticated: true,
+  });
+
+  const error = { response: { status: 401 } };
+
+  await expect(axiosInstance.interceptors.response.handlers[0].rejected(error)).rejects.toBe(error);
+  expect(useAuthStore.getState()).toMatchObject({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+  });
+});

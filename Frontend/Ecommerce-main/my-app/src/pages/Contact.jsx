@@ -7,6 +7,18 @@ import { config } from '../config/config';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
+export const getContactTileLayer = (mapConfig) => (
+  mapConfig.apiKey
+    ? {
+        url: `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${mapConfig.apiKey}`,
+        attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }
+    : {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }
+);
+
 export default function Contact() {
   const [loading, setLoading] = useState(false);
   const mapContainer = useRef(null);
@@ -15,13 +27,15 @@ export default function Contact() {
   useEffect(() => {
     if (mapInstance.current || !mapContainer.current) return;
 
+    const tileLayer = getContactTileLayer(config.map);
+
     mapInstance.current = L.map(mapContainer.current).setView(
       [config.map.center.lat, config.map.center.lng], 
       config.map.zoom
     );
 
-    L.tileLayer(`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${config.map.apiKey}`, {
-      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    L.tileLayer(tileLayer.url, {
+      attribution: tileLayer.attribution,
     }).addTo(mapInstance.current);
 
     L.marker([config.map.center.lat, config.map.center.lng]).addTo(mapInstance.current)

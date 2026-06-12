@@ -20,7 +20,7 @@ export const config = {
 
   // Map Configuration
   map: {
-    apiKey: process.env.REACT_APP_MAPTILER_API_KEY || '2FaPE8zf7cPPLPgGQNjC',
+    apiKey: process.env.REACT_APP_MAPTILER_API_KEY || '',
     center: {
       lat: parseFloat(process.env.REACT_APP_MAP_CENTER_LAT) || 24.7136,
       lng: parseFloat(process.env.REACT_APP_MAP_CENTER_LNG) || 46.6753,
