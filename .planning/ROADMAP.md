@@ -80,7 +80,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03: Replace frontend starter test and add core UI/store tests.
+- [x] 02-03: Replace frontend starter test and add core UI/store tests.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -225,7 +225,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Flow Stabilization | 3/3 | Complete | 2026-06-12 |
-| 2. Automated Test Foundation | 1/4 | In Progress | - |
+| 2. Automated Test Foundation | 2/4 | In Progress | - |
 | 3. API Security and Validation | 0/3 | Not started | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
 | 5. Production Payments | 0/3 | Not started | - |

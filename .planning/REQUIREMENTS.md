@@ -17,7 +17,7 @@
 
 - [x] **TEST-01**: Backend has an automated test runner and route-test setup.
 - [ ] **TEST-02**: Auth, cart, coupon, checkout/order, and contact API paths have automated coverage.
-- [ ] **TEST-03**: Frontend starter test is replaced with PLASHOE-specific tests.
+- [x] **TEST-03**: Frontend starter test is replaced with PLASHOE-specific tests.
 - [ ] **TEST-04**: Core flow contract checker is retained or converted into tests.
 
 ### Security
@@ -89,7 +89,7 @@
 | CORE-05 | Phase 1 | Complete |
 | TEST-01 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Pending |
-| TEST-03 | Phase 2 | Pending |
+| TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 2 | Pending |
 | SEC-01 | Phase 3 | Pending |
 | SEC-02 | Phase 3 | Pending |
