@@ -105,13 +105,26 @@ Plans:
   4. Dependency audit output is clean or remaining risk is documented.
   5. Token storage risk is reduced or explicitly accepted with compensating controls.
 
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
 
+**Wave 1**
+
 - [ ] 03-01: Add security middleware and startup configuration validation.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 03-02: Add request validators/DTO allowlists.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 03-03: Remediate dependency audit findings and token-storage risk.
+
+**Cross-cutting constraints:**
+
+- D-33: `Backend/.env.example` remains untouched.
+- D-22: Avoid Express 5, Mongoose 9, React Router 7, React 19, and CRA-to-Vite migration unless Phase 3 audit evidence requires it.
 
 ### Phase 4: Checkout Data Integrity and Inventory
 
@@ -226,7 +239,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Core Flow Stabilization | 3/3 | Complete | 2026-06-12 |
 | 2. Automated Test Foundation | 4/4 | Complete | 2026-06-12 |
-| 3. API Security and Validation | 0/3 | Not started | - |
+| 3. API Security and Validation | 0/3 | Planned | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
 | 5. Production Payments | 0/3 | Not started | - |
 | 6. Admin Fulfillment Operations | 0/3 | Not started | - |
@@ -235,6 +248,6 @@ Plans:
 
 ## Recommendations
 
-- Start Phase 2 next so the fixed Phase 1 core-flow contracts are protected by automated backend/frontend tests.
+- Start Phase 3 execution next with plan 03-01 so security middleware and startup configuration are in place before validators and dependency remediation.
 - Keep payment work after checkout integrity; real payments amplify inconsistent order/cart/stock behavior.
 - Keep CI/CD after tests exist; otherwise CI has too little signal.
