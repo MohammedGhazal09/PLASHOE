@@ -37,6 +37,11 @@ function lineOfAfter(text, anchor, pattern) {
   return index === -1 ? null : index + 1;
 }
 
+function sourceAfter(text, anchor) {
+  const index = text.indexOf(anchor);
+  return index === -1 ? text : text.slice(index);
+}
+
 function check(id, title, status, evidence, recommendation) {
   return { id, title, status, evidence, recommendation };
 }
@@ -102,16 +107,31 @@ checks.push(check(
   'Return discount from cartStore.applyCoupon or read the updated discount value from store state in Checkout.'
 ));
 
+const checkoutComputesDiscountAmount = /subtotal\s*\*\s*discount\s*\/\s*100/.test(checkoutPage);
+const checkoutShowsRawDiscountAsMoney = /-\$\{discount\.toFixed\(2\)\}/.test(checkoutPage);
+checks.push(check(
+  'coupon-summary-discount-display',
+  'Checkout order summary treats coupon discount as a percentage',
+  checkoutComputesDiscountAmount && !checkoutShowsRawDiscountAsMoney ? 'PASS' : 'FAIL',
+  checkoutComputesDiscountAmount && !checkoutShowsRawDiscountAsMoney
+    ? 'Checkout computes a discount amount from subtotal and percentage.'
+    : `Checkout may display percentage discount as a dollar amount in ${rel.checkoutPage}:${lineOf(checkoutPage, 'discount.toFixed')}.`,
+  'Render the order-summary discount as subtotal * discount / 100 and label the percentage separately.'
+));
+
 const removeCouponLine = lineOf(cartController, 'export const removeCoupon');
 const populateLine = lineOfAfter(cartController, 'export const removeCoupon', "await cart.populate('items.product'");
-const populatesAfterNullableCart = /const cart = await Cart\.findOne[\s\S]*if \(cart\)[\s\S]*await cart\.populate/.test(cartController);
+const removeCouponBody = sourceAfter(cartController, 'export const removeCoupon');
+const missingCartReturnsNullData = /if\s*\(!cart\)\s*{[\s\S]*return\s+res\.json\(\s*{[\s\S]*data:\s*null[\s\S]*}\s*\)/.test(removeCouponBody);
 checks.push(check(
   'remove-coupon-null-cart',
   'Removing a coupon handles a missing cart',
-  populatesAfterNullableCart ? 'FAIL' : 'PASS',
-  populatesAfterNullableCart
+  missingCartReturnsNullData ? 'PASS' : 'FAIL',
+  missingCartReturnsNullData
+    ? 'removeCoupon returns a successful empty-cart response before populate when no cart exists.'
+    : populateLine
     ? `removeCoupon starts at ${rel.cartController}:${removeCouponLine} and can call cart.populate at ${rel.cartController}:${populateLine} after a missing cart.`
-    : 'removeCoupon avoids dereferencing a missing cart.',
+    : 'removeCoupon does not show a safe missing-cart response.',
   'Return a successful empty-cart response when no cart exists, or create/load a cart before populating.'
 ));
 
