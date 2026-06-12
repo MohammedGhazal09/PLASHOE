@@ -39,7 +39,7 @@ Plans:
 - [x] 01-01: Fix contact, coupon, checkout-routing, and remove-coupon defects.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 01-02: Update the contract checker or add equivalent focused assertions.
+- [x] 01-02: Update the contract checker or add equivalent focused assertions.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 01-03: Smoke-check the stabilized core flow.
@@ -173,7 +173,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Flow Stabilization | 1/3 | In Progress | - |
+| 1. Core Flow Stabilization | 2/3 | In Progress | - |
 | 2. Automated Test Foundation | 0/3 | Not started | - |
 | 3. API Security and Validation | 0/3 | Not started | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
