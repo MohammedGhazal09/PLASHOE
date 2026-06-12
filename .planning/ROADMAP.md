@@ -171,13 +171,27 @@ Plans:
   3. Successful, failed, canceled, and refunded payment paths are represented.
   4. Payment webhook handling is verified by automated tests.
 
-**Plans**: TBD
-
+**Plans**: 5
 Plans:
+**Wave 1**
 
-- [ ] 05-01: Design payment provider contract and order payment-state model.
-- [ ] 05-02: Implement payment creation/confirmation and frontend checkout integration.
-- [ ] 05-03: Implement webhook and refund/failure handling tests.
+- [ ] 05-01: Payment state, configuration, and provider seam.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 05-02: Checkout-start payment session integration.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 05-03: Webhook reconciliation and refund handling.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 05-04: Frontend payment redirect and return states.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 05-05: Payment docs, static checker, and final verification.
 
 ### Phase 6: Admin Fulfillment Operations
 
@@ -252,13 +266,13 @@ Plans:
 | 2. Automated Test Foundation | 4/4 | Complete | 2026-06-12 |
 | 3. API Security and Validation | 3/3 | Complete | 2026-06-12 |
 | 4. Checkout Data Integrity and Inventory | 3/3 | Complete   | 2026-06-12 |
-| 5. Production Payments | 0/3 | Not started | - |
+| 5. Production Payments | 0/5 | Ready to execute | - |
 | 6. Admin Fulfillment Operations | 0/3 | Not started | - |
 | 7. Catalog and Frontend Architecture Cleanup | 0/3 | Not started | - |
 | 8. CI/CD, Observability, and Deployment Readiness | 0/3 | Not started | - |
 
 ## Recommendations
 
-- Start Phase 4 planning next so checkout writes, inventory, and order numbering are hardened before payments.
-- Keep payment work after checkout integrity; real payments amplify inconsistent order/cart/stock behavior.
+- Execute Phase 5 next so the current demo payment path is replaced with hosted Stripe Checkout and webhook-backed payment state.
+- Keep payment execution after checkout integrity; real payments amplify inconsistent order/cart/stock behavior.
 - Keep CI/CD after tests exist; otherwise CI has too little signal.

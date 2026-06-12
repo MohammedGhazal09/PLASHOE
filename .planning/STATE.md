@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 05
 current_plan: Not started
-status: planning
-last_updated: "2026-06-12T18:49:06.041Z"
-last_activity: 2026-06-12 - Phase 05 context gathered; approved Stripe production payment decisions captured.
+status: executing
+last_updated: "2026-06-12T19:03:10.497Z"
+last_activity: 2026-06-12 - Phase 05 planning complete; 5 production payment plans ready to execute.
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 13
+  total_plans: 18
   completed_plans: 13
   percent: 50
 ---
@@ -18,14 +18,14 @@ progress:
 # Project State: PLASHOE
 
 **Current Phase:** 05
-**Status:** Ready to plan
+**Status:** Ready to execute
 **Current Plan:** Not started
-**Next recommended run:** `$gsd-plan-phase 5`
-**Last Activity:** 2026-06-12 - Phase 05 context gathered; approved Stripe production payment decisions captured.
+**Next recommended run:** `$gsd-execute-phase 5`
+**Last Activity:** 2026-06-12 - Phase 05 planning complete; 5 production payment plans ready to execute.
 
 ## Current Focus
 
-Plan Phase 5: Production Payments.
+Execute Phase 5: Production Payments.
 
 ## Accumulated Context
 
@@ -40,6 +40,7 @@ Plan Phase 5: Production Payments.
 - 2026-06-12: Planned Phase 4 into transactional/idempotent checkout, inventory/coupon/cancellation consistency, frontend cart normalization, and final docs/verification.
 - 2026-06-12: Completed Phase 4 with transactional checkout, idempotency, stock/coupon/cancellation consistency, normalized cart state, updated docs, and full backend/frontend/build/static verification.
 - 2026-06-12: Captured Phase 5 production payment context with approved Stripe Checkout, webhook, payment-state, frontend return, config, docs, and deterministic test decisions.
+- 2026-06-12: Planned Phase 5 into payment state/config/provider seam, checkout-start session integration, webhook reconciliation, frontend payment returns, and docs/static verification.
 
 ### Decisions
 
