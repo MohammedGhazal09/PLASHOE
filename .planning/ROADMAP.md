@@ -111,7 +111,7 @@ Plans:
 
 **Wave 1**
 
-- [ ] 03-01: Add security middleware and startup configuration validation.
+- [x] 03-01: Add security middleware and startup configuration validation.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -239,7 +239,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Core Flow Stabilization | 3/3 | Complete | 2026-06-12 |
 | 2. Automated Test Foundation | 4/4 | Complete | 2026-06-12 |
-| 3. API Security and Validation | 0/3 | Planned | - |
+| 3. API Security and Validation | 1/3 | In Progress | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
 | 5. Production Payments | 0/3 | Not started | - |
 | 6. Admin Fulfillment Operations | 0/3 | Not started | - |
