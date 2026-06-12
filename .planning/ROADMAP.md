@@ -36,7 +36,7 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 
 Plans:
 **Wave 1**
-- [ ] 01-01: Fix contact, coupon, checkout-routing, and remove-coupon defects.
+- [x] 01-01: Fix contact, coupon, checkout-routing, and remove-coupon defects.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02: Update the contract checker or add equivalent focused assertions.
@@ -173,7 +173,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Flow Stabilization | 0/3 | Planned | - |
+| 1. Core Flow Stabilization | 1/3 | In Progress | - |
 | 2. Automated Test Foundation | 0/3 | Not started | - |
 | 3. API Security and Validation | 0/3 | Not started | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
