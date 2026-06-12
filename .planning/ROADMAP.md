@@ -10,7 +10,7 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - Integer phases are planned milestone work.
 - Decimal phases are reserved for urgent insertions.
 
-- [ ] **Phase 1: Core Flow Stabilization** - Fix the current contact, coupon, checkout, and cart contract defects.
+- [x] **Phase 1: Core Flow Stabilization** - Fix the current contact, coupon, checkout, and cart contract defects. (completed 2026-06-12)
 - [ ] **Phase 2: Automated Test Foundation** - Add backend/frontend automated tests around the stabilized purchase path.
 - [ ] **Phase 3: API Security and Validation** - Add API hardening, config validation, dependency remediation, and request allowlists.
 - [ ] **Phase 4: Checkout Data Integrity and Inventory** - Make order creation, coupons, carts, stock, and order numbers consistent under real usage.
@@ -173,7 +173,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Flow Stabilization | 3/3 | In Progress | - |
+| 1. Core Flow Stabilization | 3/3 | Complete | 2026-06-12 |
 | 2. Automated Test Foundation | 0/3 | Not started | - |
 | 3. API Security and Validation | 0/3 | Not started | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
@@ -184,6 +184,6 @@ Plans:
 
 ## Recommendations
 
-- Start with Phase 1 because it fixes defects already proven by spike 001.
+- Start Phase 2 next so the fixed Phase 1 core-flow contracts are protected by automated backend/frontend tests.
 - Keep payment work after checkout integrity; real payments amplify inconsistent order/cart/stock behavior.
 - Keep CI/CD after tests exist; otherwise CI has too little signal.

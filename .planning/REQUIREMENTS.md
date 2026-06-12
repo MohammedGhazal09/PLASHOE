@@ -7,11 +7,11 @@
 
 ### Core Flow Stabilization
 
-- [ ] **CORE-01**: Contact form calls the API wrapper method that actually exists.
-- [ ] **CORE-02**: Contact submission only shows success when the backend accepts the message.
-- [ ] **CORE-03**: Checkout routing matches the intended guest/authenticated checkout policy.
-- [ ] **CORE-04**: Coupon application UI and cart store agree on the returned discount/message contract.
-- [ ] **CORE-05**: Removing a coupon handles a missing cart without throwing.
+- [x] **CORE-01**: Contact form calls the API wrapper method that actually exists.
+- [x] **CORE-02**: Contact submission only shows success when the backend accepts the message.
+- [x] **CORE-03**: Checkout routing matches the intended guest/authenticated checkout policy.
+- [x] **CORE-04**: Coupon application UI and cart store agree on the returned discount/message contract.
+- [x] **CORE-05**: Removing a coupon handles a missing cart without throwing.
 
 ### Testing
 
@@ -82,11 +82,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CORE-01 | Phase 1 | Pending |
-| CORE-02 | Phase 1 | Pending |
-| CORE-03 | Phase 1 | Pending |
-| CORE-04 | Phase 1 | Pending |
-| CORE-05 | Phase 1 | Pending |
+| CORE-01 | Phase 1 | Complete |
+| CORE-02 | Phase 1 | Complete |
+| CORE-03 | Phase 1 | Complete |
+| CORE-04 | Phase 1 | Complete |
+| CORE-05 | Phase 1 | Complete |
 | TEST-01 | Phase 2 | Pending |
 | TEST-02 | Phase 2 | Pending |
 | TEST-03 | Phase 2 | Pending |
@@ -116,6 +116,10 @@
 | OPS-02 | Phase 8 | Pending |
 | OPS-03 | Phase 8 | Pending |
 | OPS-04 | Phase 8 | Pending |
+| V2-01 | Post-v1 | Deferred |
+| V2-02 | Post-v1 | Deferred |
+| V2-03 | Post-v1 | Deferred |
+| V2-04 | Post-v1 | Deferred |
 
 **Coverage:**
 - v1 requirements: 34 total
