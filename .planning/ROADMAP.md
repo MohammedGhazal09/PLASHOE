@@ -13,7 +13,7 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 
 - [x] **Phase 1: Core Flow Stabilization** - Fix the current contact, coupon, checkout, and cart contract defects. (completed 2026-06-12)
 - [x] **Phase 2: Automated Test Foundation** - Add backend/frontend automated tests around the stabilized purchase path. (completed 2026-06-12)
-- [ ] **Phase 3: API Security and Validation** - Add API hardening, config validation, dependency remediation, and request allowlists.
+- [x] **Phase 3: API Security and Validation** - Add API hardening, config validation, dependency remediation, and request allowlists. (completed 2026-06-12)
 - [ ] **Phase 4: Checkout Data Integrity and Inventory** - Make order creation, coupons, carts, stock, and order numbers consistent under real usage.
 - [ ] **Phase 5: Production Payments** - Replace demo checkout with a real payment flow and payment-state model.
 - [ ] **Phase 6: Admin Fulfillment Operations** - Add admin order fulfillment APIs and operational views.
@@ -119,7 +119,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-03: Remediate dependency audit findings and token-storage risk.
+- [x] 03-03: Remediate dependency audit findings and token-storage risk.
 
 **Cross-cutting constraints:**
 
@@ -239,7 +239,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Core Flow Stabilization | 3/3 | Complete | 2026-06-12 |
 | 2. Automated Test Foundation | 4/4 | Complete | 2026-06-12 |
-| 3. API Security and Validation | 2/3 | In Progress | - |
+| 3. API Security and Validation | 3/3 | Complete | 2026-06-12 |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |
 | 5. Production Payments | 0/3 | Not started | - |
 | 6. Admin Fulfillment Operations | 0/3 | Not started | - |
@@ -248,6 +248,6 @@ Plans:
 
 ## Recommendations
 
-- Start Phase 3 execution next with plan 03-01 so security middleware and startup configuration are in place before validators and dependency remediation.
+- Start Phase 4 planning next so checkout writes, inventory, and order numbering are hardened before payments.
 - Keep payment work after checkout integrity; real payments amplify inconsistent order/cart/stock behavior.
 - Keep CI/CD after tests exist; otherwise CI has too little signal.

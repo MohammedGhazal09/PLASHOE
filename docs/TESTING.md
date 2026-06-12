@@ -98,7 +98,7 @@ Latest Phase 3 gate evidence:
 | `cd Frontend/Ecommerce-main/my-app && npm run build` | Passed with the existing `OrderDetail.jsx` hook dependency warning |
 | `cd Backend && npm audit --omit=dev` | Passed: 0 vulnerabilities |
 | `cd Frontend/Ecommerce-main/my-app && npm audit --omit=dev` | Non-clean: 46 production findings, documented in `.planning/phases/03-api-security-and-validation/03-SECURITY-RISK-REGISTER.md` |
-| `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` | Must report no `FAIL` findings; `WARN` findings remain expected for later payment and inventory phases |
+| `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` | Passed with 7 `PASS`, 2 `WARN`, and no `FAIL` findings |
 
 The frontend test command currently emits React 18 deprecation/act warnings from the older CRA/React Testing Library stack. They do not fail the suite. The frontend build also emits an existing `OrderDetail.jsx` hook dependency warning.
 

@@ -25,8 +25,8 @@
 - [x] **SEC-01**: Auth and high-abuse endpoints have rate limiting and request-size protection.
 - [x] **SEC-02**: Backend validates required secrets and configuration before listening.
 - [x] **SEC-03**: Controllers map request bodies through explicit allowlists or validators before persistence.
-- [ ] **SEC-04**: Dependency audit findings are addressed or documented with accepted risk.
-- [ ] **SEC-05**: Browser token storage risk is reduced or documented with compensating controls.
+- [x] **SEC-04**: Dependency audit findings are addressed or documented with accepted risk.
+- [x] **SEC-05**: Browser token storage risk is reduced or documented with compensating controls.
 
 ### Checkout Integrity
 
@@ -94,8 +94,8 @@
 | SEC-01 | Phase 3 | Complete |
 | SEC-02 | Phase 3 | Complete |
 | SEC-03 | Phase 3 | Complete |
-| SEC-04 | Phase 3 | Pending |
-| SEC-05 | Phase 3 | Pending |
+| SEC-04 | Phase 3 | Complete |
+| SEC-05 | Phase 3 | Complete |
 | CHK-01 | Phase 4 | Pending |
 | CHK-02 | Phase 4 | Pending |
 | CHK-03 | Phase 4 | Pending |

@@ -2,30 +2,30 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 03
-current_plan: 3
-status: executing
-last_updated: "2026-06-12T14:30:12.595Z"
-last_activity: 2026-06-12 - Completed Phase 3 plan 03-02 request validators and DTO allowlists.
+current_phase: 04
+current_plan: null
+status: phase_03_complete
+last_updated: "2026-06-12T17:50:54.8129056+03:00"
+last_activity: 2026-06-12 - Completed Phase 3 API security and validation.
 progress:
   total_phases: 8
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State: PLASHOE
 
-**Current Phase:** 03
-**Status:** Executing Phase 03
-**Current Plan:** 3
-**Next recommended run:** `$gsd-execute-phase 3`
-**Last Activity:** 2026-06-12 - Completed Phase 3 plan 03-02 request validators and DTO allowlists.
+**Current Phase:** 04
+**Status:** Phase 03 complete
+**Current Plan:** None
+**Next recommended run:** `$gsd-spec-phase 4`
+**Last Activity:** 2026-06-12 - Completed Phase 3 API security and validation.
 
 ## Current Focus
 
-Execute Phase 3 Plan 03-03: Dependency remediation, frontend token storage, public config, and final gate.
+Prepare Phase 4: Checkout Data Integrity and Inventory.
 
 ## Accumulated Context
 
@@ -36,6 +36,7 @@ Execute Phase 3 Plan 03-03: Dependency remediation, frontend token storage, publ
 - 2026-06-12: Planned Phase 2 into backend test infrastructure, backend API coverage, frontend behavior coverage, and final docs/checker verification.
 - 2026-06-12: Planned Phase 1 into source fixes, checker/evidence alignment, and final smoke verification.
 - 2026-06-12: Planned Phase 3 into security middleware/config, validators/DTO allowlists, and dependency/token/config remediation.
+- 2026-06-12: Completed Phase 3 with backend audit clean, frontend CRA tooling audit risk registered, frontend auth persistence moved to sessionStorage, and MapTiler fallback removed.
 
 ### Decisions
 
@@ -49,3 +50,4 @@ Execute Phase 3 Plan 03-03: Dependency remediation, frontend token storage, publ
 - `Backend/.env.example` remains untracked local work and was not modified by this roadmap setup.
 - Real payment provider choice is deferred to Phase 5 planning.
 - Dependency upgrade path may require frontend build-tool migration if Create React App constraints block clean remediation.
+- Frontend `npm audit --omit=dev` remains non-clean due CRA build/test/tooling findings accepted in `03-SECURITY-RISK-REGISTER.md`.

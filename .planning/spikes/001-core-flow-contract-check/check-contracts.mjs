@@ -138,7 +138,7 @@ checks.push(check(
 const routesProtected =
   /router\.use\(protect\)/.test(cartRoutes) &&
   /router\.use\(protect\)/.test(orderRoutes) &&
-  /router\.post\('\/', submitContact\)/.test(contactRoutes);
+  /router\.post\(\s*['"]\/['"][\s\S]*submitContact\s*\)/.test(contactRoutes);
 checks.push(check(
   'route-auth-boundaries',
   'Core route auth boundaries match the intended storefront flow',
