@@ -6,11 +6,12 @@ import {
   deleteCoupon
 } from '../controllers/couponController.js';
 import { protect, admin } from '../middleware/auth.js';
+import { couponValidationLimiter } from '../middleware/security.js';
 
 const router = express.Router();
 
 // Public route
-router.post('/validate', validateCoupon);
+router.post('/validate', couponValidationLimiter, validateCoupon);
 
 // Admin routes
 router.get('/', protect, admin, getCoupons);

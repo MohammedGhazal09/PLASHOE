@@ -6,11 +6,12 @@ import {
   deleteMessage
 } from '../controllers/contactController.js';
 import { protect, admin } from '../middleware/auth.js';
+import { contactLimiter } from '../middleware/security.js';
 
 const router = express.Router();
 
 // Public route
-router.post('/', submitContact);
+router.post('/', contactLimiter, submitContact);
 
 // Admin routes
 router.get('/', protect, admin, getMessages);

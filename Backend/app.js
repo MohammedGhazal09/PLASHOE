@@ -7,6 +7,13 @@ import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import {
+  apiLimiter,
+  defaultJsonParser,
+  handleSecurityErrors,
+  securityHeaders,
+  strictJsonParser,
+} from "./middleware/security.js";
 
 dotenv.config(
   process.env.DOTENV_CONFIG_PATH ? { path: process.env.DOTENV_CONFIG_PATH } : undefined
@@ -19,19 +26,23 @@ const corsOptions = {
   credentials: true,
 };
 
+app.use(securityHeaders);
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use("/api", apiLimiter);
 
-app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/cart", cartRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/coupons", couponRoutes);
-app.use("/api/contact", contactRoutes);
+app.use("/api/auth", strictJsonParser, authRoutes);
+app.use("/api/products", defaultJsonParser, productRoutes);
+app.use("/api/cart", defaultJsonParser, cartRoutes);
+app.use("/api/orders", defaultJsonParser, orderRoutes);
+app.use("/api/coupons/validate", strictJsonParser);
+app.use("/api/coupons", defaultJsonParser, couponRoutes);
+app.use("/api/contact", strictJsonParser, contactRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "PLASHOE API is running" });
 });
+
+app.use(handleSecurityErrors);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
