@@ -245,6 +245,42 @@ describe("order routes", () => {
     expect(cart.discount).toBe(coupon.discountPercentage);
   });
 
+  it("returns a feature-disabled response before checkout side effects when payments are disabled", async () => {
+    const previousPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+    const previousSuccessUrl = process.env.PAYMENT_SUCCESS_URL;
+    const previousCancelUrl = process.env.PAYMENT_CANCEL_URL;
+    process.env.PAYMENTS_ENABLED = "false";
+    delete process.env.PAYMENT_SUCCESS_URL;
+    delete process.env.PAYMENT_CANCEL_URL;
+
+    try {
+      const user = await createUser();
+      const product = await createProduct({ stock: 10 });
+      await createCartForUser(user, [{ product, quantity: 2, size: 42 }]);
+
+      const response = await postCheckout(user, nextIdempotencyKey()).expect(503);
+
+      expect(response.body).toMatchObject({
+        success: false,
+        message: "Payments are currently disabled",
+        errors: [
+          {
+            code: "PAYMENTS_DISABLED",
+            resource: "payment",
+          },
+        ],
+      });
+      expect(fakePaymentProvider.createCheckoutSession).not.toHaveBeenCalled();
+      expect(await Order.countDocuments({ user: user._id })).toBe(0);
+      expect((await Product.findById(product._id)).stock).toBe(10);
+      expect((await Cart.findOne({ user: user._id })).items).toHaveLength(1);
+    } finally {
+      process.env.PAYMENTS_ENABLED = previousPaymentsEnabled;
+      process.env.PAYMENT_SUCCESS_URL = previousSuccessUrl;
+      process.env.PAYMENT_CANCEL_URL = previousCancelUrl;
+    }
+  });
+
   it("rejects stale idempotency-key reuse for a changed non-empty cart", async () => {
     const user = await createUser();
     const product = await createProduct({ stock: 10 });

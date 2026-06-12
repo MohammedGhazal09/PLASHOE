@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import Order from '../models/Order.js';
 import {
+  CheckoutError,
   compensateCheckoutSideEffects,
   createCheckoutFromCart,
   createPaymentStartError,
@@ -39,6 +40,10 @@ const isReusablePendingPayment = (order) =>
   order.paymentStatus === 'payment_pending' &&
   Boolean(order.paymentCheckoutUrl);
 
+const arePaymentsExplicitlyDisabled = (env = process.env) =>
+  typeof env.PAYMENTS_ENABLED === 'string' &&
+  env.PAYMENTS_ENABLED.trim().toLowerCase() === 'false';
+
 export const startCheckoutPayment = async ({
   user,
   shippingAddress,
@@ -46,6 +51,17 @@ export const startCheckoutPayment = async ({
   idempotencyKey,
   provider = paymentProvider,
 }) => {
+  if (arePaymentsExplicitlyDisabled()) {
+    const error = new CheckoutError('Payments are currently disabled', 503, [
+      {
+        code: 'PAYMENTS_DISABLED',
+        resource: 'payment',
+      },
+    ]);
+    error.expose = true;
+    throw error;
+  }
+
   const localIdempotencyKey = validateIdempotencyKey(idempotencyKey);
 
   const checkout = await createCheckoutFromCart({

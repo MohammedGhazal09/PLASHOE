@@ -15,6 +15,20 @@ export const restoreOrderInventoryOnce = async ({ order, session }) => {
     return false;
   }
 
+  const transition = await Order.updateOne(
+    {
+      _id: order._id,
+      inventoryDecremented: true,
+    },
+    { $set: { inventoryDecremented: false } },
+    { session }
+  );
+
+  if (transition.modifiedCount !== 1) {
+    order.inventoryDecremented = false;
+    return false;
+  }
+
   for (const item of order.items) {
     await Product.updateOne(
       { _id: item.product },
@@ -33,6 +47,7 @@ export const transitionOrderPaymentState = async ({
   providerIntentId,
   failureReason,
   refundAmount,
+  refundRecords,
   session,
 }) => {
   assertKnownTarget(targetStatus);
@@ -65,6 +80,14 @@ export const transitionOrderPaymentState = async ({
     order.paymentStatus = targetStatus;
     order.refundedAt = new Date();
     order.refundAmount = Math.max(0, Number(refundAmount ?? order.refundAmount ?? 0));
+
+    if (refundRecords) {
+      order.refundRecords = refundRecords;
+    }
+
+    if (providerIntentId) {
+      order.paymentProviderIntentId = providerIntentId;
+    }
   } else {
     order.paymentStatus = targetStatus;
 

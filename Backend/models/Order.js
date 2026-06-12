@@ -13,6 +13,40 @@ const orderItemSchema = new mongoose.Schema({
   price: Number
 });
 
+const refundRecordSchema = new mongoose.Schema(
+  {
+    provider: {
+      type: String,
+      default: 'stripe',
+      trim: true,
+    },
+    providerRefundId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    status: {
+      type: String,
+      default: null,
+    },
+    providerEventId: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false }
+);
+
 export const PAYMENT_STATUSES = [
   'requires_payment',
   'payment_pending',
@@ -116,6 +150,10 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: 0
+  },
+  refundRecords: {
+    type: [refundRecordSchema],
+    default: [],
   },
   notes: String,
   // Shipment tracking fields

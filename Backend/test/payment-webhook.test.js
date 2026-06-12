@@ -138,6 +138,32 @@ describe("Stripe webhook route", () => {
     expect(await PaymentEvent.countDocuments({ providerEventId: "event-payment-failed" })).toBe(1);
   });
 
+  it("claims concurrent duplicate failed payment events before restoring inventory", async () => {
+    const { product, order } = await createInventoryBackedPaymentOrder();
+    const event = stripeEvent({
+      id: "event-payment-failed-concurrent",
+      type: "payment_intent.payment_failed",
+      object: {
+        id: "intent-failed-concurrent",
+        object: "payment_intent",
+        last_payment_error: { code: "card_declined" },
+        metadata: { orderId: order._id.toString() },
+      },
+    });
+
+    const responses = await Promise.all([postEvent(event), postEvent(event)]);
+
+    expect(responses.map((response) => response.status).sort()).toEqual([200, 200]);
+    const updatedOrder = await Order.findById(order._id);
+    expect(updatedOrder.paymentStatus).toBe("payment_failed");
+    expect(updatedOrder.inventoryDecremented).toBe(false);
+    expect((await Product.findById(product._id)).stock).toBe(5);
+    expect(await PaymentEvent.countDocuments({ providerEventId: "event-payment-failed-concurrent" })).toBe(1);
+    expect(await PaymentEvent.findOne({ providerEventId: "event-payment-failed-concurrent" })).toMatchObject({
+      status: "processed",
+    });
+  });
+
   it("marks expired checkout sessions as payment canceled and restores inventory", async () => {
     const { product, order } = await createInventoryBackedPaymentOrder();
     const event = stripeEvent({
@@ -173,7 +199,10 @@ describe("Stripe webhook route", () => {
 
     await postEvent(event).expect(500);
 
-    expect(await PaymentEvent.countDocuments({ providerEventId: "event-unresolved" })).toBe(0);
+    expect(await PaymentEvent.findOne({ providerEventId: "event-unresolved" })).toMatchObject({
+      status: "failed",
+      error: "Webhook event could not be reconciled to a local order",
+    });
   });
 
   it("retrieves related payment intents when direct metadata is missing", async () => {
@@ -252,6 +281,55 @@ describe("Stripe webhook route", () => {
     expect(updatedPartial.paymentStatus).toBe("partially_refunded");
     expect(updatedPartial.refundAmount).toBe(25);
     expect(updatedPartial.refundedAt).toBeInstanceOf(Date);
+    expect(updatedPartial.refundRecords).toHaveLength(1);
     expect(await PaymentEvent.countDocuments({ providerEventId: "event-partial-refund" })).toBe(1);
+  });
+
+  it("does not double-count repeated refund updates for the same refund object", async () => {
+    const user = await createUser();
+    const order = await createProviderBackedOrder(user, {
+      paymentStatus: "paid",
+      status: "processing",
+      inventoryDecremented: false,
+      total: 100,
+    });
+    const baseRefund = {
+      id: "refund-repeat",
+      object: "refund",
+      amount: 2500,
+      payment_intent: "intent-repeat",
+      metadata: { orderId: order._id.toString() },
+    };
+    const firstUpdate = stripeEvent({
+      id: "event-refund-repeat-1",
+      type: "refund.updated",
+      object: {
+        ...baseRefund,
+        status: "pending",
+      },
+    });
+    const secondUpdate = stripeEvent({
+      id: "event-refund-repeat-2",
+      type: "refund.updated",
+      object: {
+        ...baseRefund,
+        status: "succeeded",
+      },
+    });
+
+    await postEvent(firstUpdate).expect(200);
+    await postEvent(secondUpdate).expect(200);
+
+    const updatedOrder = await Order.findById(order._id);
+    expect(updatedOrder.paymentStatus).toBe("partially_refunded");
+    expect(updatedOrder.refundAmount).toBe(25);
+    expect(updatedOrder.refundRecords).toHaveLength(1);
+    expect(updatedOrder.refundRecords[0]).toMatchObject({
+      providerRefundId: "refund-repeat",
+      amount: 25,
+      status: "succeeded",
+      providerEventId: "event-refund-repeat-2",
+    });
+    expect(await PaymentEvent.countDocuments({ providerEventId: /^event-refund-repeat-/ })).toBe(2);
   });
 });

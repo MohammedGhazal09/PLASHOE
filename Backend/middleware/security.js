@@ -84,10 +84,10 @@ export const handleApplicationErrors = (err, req, res, next) => {
 
   const payload = {
     success: false,
-    message: status >= 500 ? 'Server Error' : err?.message || 'Server Error',
+    message: status >= 500 && !err?.expose ? 'Server Error' : err?.message || 'Server Error',
   };
 
-  if (Array.isArray(err?.errors) && err.errors.length > 0 && status < 500) {
+  if (Array.isArray(err?.errors) && err.errors.length > 0 && (status < 500 || err?.expose)) {
     payload.errors = err.errors;
   }
 

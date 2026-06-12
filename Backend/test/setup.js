@@ -12,6 +12,7 @@ process.env.PAYMENT_SUCCESS_URL =
   process.env.PAYMENT_SUCCESS_URL || "http://localhost:3000/checkout/success";
 process.env.PAYMENT_CANCEL_URL =
   process.env.PAYMENT_CANCEL_URL || "http://localhost:3000/checkout/cancel";
+process.env.PAYMENTS_ENABLED = process.env.PAYMENTS_ENABLED || "true";
 process.env.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "stripe-secret-placeholder";
 process.env.STRIPE_WEBHOOK_SECRET =
   process.env.STRIPE_WEBHOOK_SECRET || "stripe-webhook-secret-placeholder";

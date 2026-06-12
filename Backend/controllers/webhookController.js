@@ -120,6 +120,125 @@ const getFailureReason = (stripeObject) =>
 
 const amountFromMinorUnits = (amount) => Number(amount || 0) / 100;
 
+const isDuplicateKeyError = (error) => error?.code === 11000;
+
+const claimPaymentEvent = async (event) => {
+  try {
+    const eventRecord = await PaymentEvent.create({
+      provider: PROVIDER,
+      providerEventId: event.id,
+      eventType: event.type,
+      status: 'processing',
+    });
+
+    return { eventRecord, duplicate: false };
+  } catch (error) {
+    if (!isDuplicateKeyError(error)) {
+      throw error;
+    }
+
+    const existingEvent = await PaymentEvent.findOne({
+      provider: PROVIDER,
+      providerEventId: event.id,
+    });
+
+    if (existingEvent?.status === 'failed') {
+      const retryEvent = await PaymentEvent.findOneAndUpdate(
+        {
+          _id: existingEvent._id,
+          status: 'failed',
+        },
+        {
+          $set: {
+            eventType: event.type,
+            status: 'processing',
+            processedAt: null,
+            error: null,
+          },
+        },
+        { new: true }
+      );
+
+      if (retryEvent) {
+        return { eventRecord: retryEvent, duplicate: false };
+      }
+    }
+
+    return { eventRecord: existingEvent, duplicate: true };
+  }
+};
+
+const markPaymentEventProcessed = async ({ eventRecord, order }) =>
+  PaymentEvent.updateOne(
+    { _id: eventRecord._id },
+    {
+      $set: {
+        order: order?._id || null,
+        status: 'processed',
+        processedAt: new Date(),
+        error: null,
+      },
+    }
+  );
+
+const markPaymentEventFailed = async ({ eventRecord, error }) =>
+  PaymentEvent.updateOne(
+    { _id: eventRecord._id },
+    {
+      $set: {
+        status: 'failed',
+        processedAt: null,
+        error: error?.message || 'Webhook processing failed',
+      },
+    }
+  );
+
+const toRefundRecord = ({ stripeObject, event }) => ({
+  provider: PROVIDER,
+  providerRefundId: stripeObject.id || event.id,
+  amount: amountFromMinorUnits(stripeObject.amount),
+  status: stripeObject.status || null,
+  providerEventId: event.id,
+  updatedAt: new Date(),
+});
+
+const mergeRefundRecord = ({ order, stripeObject, event }) => {
+  if (!stripeObject.id && !event.id) {
+    return null;
+  }
+
+  const existingRecords = Array.isArray(order.refundRecords) ? order.refundRecords : [];
+  const refundRecords = existingRecords.map((record) => ({
+    provider: record.provider || PROVIDER,
+    providerRefundId: record.providerRefundId,
+    amount: Number(record.amount || 0),
+    status: record.status || null,
+    providerEventId: record.providerEventId || null,
+    updatedAt: record.updatedAt || new Date(),
+  }));
+  const nextRecord = toRefundRecord({ stripeObject, event });
+  const existingIndex = refundRecords.findIndex(
+    (record) =>
+      record.provider === nextRecord.provider &&
+      record.providerRefundId === nextRecord.providerRefundId
+  );
+
+  if (existingIndex >= 0) {
+    refundRecords[existingIndex] = nextRecord;
+  } else {
+    refundRecords.push(nextRecord);
+  }
+
+  const recordsTotal = refundRecords.reduce((total, record) => total + Number(record.amount || 0), 0);
+  const baselineAmount = existingRecords.length > 0 ? 0 : Number(order.refundAmount || 0);
+  const refundAmount = Math.min(
+    order.total,
+    Math.max(Number(order.refundAmount || 0), baselineAmount + recordsTotal)
+  );
+
+  return { refundAmount, refundRecords };
+};
+
 const handleSuccess = async (event) => {
   const stripeObject = getStripeObject(event);
   const order = await resolveOrder(event);
@@ -168,9 +287,10 @@ const handleRefund = async (event) => {
   const stripeObject = getStripeObject(event);
   const order = await resolveOrder(event);
   const isChargeRefund = event.type === 'charge.refunded';
+  const refundState = isChargeRefund ? null : mergeRefundRecord({ order, stripeObject, event });
   const refundAmount = isChargeRefund
     ? amountFromMinorUnits(stripeObject.amount_refunded)
-    : Math.min(order.total, Number(order.refundAmount || 0) + amountFromMinorUnits(stripeObject.amount));
+    : refundState?.refundAmount ?? order.refundAmount;
   const fullAmount = isChargeRefund
     ? amountFromMinorUnits(stripeObject.amount_refunded) >= amountFromMinorUnits(stripeObject.amount)
     : refundAmount >= order.total;
@@ -180,6 +300,7 @@ const handleRefund = async (event) => {
     targetStatus: fullAmount ? 'refunded' : 'partially_refunded',
     providerIntentId: getObjectId(stripeObject.payment_intent) || order.paymentProviderIntentId,
     refundAmount,
+    refundRecords: refundState?.refundRecords,
   });
 };
 
@@ -216,33 +337,27 @@ export const handleStripeWebhook = async (req, res) => {
     });
   }
 
-  const existingEvent = await PaymentEvent.findOne({
-    provider: PROVIDER,
-    providerEventId: event.id,
-  });
-
-  if (existingEvent?.status === 'processed') {
-    return res.json({
-      success: true,
-      message: 'Webhook event already processed',
-      data: {
-        received: true,
-        duplicate: true,
-      },
-    });
-  }
+  let eventRecord;
 
   try {
+    const claim = await claimPaymentEvent(event);
+
+    if (claim.duplicate) {
+      return res.json({
+        success: true,
+        message: 'Webhook event already accepted',
+        data: {
+          received: true,
+          duplicate: true,
+          status: claim.eventRecord?.status || 'unknown',
+        },
+      });
+    }
+
+    eventRecord = claim.eventRecord;
     const order = await dispatchEvent(event);
 
-    await PaymentEvent.create({
-      provider: PROVIDER,
-      providerEventId: event.id,
-      eventType: event.type,
-      order: order?._id || null,
-      status: 'processed',
-      processedAt: new Date(),
-    });
+    await markPaymentEventProcessed({ eventRecord, order });
 
     return res.json({
       success: true,
@@ -254,6 +369,10 @@ export const handleStripeWebhook = async (req, res) => {
       },
     });
   } catch (error) {
+    if (eventRecord) {
+      await markPaymentEventFailed({ eventRecord, error });
+    }
+
     console.error(error?.stack || error);
     return res.status(500).json({
       success: false,
