@@ -16,7 +16,7 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 3: API Security and Validation** - Add API hardening, config validation, dependency remediation, and request allowlists. (completed 2026-06-12)
 - [x] **Phase 4: Checkout Data Integrity and Inventory** - Make order creation, coupons, carts, stock, and order numbers consistent under real usage. (completed 2026-06-12)
 - [x] **Phase 5: Production Payments** - Replace demo checkout with a real payment flow and payment-state model. (completed 2026-06-12)
-- [ ] **Phase 6: Admin Fulfillment Operations** - Add admin order fulfillment APIs and operational views.
+- [x] **Phase 6: Admin Fulfillment Operations** - Add admin order fulfillment APIs and operational views. (completed 2026-06-12)
 - [ ] **Phase 7: Catalog and Frontend Architecture Cleanup** - Normalize product/cart data and reduce fragile frontend/API structure.
 - [ ] **Phase 8: CI/CD, Observability, and Deployment Readiness** - Add pipeline checks, deployment readiness, logging, and environment verification.
 
@@ -210,15 +210,15 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 06-01: Add admin order API operations and tests.
+- [x] 06-01: Add admin order API operations and tests.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 06-02: Add fulfillment/tracking workflow.
+- [x] 06-02: Add fulfillment/tracking workflow.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 06-03: Add pagination/filtering for admin list endpoints.
+- [x] 06-03: Add pagination/filtering for admin list endpoints.
 
 **Cross-cutting constraints:**
 
@@ -242,13 +242,26 @@ Plans:
   3. Contact and coupon API wrappers are split from `ordersApi`.
   4. Checkout/account/product pages have smaller, testable units where current files are doing too much.
 
-**Plans**: TBD
-
+**Plans**: 3
 Plans:
+**Wave 1**
 
-- [ ] 07-01: Normalize product and cart view models.
-- [ ] 07-02: Add catalog query limits/indexes.
-- [ ] 07-03: Split API modules and extract large frontend logic.
+- [ ] 07-01: Backend catalog contract, bounds, and indexes.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 07-02: Frontend normalized catalog boundary.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 07-03: API module split, focused extraction, and docs.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-01: Apply react-best-practices, zustand-state-management, mongodb, and api-testing guidance as supporting constraints.
+- D-08: Preserve the existing cartStore normalization boundary.
+- D-30: Stop extraction when touched logic is delegated and tested; do not chase line counts.
 
 ### Phase 8: CI/CD, Observability, and Deployment Readiness
 
@@ -282,12 +295,12 @@ Plans:
 | 3. API Security and Validation | 3/3 | Complete | 2026-06-12 |
 | 4. Checkout Data Integrity and Inventory | 3/3 | Complete   | 2026-06-12 |
 | 5. Production Payments | 5/5 | Complete    | 2026-06-12 |
-| 6. Admin Fulfillment Operations | 0/3 | Not started | - |
-| 7. Catalog and Frontend Architecture Cleanup | 0/3 | Not started | - |
+| 6. Admin Fulfillment Operations | 3/3 | Complete   | 2026-06-12 |
+| 7. Catalog and Frontend Architecture Cleanup | 0/3 | Planned | - |
 | 8. CI/CD, Observability, and Deployment Readiness | 0/3 | Not started | - |
 
 ## Recommendations
 
-- Start Phase 6 next so paid orders can move into safe admin fulfillment operations.
-- Keep fulfillment operations after payments; operator workflows should only act on authoritative payment state.
-- Keep CI/CD after tests exist; otherwise CI has too little signal.
+- Start Phase 7 execution next with 07-01 so frontend catalog work can rely on one backend product list contract.
+- Keep Phase 8 after Phase 7; CI/CD and observability should validate the cleaned catalog/API architecture rather than current duplicate frontend loading paths.
+- Preserve the no-subagent constraint for GSD execution unless the repository instruction changes.
