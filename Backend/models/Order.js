@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 
 const orderItemSchema = new mongoose.Schema({
@@ -22,6 +23,11 @@ const orderSchema = new mongoose.Schema({
     type: String,
     unique: true
   },
+  idempotencyKey: {
+    type: String,
+    trim: true
+  },
+  cartFingerprint: String,
   items: [orderItemSchema],
   shippingAddress: {
     firstName: { type: String, required: true },
@@ -97,11 +103,26 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
+orderSchema.index(
+  { user: 1, idempotencyKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      idempotencyKey: { $type: 'string' }
+    }
+  }
+);
+
+const generateOrderNumber = () => {
+  const timePart = Date.now().toString(36).toUpperCase();
+  const randomPart = randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase();
+  return `PLS-${timePart}-${randomPart}`;
+};
+
 // Generate order number before save
-orderSchema.pre('save', async function(next) {
+orderSchema.pre('save', function(next) {
   if (!this.orderNumber) {
-    const count = await mongoose.model('Order').countDocuments();
-    this.orderNumber = `PLS-${Date.now()}-${count + 1}`;
+    this.orderNumber = generateOrderNumber();
   }
   next();
 });

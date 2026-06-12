@@ -82,8 +82,14 @@ export const handleApplicationErrors = (err, req, res, next) => {
     console.error(err?.stack || err);
   }
 
-  res.status(status).json({
+  const payload = {
     success: false,
     message: status >= 500 ? 'Server Error' : err?.message || 'Server Error',
-  });
+  };
+
+  if (Array.isArray(err?.errors) && err.errors.length > 0 && status < 500) {
+    payload.errors = err.errors;
+  }
+
+  res.status(status).json(payload);
 };

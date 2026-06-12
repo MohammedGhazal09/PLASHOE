@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
-let mongoServer;
+let mongoReplSet;
 
 process.env.JWT_SECRET =
   process.env.JWT_SECRET || "test-jwt-secret-with-at-least-32-characters";
@@ -11,8 +11,13 @@ process.env.FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 process.env.NODE_ENV = "test";
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
+  mongoReplSet = await MongoMemoryReplSet.create({
+    replSet: {
+      count: 1,
+      storageEngine: "wiredTiger",
+    },
+  });
+  await mongoose.connect(mongoReplSet.getUri());
 });
 
 afterEach(async () => {
@@ -26,7 +31,7 @@ afterEach(async () => {
 afterAll(async () => {
   await mongoose.disconnect();
 
-  if (mongoServer) {
-    await mongoServer.stop();
+  if (mongoReplSet) {
+    await mongoReplSet.stop();
   }
 });

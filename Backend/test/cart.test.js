@@ -64,6 +64,65 @@ describe("cart routes", () => {
     });
   });
 
+  it("rejects adding more than available stock without creating a cart", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 2 });
+
+    const response = await request(app)
+      .post("/api/cart/items")
+      .set(authHeader(user))
+      .send({
+        productId: product._id.toString(),
+        quantity: 3,
+        size: 42,
+      })
+      .expect(409);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Requested quantity exceeds available stock",
+      errors: [
+        {
+          code: "INSUFFICIENT_STOCK",
+          resource: "product",
+          productId: product._id.toString(),
+          requested: 3,
+          available: 2,
+        },
+      ],
+    });
+
+    const cart = await Cart.findOne({ user: user._id });
+    expect(cart).toBeNull();
+  });
+
+  it("rejects duplicate cart additions above stock and leaves the item unchanged", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 3 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }]);
+
+    const response = await request(app)
+      .post("/api/cart/items")
+      .set(authHeader(user))
+      .send({
+        productId: product._id.toString(),
+        quantity: 2,
+        size: 42,
+      })
+      .expect(409);
+
+    expect(response.body.errors[0]).toMatchObject({
+      code: "INSUFFICIENT_STOCK",
+      productId: product._id.toString(),
+      requested: 4,
+      available: 3,
+    });
+
+    const cart = await Cart.findOne({ user: user._id });
+    expect(cart.items).toHaveLength(1);
+    expect(cart.items[0].quantity).toBe(2);
+  });
+
   it("rejects an unknown product when adding items", async () => {
     const user = await createUser();
 
@@ -133,6 +192,37 @@ describe("cart routes", () => {
 
     expect(deleteResponse.body.success).toBe(true);
     expect(deleteResponse.body.data.items).toHaveLength(0);
+  });
+
+  it("rejects updating a cart item above stock and leaves quantity unchanged", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 3 });
+    const cart = await createCartForUser(user, [{ product, quantity: 2, size: 42 }]);
+    const itemId = cart.items[0]._id.toString();
+
+    const response = await request(app)
+      .put(`/api/cart/items/${itemId}`)
+      .set(authHeader(user))
+      .send({ quantity: 4 })
+      .expect(409);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Requested quantity exceeds available stock",
+      errors: [
+        {
+          code: "INSUFFICIENT_STOCK",
+          resource: "product",
+          productId: product._id.toString(),
+          cartItemId: itemId,
+          requested: 4,
+          available: 3,
+        },
+      ],
+    });
+
+    const persistedCart = await Cart.findOne({ user: user._id });
+    expect(persistedCart.items[0].quantity).toBe(2);
   });
 
   it("clears cart items and coupon state", async () => {

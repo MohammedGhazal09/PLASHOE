@@ -85,11 +85,9 @@ export const createCartForUser = async (user, items = [], overrides = {}) => {
 };
 
 export const createOrder = async (user, overrides = {}) => {
-  const product = await createProduct();
-
-  return Order.create({
-    user: user._id,
-    items: [
+  const product = overrides.items ? null : await createProduct();
+  const items =
+    overrides.items || [
       {
         product: product._id,
         name: product.name,
@@ -98,10 +96,17 @@ export const createOrder = async (user, overrides = {}) => {
         size: 42,
         price: product.price.current,
       },
-    ],
+    ];
+  const subtotal =
+    overrides.subtotal ??
+    items.reduce((total, item) => total + item.price * item.quantity, 0);
+
+  return Order.create({
+    user: user._id,
+    items,
     shippingAddress: validShippingAddress(),
-    subtotal: product.price.current,
-    total: product.price.current,
+    subtotal,
+    total: overrides.total ?? subtotal,
     ...overrides,
   });
 };

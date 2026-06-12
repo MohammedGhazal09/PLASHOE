@@ -2,9 +2,24 @@ import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import Coupon from '../models/Coupon.js';
 
+const stockConflict = ({ message, product, cartItemId, requested }) => ({
+  success: false,
+  message,
+  errors: [
+    {
+      code: 'INSUFFICIENT_STOCK',
+      resource: 'product',
+      productId: product._id.toString(),
+      cartItemId,
+      requested,
+      available: product.stock
+    }
+  ]
+});
+
 // @desc    Get user's cart
 // @route   GET /api/cart
-export const getCart = async (req, res) => {
+export const getCart = async (req, res, next) => {
   try {
     let cart = await Cart.findOne({ user: req.user._id })
       .populate('items.product', 'name image price');
@@ -18,16 +33,13 @@ export const getCart = async (req, res) => {
       data: cart
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Add item to cart
 // @route   POST /api/cart/items
-export const addToCart = async (req, res) => {
+export const addToCart = async (req, res, next) => {
   try {
     const { productId, quantity = 1, size } = req.body;
 
@@ -58,6 +70,20 @@ export const addToCart = async (req, res) => {
     const existingItem = cart.items.find(
       item => item.product.toString() === productId && item.size === size
     );
+    const requestedQuantity = existingItem
+      ? existingItem.quantity + quantity
+      : quantity;
+
+    if (requestedQuantity > product.stock) {
+      return res.status(409).json(
+        stockConflict({
+          message: 'Requested quantity exceeds available stock',
+          product,
+          cartItemId: existingItem?._id?.toString(),
+          requested: requestedQuantity
+        })
+      );
+    }
 
     if (existingItem) {
       existingItem.quantity += quantity;
@@ -80,16 +106,13 @@ export const addToCart = async (req, res) => {
       data: cart
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Update cart item quantity
 // @route   PUT /api/cart/items/:itemId
-export const updateCartItem = async (req, res) => {
+export const updateCartItem = async (req, res, next) => {
   try {
     const { quantity } = req.body;
     
@@ -118,6 +141,35 @@ export const updateCartItem = async (req, res) => {
       });
     }
 
+    const product = await Product.findById(item.product);
+    if (!product) {
+      return res.status(409).json({
+        success: false,
+        message: 'Cart item product is no longer available',
+        errors: [
+          {
+            code: 'PRODUCT_UNAVAILABLE',
+            resource: 'product',
+            productId: item.product.toString(),
+            cartItemId: item._id.toString(),
+            requested: quantity,
+            available: 0
+          }
+        ]
+      });
+    }
+
+    if (quantity > product.stock) {
+      return res.status(409).json(
+        stockConflict({
+          message: 'Requested quantity exceeds available stock',
+          product,
+          cartItemId: item._id.toString(),
+          requested: quantity
+        })
+      );
+    }
+
     item.quantity = quantity;
     await cart.save();
     
@@ -128,16 +180,13 @@ export const updateCartItem = async (req, res) => {
       data: cart
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Remove item from cart
 // @route   DELETE /api/cart/items/:itemId
-export const removeFromCart = async (req, res) => {
+export const removeFromCart = async (req, res, next) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id });
     
@@ -160,16 +209,13 @@ export const removeFromCart = async (req, res) => {
       data: cart
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Clear cart
 // @route   DELETE /api/cart
-export const clearCart = async (req, res) => {
+export const clearCart = async (req, res, next) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id });
     
@@ -185,16 +231,13 @@ export const clearCart = async (req, res) => {
       message: 'Cart cleared'
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Apply coupon to cart
 // @route   POST /api/cart/coupon
-export const applyCoupon = async (req, res) => {
+export const applyCoupon = async (req, res, next) => {
   try {
     const { code } = req.body;
     
@@ -244,16 +287,13 @@ export const applyCoupon = async (req, res) => {
       data: cart
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Remove coupon from cart
 // @route   DELETE /api/cart/coupon
-export const removeCoupon = async (req, res) => {
+export const removeCoupon = async (req, res, next) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id });
     
@@ -277,9 +317,6 @@ export const removeCoupon = async (req, res) => {
       data: cart
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
