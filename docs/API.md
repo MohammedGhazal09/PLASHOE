@@ -1,0 +1,370 @@
+<!-- generated-by: gsd-doc-writer -->
+# API Reference
+
+PLASHOE exposes a JSON HTTP API from the Express backend in `Backend/server.js`. All mounted routes use the `/api` prefix, and the frontend axios instance in `Frontend/Ecommerce-main/my-app/src/api/axios.js` is configured with `config.api.baseUrl`, which defaults to `http://localhost:5000/api` in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
+
+## Authentication
+
+Authentication uses JWT bearer tokens. `POST /api/auth/register` and `POST /api/auth/login` return a token at `data.token`. Protected requests must include:
+
+```http
+Authorization: Bearer <token>
+```
+
+The frontend axios instance reads the token from `useAuthStore.getState().token` and attaches the `Authorization` header automatically. A `401` response triggers `useAuthStore.getState().logout()` in the frontend response interceptor.
+
+Admin routes use the same bearer token plus the backend `admin` middleware, which requires `req.user.isAdmin` to be truthy.
+
+## Endpoints Overview
+
+| Method | Path | Description | Auth Required | Frontend Wrapper |
+| --- | --- | --- | --- | --- |
+| GET | `/api/health` | Health check for the backend process. | No | None |
+| POST | `/api/auth/register` | Create a user and return the user profile plus JWT. | No | `authApi.register(name, email, password)` |
+| POST | `/api/auth/login` | Authenticate a user and return the user profile plus JWT. | No | `authApi.login(email, password)` |
+| GET | `/api/auth/me` | Return the current authenticated user document. | Bearer JWT | `authApi.getMe()` |
+| PUT | `/api/auth/profile` | Update the current user's `name`, `email`, and/or `phone`. | Bearer JWT | `authApi.updateProfile(profileData)` |
+| POST | `/api/auth/addresses` | Add an address to the current user. | Bearer JWT | `authApi.addAddress(address)` |
+| DELETE | `/api/auth/addresses/:id` | Delete one address from the current user. | Bearer JWT | `authApi.deleteAddress(addressId)` |
+| GET | `/api/products` | List products with optional filtering, sorting, and pagination. | No | `productsApi.getAll(params)` |
+| GET | `/api/products/men` | List products where `gender` is `male`. | No | `productsApi.getMen()` |
+| GET | `/api/products/women` | List products where `gender` is `female`. | No | `productsApi.getWomen()` |
+| GET | `/api/products/sale` | List products where `isOnSale` is `true`. | No | `productsApi.getSale()` |
+| GET | `/api/products/bestsellers` | List up to 8 products sorted by descending rating. | No | `productsApi.getBestsellers()` |
+| GET | `/api/products/categories` | Return distinct product categories. | No | `productsApi.getCategories()` |
+| GET | `/api/products/:id` | Return one product by MongoDB id. | No | `productsApi.getById(id)` |
+| POST | `/api/products` | Create a product. | Admin bearer JWT | None |
+| PUT | `/api/products/:id` | Update a product. | Admin bearer JWT | None |
+| DELETE | `/api/products/:id` | Delete a product. | Admin bearer JWT | None |
+| GET | `/api/cart` | Return the current user's cart, creating an empty cart if needed. | Bearer JWT | `cartApi.getCart()` |
+| POST | `/api/cart/items` | Add a product and size to the current user's cart. | Bearer JWT | `cartApi.addItem(productId, quantity, size)` |
+| PUT | `/api/cart/items/:itemId` | Update a cart item quantity. | Bearer JWT | `cartApi.updateItem(itemId, quantity)` |
+| DELETE | `/api/cart/items/:itemId` | Remove one cart item. | Bearer JWT | `cartApi.removeItem(itemId)` |
+| DELETE | `/api/cart` | Clear cart items and coupon data. | Bearer JWT | `cartApi.clearCart()` |
+| POST | `/api/cart/coupon` | Apply a coupon to the current user's cart. | Bearer JWT | `cartApi.applyCoupon(code)` |
+| DELETE | `/api/cart/coupon` | Remove coupon data from the current user's cart. | Bearer JWT | `cartApi.removeCoupon()` |
+| POST | `/api/orders` | Create an order from the current user's cart and clear the cart. | Bearer JWT | `ordersApi.create(orderData)` |
+| GET | `/api/orders` | List the current user's orders sorted newest first. | Bearer JWT | `ordersApi.getAll()` |
+| GET | `/api/orders/:id` | Return one order if owned by the user or requested by an admin. | Bearer JWT, owner or admin | `ordersApi.getById(id)` |
+| PUT | `/api/orders/:id/cancel` | Cancel an owned order unless it is shipped or delivered. | Bearer JWT, owner only | `ordersApi.cancel(id)` |
+| POST | `/api/coupons/validate` | Validate a coupon code and return discount details. | No | `couponApi.validate(code)` |
+| GET | `/api/coupons` | List all coupons sorted newest first. | Admin bearer JWT | None |
+| POST | `/api/coupons` | Create a coupon. | Admin bearer JWT | None |
+| DELETE | `/api/coupons/:id` | Delete a coupon. | Admin bearer JWT | None |
+| POST | `/api/contact` | Submit a contact message. | No | `contactApi.submit(name, email, subject, message)` |
+| GET | `/api/contact` | List all contact messages sorted newest first. | Admin bearer JWT | None |
+| PUT | `/api/contact/:id/read` | Mark one contact message as read. | Admin bearer JWT | None |
+| DELETE | `/api/contact/:id` | Delete one contact message. | Admin bearer JWT | None |
+
+## Request Formats
+
+### Auth
+
+`POST /api/auth/register`
+
+```json
+{
+  "name": "Jane Customer",
+  "email": "jane@example.com",
+  "password": "secret123"
+}
+```
+
+`POST /api/auth/login`
+
+```json
+{
+  "email": "jane@example.com",
+  "password": "secret123"
+}
+```
+
+`PUT /api/auth/profile`
+
+```json
+{
+  "name": "Jane Customer",
+  "email": "jane@example.com",
+  "phone": "+1 555 123 4567"
+}
+```
+
+`POST /api/auth/addresses`
+
+```json
+{
+  "firstName": "Jane",
+  "lastName": "Customer",
+  "company": "Example Co",
+  "country": "US",
+  "street": "123 Example Street",
+  "apartment": "4B",
+  "city": "Example City",
+  "state": "CA",
+  "zipCode": "90210",
+  "phone": "+1 555 123 4567",
+  "isDefault": true
+}
+```
+
+### Products
+
+`GET /api/products` accepts these query parameters:
+
+| Query Parameter | Description |
+| --- | --- |
+| `gender` | Filters by product `gender`, such as `male` or `female`. |
+| `category` | Filters by product category. Model enum values are `Training`, `Running`, `Sneaker`, and `Classic`. |
+| `sale` | When set to `true`, filters products where `isOnSale` is true. |
+| `sort` | Supports `price-asc`, `price-desc`, `rating`, and `newest`. |
+| `limit` | Maximum products returned. Defaults to `20`. |
+| `page` | Page number. Defaults to `1`. |
+
+Admin `POST /api/products` and `PUT /api/products/:id` accept product fields from the `Product` model:
+
+```json
+{
+  "name": "Trail Runner",
+  "gender": "male",
+  "category": "Running",
+  "image": "trail-runner.jpg",
+  "price": {
+    "original": 140,
+    "current": 120
+  },
+  "rating": 4.5,
+  "sizes": [39, 40, 41, 42, 43],
+  "stock": 25,
+  "isOnSale": true,
+  "description": "Lightweight running shoe."
+}
+```
+
+### Cart
+
+`POST /api/cart/items`
+
+```json
+{
+  "productId": "665000000000000000000001",
+  "quantity": 2,
+  "size": 42
+}
+```
+
+`quantity` defaults to `1`. `size` is required and must be between `35` and `45`.
+
+`PUT /api/cart/items/:itemId`
+
+```json
+{
+  "quantity": 3
+}
+```
+
+`quantity` must be at least `1`.
+
+`POST /api/cart/coupon`
+
+```json
+{
+  "code": "SAVE10"
+}
+```
+
+### Orders
+
+`POST /api/orders`
+
+```json
+{
+  "shippingAddress": {
+    "firstName": "Jane",
+    "lastName": "Customer",
+    "company": "Example Co",
+    "country": "US",
+    "street": "123 Example Street",
+    "apartment": "4B",
+    "city": "Example City",
+    "state": "CA",
+    "zipCode": "90210",
+    "phone": "+1 555 123 4567"
+  },
+  "notes": "Leave at the front desk."
+}
+```
+
+Required `shippingAddress` fields are `firstName`, `lastName`, `country`, `street`, `city`, `state`, `zipCode`, and `phone`. Orders are created from the authenticated user's cart; clients do not send line items or totals.
+
+### Coupons
+
+`POST /api/coupons/validate`
+
+```json
+{
+  "code": "SAVE10"
+}
+```
+
+Admin `POST /api/coupons`
+
+```json
+{
+  "code": "SAVE10",
+  "discountPercentage": 10,
+  "minOrderAmount": 50,
+  "maxUses": 100,
+  "validFrom": "2026-01-01T00:00:00.000Z",
+  "validUntil": "2026-12-31T23:59:59.000Z",
+  "isActive": true
+}
+```
+
+### Contact
+
+`POST /api/contact`
+
+```json
+{
+  "name": "Jane Customer",
+  "email": "jane@example.com",
+  "subject": "Sizing question",
+  "message": "Do these shoes fit true to size?"
+}
+```
+
+`name`, `email`, and `message` are required. `subject` is optional.
+
+## Response Formats
+
+Most successful responses use a `success: true` envelope and return resource data in `data`:
+
+```json
+{
+  "success": true,
+  "data": {}
+}
+```
+
+List endpoints commonly include `count`; paginated product lists also include `total` and `pages`:
+
+```json
+{
+  "success": true,
+  "count": 20,
+  "total": 57,
+  "pages": 3,
+  "data": []
+}
+```
+
+Auth register/login responses return the authenticated user summary and token:
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "665000000000000000000001",
+    "name": "Jane Customer",
+    "email": "jane@example.com",
+    "isAdmin": false,
+    "token": "<jwt>"
+  }
+}
+```
+
+Cart responses return a cart document with populated `items.product` fields `name`, `image`, and `price`; cart JSON also includes virtual `subtotal` and `total` values:
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": "665000000000000000000001",
+    "items": [
+      {
+        "product": {
+          "_id": "665000000000000000000002",
+          "name": "Trail Runner",
+          "image": "trail-runner.jpg",
+          "price": {
+            "original": 140,
+            "current": 120
+          }
+        },
+        "quantity": 2,
+        "size": 42,
+        "priceAtAdd": 120
+      }
+    ],
+    "couponCode": "SAVE10",
+    "discount": 10,
+    "subtotal": 240,
+    "total": 216
+  }
+}
+```
+
+Order creation returns status `201`, a success message, and the created order. The backend calculates order items, subtotal, discount, total, coupon usage, and sets `status` to `processing`.
+
+```json
+{
+  "success": true,
+  "message": "Order placed successfully",
+  "data": {
+    "orderNumber": "PLS-1760000000000-1",
+    "items": [],
+    "shippingAddress": {},
+    "subtotal": 240,
+    "discount": 10,
+    "total": 216,
+    "status": "processing"
+  }
+}
+```
+
+Delete and state-change responses may return only a message:
+
+```json
+{
+  "success": true,
+  "message": "Product deleted"
+}
+```
+
+Error responses use `success: false` and a message:
+
+```json
+{
+  "success": false,
+  "message": "Not authorized, no token"
+}
+```
+
+## Error Codes
+
+| Status | Source | Meaning |
+| --- | --- | --- |
+| `400` | Controllers and Mongoose validation | Invalid request body, duplicate user, invalid coupon, invalid cart quantity or size, empty cart, missing shipping fields, or an order that can no longer be cancelled. |
+| `401` | `protect` middleware and login controller | Missing token, failed token verification, missing authenticated user, or invalid login credentials. |
+| `403` | `admin` middleware and order ownership checks | Authenticated user is not an admin, or the user is not authorized to access the requested order. |
+| `404` | Controllers | Product, cart, cart item, order, coupon, or contact message was not found. |
+| `500` | Controllers and global error handler | Unexpected server error. |
+
+## Rate Limits
+
+No rate-limiting middleware or rate-limit dependency is configured in `Backend/package.json`, `Backend/server.js`, or `Backend/routes`.
+
+## Frontend Wrapper Mappings
+
+The frontend wrappers are relative to the configured axios `baseURL`; with the default frontend config, `/auth/login` resolves to `http://localhost:5000/api/auth/login`.
+
+| Wrapper File | Export | Backend Endpoint(s) |
+| --- | --- | --- |
+| `Frontend/Ecommerce-main/my-app/src/api/authApi.js` | `authApi` | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `PUT /api/auth/profile`, `POST /api/auth/addresses`, `DELETE /api/auth/addresses/:id` |
+| `Frontend/Ecommerce-main/my-app/src/api/productsApi.js` | `productsApi` | Public product read endpoints only: `GET /api/products`, `GET /api/products/:id`, `GET /api/products/men`, `GET /api/products/women`, `GET /api/products/sale`, `GET /api/products/bestsellers`, `GET /api/products/categories` |
+| `Frontend/Ecommerce-main/my-app/src/api/cartApi.js` | `cartApi` | `GET /api/cart`, `POST /api/cart/items`, `PUT /api/cart/items/:itemId`, `DELETE /api/cart/items/:itemId`, `DELETE /api/cart`, `POST /api/cart/coupon`, `DELETE /api/cart/coupon` |
+| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `ordersApi` | `POST /api/orders`, `GET /api/orders`, `GET /api/orders/:id`, `PUT /api/orders/:id/cancel` |
+| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `contactApi` | `POST /api/contact` |
+| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `couponApi` | `POST /api/coupons/validate` |
+
+The backend admin endpoints for products, coupons, and contact messages are implemented in `Backend/routes`, but no frontend wrapper in `Frontend/Ecommerce-main/my-app/src/api` maps those admin operations.
