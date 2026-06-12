@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-06-12T10:36:48.611Z",
+  "spike": "001-core-flow-contract-check",
+  "verdict": "VALIDATED",
+  "counts": {
+    "FAIL": 5,
+    "PASS": 1,
+    "WARN": 2
+  },
+  "checks": [
+    {
+      "id": "contact-wrapper-method",
+      "title": "Contact page calls a method exported by the contact API wrapper",
+      "status": "FAIL",
+      "evidence": "Contact page calls contactApi.send at Frontend/Ecommerce-main/my-app/src/pages/Contact.jsx:60; wrapper exports submit at Frontend/Ecommerce-main/my-app/src/api/ordersApi.js:26.",
+      "recommendation": "Use contactApi.submit(name, email, subject, message), or add a send(formData) wrapper that calls POST /api/contact."
+    },
+    {
+      "id": "contact-error-honesty",
+      "title": "Contact submission reports failures honestly",
+      "status": "FAIL",
+      "evidence": "Catch block shows toast.success in Frontend/Ecommerce-main/my-app/src/pages/Contact.jsx:68.",
+      "recommendation": "Show an error toast in the catch path and preserve form contents unless the POST succeeds."
+    },
+    {
+      "id": "guest-checkout-reachability",
+      "title": "Checkout routing matches checkout business rules",
+      "status": "FAIL",
+      "evidence": "Route is protected in Frontend/Ecommerce-main/my-app/src/App.js:74, but guest checkout branch exists in Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:125.",
+      "recommendation": "Either remove the guest checkout branch or make /checkout public and implement a deliberate guest order flow."
+    },
+    {
+      "id": "coupon-result-contract",
+      "title": "Coupon application return shape matches checkout UI expectations",
+      "status": "FAIL",
+      "evidence": "Checkout reads result.discount at Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:68, but cartStore applyCoupon returns success/message without discount at Frontend/Ecommerce-main/my-app/src/store/cartStore.js:71.",
+      "recommendation": "Return discount from cartStore.applyCoupon or read the updated discount value from store state in Checkout."
+    },
+    {
+      "id": "remove-coupon-null-cart",
+      "title": "Removing a coupon handles a missing cart",
+      "status": "FAIL",
+      "evidence": "removeCoupon starts at Backend/controllers/cartController.js:256 and can call cart.populate at Backend/controllers/cartController.js:266 after a missing cart.",
+      "recommendation": "Return a successful empty-cart response when no cart exists, or create/load a cart before populating."
+    },
+    {
+      "id": "route-auth-boundaries",
+      "title": "Core route auth boundaries match the intended storefront flow",
+      "status": "PASS",
+      "evidence": "Cart and order routers apply router.use(protect); contact POST remains public in Backend/routes/contactRoutes.js.",
+      "recommendation": "Keep cart and order routes protected, and keep public contact submission separate from admin contact routes."
+    },
+    {
+      "id": "payment-production-readiness",
+      "title": "Checkout has a production payment state",
+      "status": "WARN",
+      "evidence": "Checkout announces demo payment behavior in Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx:281; orders are created without a payment provider.",
+      "recommendation": "Add a payment provider contract before production: payment intent creation, confirmation, failure handling, order payment status, and refund path."
+    },
+    {
+      "id": "inventory-enforcement",
+      "title": "Stock is enforced during cart and order workflows",
+      "status": "WARN",
+      "evidence": "Product stock exists in Backend/models/Product.js:36, but cart/order controllers do not consistently validate or decrement it.",
+      "recommendation": "Validate stock in cart add/update and atomically decrement or reserve stock during order creation."
+    }
+  ]
+}
