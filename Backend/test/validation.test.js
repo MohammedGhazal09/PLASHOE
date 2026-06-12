@@ -142,4 +142,44 @@ describe("request validation middleware", () => {
       message: "Invalid request",
     });
   });
+
+  it("rejects invalid product query parameters", async () => {
+    const response = await request(app)
+      .get("/api/products")
+      .query({ sort: "expensive-first" })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+  });
+
+  it("rejects product limits above the configured cap", async () => {
+    const response = await request(app)
+      .get("/api/products")
+      .query({ limit: 101 })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+  });
+
+  it("accepts valid product query parameters at the configured cap", async () => {
+    await request(app)
+      .get("/api/products")
+      .query({ gender: "male", category: "Running", sale: "true", sort: "newest", page: 1, limit: 100 })
+      .expect(200);
+  });
+
+  it("rejects malformed product ObjectId route params", async () => {
+    const response = await request(app).get("/api/products/not-an-id").expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+  });
 });

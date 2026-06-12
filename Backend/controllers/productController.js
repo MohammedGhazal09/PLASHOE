@@ -10,7 +10,7 @@ export const getProducts = async (req, res) => {
     
     if (gender) query.gender = gender;
     if (category) query.category = category;
-    if (sale === 'true') query.isOnSale = true;
+    if (sale === true) query.isOnSale = true;
     
     let sortOption = {};
     if (sort === 'price-asc') sortOption = { 'price.current': 1 };
@@ -18,11 +18,11 @@ export const getProducts = async (req, res) => {
     else if (sort === 'rating') sortOption = { rating: -1 };
     else if (sort === 'newest') sortOption = { createdAt: -1 };
     
-    const skip = (Number(page) - 1) * Number(limit);
+    const skip = (page - 1) * limit;
     
     const products = await Product.find(query)
       .sort(sortOption)
-      .limit(Number(limit))
+      .limit(limit)
       .skip(skip);
     
     const total = await Product.countDocuments(query);
@@ -31,7 +31,7 @@ export const getProducts = async (req, res) => {
       success: true,
       count: products.length,
       total,
-      pages: Math.ceil(total / Number(limit)),
+      pages: Math.ceil(total / limit),
       data: products
     });
   } catch (error) {
