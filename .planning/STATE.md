@@ -4,9 +4,9 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06
 current_plan: Not started
-status: planning
-last_updated: "2026-06-12T22:39:58.938Z"
-last_activity: 2026-06-12 - Completed Phase 5 production payments with hosted checkout, webhook reconciliation, frontend return states, docs, and verification.
+status: executing
+last_updated: "2026-06-12T22:50:26.404Z"
+last_activity: 2026-06-13 - Planned Phase 6 admin fulfillment operations into 3 executable waves.
 progress:
   total_phases: 8
   completed_phases: 5
@@ -18,14 +18,14 @@ progress:
 # Project State: PLASHOE
 
 **Current Phase:** 06
-**Status:** Ready to plan
+**Status:** Ready to execute
 **Current Plan:** Not started
-**Next recommended run:** `$gsd-spec-phase 6`
-**Last Activity:** 2026-06-12 - Completed Phase 5 production payments with hosted checkout, webhook reconciliation, frontend return states, docs, and verification.
+**Next recommended run:** `$gsd-execute-phase 6`
+**Last Activity:** 2026-06-13 - Planned Phase 6 admin fulfillment operations into 3 executable waves.
 
 ## Current Focus
 
-Plan Phase 6: Admin Fulfillment Operations.
+Execute Phase 6: Admin Fulfillment Operations.
 
 ## Accumulated Context
 
@@ -42,6 +42,7 @@ Plan Phase 6: Admin Fulfillment Operations.
 - 2026-06-12: Captured Phase 5 production payment context with approved Stripe Checkout, webhook, payment-state, frontend return, config, docs, and deterministic test decisions.
 - 2026-06-12: Planned Phase 5 into payment state/config/provider seam, checkout-start session integration, webhook reconciliation, frontend payment returns, and docs/static verification.
 - 2026-06-12: Completed Phase 5 with Stripe Checkout start, payment state model, webhook reconciliation, frontend payment returns, docs, and full backend/frontend/build/static verification.
+- 2026-06-13: Planned Phase 6 into admin order read APIs, fulfillment transitions, and admin list pagination/frontend wrapper/docs work.
 
 ### Decisions
 

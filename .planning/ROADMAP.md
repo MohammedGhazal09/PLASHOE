@@ -206,13 +206,28 @@ Plans:
   3. Admin coupon/contact/order lists are paginated and filterable.
   4. Admin authorization is covered by tests.
 
-**Plans**: TBD
-
+**Plans**: 3
 Plans:
+**Wave 1**
 
 - [ ] 06-01: Add admin order API operations and tests.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 06-02: Add fulfillment/tracking workflow.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 06-03: Add pagination/filtering for admin list endpoints.
+
+**Cross-cutting constraints:**
+
+- D-12: Add small shared helpers for common admin list behavior.
+- D-13: Do not introduce a full query framework or heavy abstraction in Phase 06.
+- D-14: Admin order, coupon, and contact lists should share the response metadata shape success, count, total, page, limit, pages, and data.
+- D-31: Keep strict Zod validation and request allowlist behavior from Phase 03.
+- D-42: Add focused backend admin order route tests, preferably in Backend/test/admin-order.test.js.
+- D-43: Keep fulfillment tests on Vitest/Supertest with the existing in-memory MongoDB setup and existing auth helpers/factories.
 
 ### Phase 7: Catalog and Frontend Architecture Cleanup
 
