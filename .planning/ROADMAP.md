@@ -139,13 +139,24 @@ Plans:
   3. Order numbers are collision-safe under concurrent order creation.
   4. Frontend cart item shape is normalized at store/API boundaries.
 
-**Plans**: TBD
-
+**Plans**: 3
 Plans:
+**Wave 1**
 
-- [ ] 04-01: Make checkout writes transactional or idempotent.
-- [ ] 04-02: Enforce inventory in cart and order flows.
-- [ ] 04-03: Normalize cart data and order-number generation.
+- [ ] 04-01: Transactional checkout and idempotency foundation.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 04-02: Inventory, coupon, and cancellation consistency.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 04-03: Frontend cart normalization and contract documentation.
+
+**Cross-cutting constraints:**
+
+- D-24: New domain conflicts use 409 with success false, message, and errors.
+- D-25: Conflict errors are machine-readable.
 
 ### Phase 5: Production Payments
 
