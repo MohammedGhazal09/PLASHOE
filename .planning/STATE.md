@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 02
 current_plan: Not started
-status: planning
-last_updated: "2026-06-12T12:17:09.628Z"
+status: executing
+last_updated: "2026-06-12T12:31:21.634Z"
 last_activity: 2026-06-12 - Completed Phase 1 core-flow stabilization.
 progress:
   total_phases: 8
@@ -18,14 +18,14 @@ progress:
 # Project State: PLASHOE
 
 **Current Phase:** 02
-**Status:** Ready to plan
+**Status:** Ready to execute
 **Current Plan:** Not started
-**Next recommended run:** `$gsd-plan-phase 2`
+**Next recommended run:** `$gsd-execute-phase 2`
 **Last Activity:** 2026-06-12 - Completed Phase 1 core-flow stabilization.
 
 ## Current Focus
 
-Plan Phase 2: Automated Test Foundation.
+Execute Phase 2: Automated Test Foundation.
 
 ## Accumulated Context
 
@@ -33,6 +33,7 @@ Plan Phase 2: Automated Test Foundation.
 
 - 2026-06-12: Created production-readiness roadmap from `.planning/codebase/CONCERNS.md`, verified docs, and spike 001 results.
 - 2026-06-12: Phase 1 recommended first because it fixes concrete contract failures in contact, checkout, coupon, and cart behavior.
+- 2026-06-12: Planned Phase 2 into backend test infrastructure, backend API coverage, frontend behavior coverage, and final docs/checker verification.
 - 2026-06-12: Planned Phase 1 into source fixes, checker/evidence alignment, and final smoke verification.
 
 ### Decisions
