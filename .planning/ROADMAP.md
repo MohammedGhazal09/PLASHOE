@@ -32,12 +32,20 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
   3. Coupon application displays accurate success/discount feedback.
   4. Removing a coupon with no cart returns a safe response.
   5. `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` has no `FAIL` findings.
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
+**Wave 1**
 - [ ] 01-01: Fix contact, coupon, checkout-routing, and remove-coupon defects.
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02: Update the contract checker or add equivalent focused assertions.
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 01-03: Smoke-check the stabilized core flow.
+
+**Cross-cutting constraints:**
+- D-16: react19-test-patterns, express-rest-api, and zustand-state-management are supporting guidance only, not extra gates.
 
 ### Phase 2: Automated Test Foundation
 **Goal**: PLASHOE has automated test coverage for the core backend and frontend flows that currently lack protection.
@@ -165,7 +173,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Flow Stabilization | 0/3 | Not started | - |
+| 1. Core Flow Stabilization | 0/3 | Planned | - |
 | 2. Automated Test Foundation | 0/3 | Not started | - |
 | 3. API Security and Validation | 0/3 | Not started | - |
 | 4. Checkout Data Integrity and Inventory | 0/3 | Not started | - |

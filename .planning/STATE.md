@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 1
 current_plan: Not started
-status: planning
-last_updated: "2026-06-12T11:07:00.306Z"
-last_activity: 2026-06-12 - Initialized remediation roadmap from verified PLASHOE problems.
+status: executing
+last_updated: "2026-06-12T11:17:11.294Z"
+last_activity: 2026-06-12 - Planned Phase 1 core-flow stabilization.
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 0
+  total_plans: 3
   completed_plans: 0
   percent: 0
 ---
@@ -18,10 +18,10 @@ progress:
 # Project State: PLASHOE
 
 **Current Phase:** 1
-**Status:** Ready to plan
+**Status:** Ready to execute
 **Current Plan:** Not started
-**Next recommended run:** `$gsd-plan-phase 1`
-**Last Activity:** 2026-06-12 - Initialized remediation roadmap from verified PLASHOE problems.
+**Next recommended run:** `$gsd-execute-phase 1`
+**Last Activity:** 2026-06-12 - Planned Phase 1 core-flow stabilization.
 
 ## Current Focus
 
@@ -33,6 +33,7 @@ Plan and execute Phase 1: Core Flow Stabilization.
 
 - 2026-06-12: Created production-readiness roadmap from `.planning/codebase/CONCERNS.md`, verified docs, and spike 001 results.
 - 2026-06-12: Phase 1 recommended first because it fixes concrete contract failures in contact, checkout, coupon, and cart behavior.
+- 2026-06-12: Planned Phase 1 into source fixes, checker/evidence alignment, and final smoke verification.
 
 ### Decisions
 
