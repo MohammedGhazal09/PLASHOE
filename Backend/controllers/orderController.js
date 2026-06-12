@@ -8,17 +8,6 @@ export const createOrder = async (req, res) => {
   try {
     const { shippingAddress, notes } = req.body;
 
-    // Validate required shipping fields
-    const requiredFields = ['firstName', 'lastName', 'country', 'street', 'city', 'state', 'zipCode', 'phone'];
-    for (const field of requiredFields) {
-      if (!shippingAddress?.[field]) {
-        return res.status(400).json({
-          success: false,
-          message: `${field} is required in shipping address`
-        });
-      }
-    }
-
     // Get user's cart
     const cart = await Cart.findOne({ user: req.user._id })
       .populate('items.product', 'name image price');

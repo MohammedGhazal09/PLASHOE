@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import request from "supertest";
+import app from "../app.js";
 import { validateRequest } from "../middleware/validate.js";
+import { authHeader } from "./helpers/auth.js";
+import { createCartForUser, createProduct, createUser } from "./helpers/factories.js";
 
 describe("request validation middleware", () => {
   it("returns stable 400 envelopes for invalid input", () => {
@@ -45,5 +49,97 @@ describe("request validation middleware", () => {
     expect(req.body).toEqual({ name: "Buyer" });
     expect(req.query).toEqual({ limit: 25 });
     expect(next).toHaveBeenCalledOnce();
+  });
+
+  it("rejects unknown cart item fields before persistence", async () => {
+    const user = await createUser();
+    const product = await createProduct();
+
+    const response = await request(app)
+      .post("/api/cart/items")
+      .set(authHeader(user))
+      .send({
+        productId: product._id.toString(),
+        quantity: 1,
+        size: 42,
+        priceAtAdd: 1,
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+  });
+
+  it("rejects unknown contact fields before persistence", async () => {
+    const response = await request(app)
+      .post("/api/contact")
+      .send({
+        name: "Contact User",
+        email: "contact@example.com",
+        subject: "Sizing",
+        message: "Question",
+        isRead: true,
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+  });
+
+  it("rejects unknown order fields before persistence", async () => {
+    const user = await createUser();
+    await createCartForUser(user);
+
+    const response = await request(app)
+      .post("/api/orders")
+      .set(authHeader(user))
+      .send({
+        shippingAddress: {
+          firstName: "Test",
+          lastName: "Buyer",
+          country: "United States",
+          street: "123 Test Street",
+          city: "Testville",
+          state: "CA",
+          zipCode: "90210",
+          phone: "5551234567",
+        },
+        notes: "Leave at reception",
+        status: "delivered",
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+  });
+
+  it("rejects unknown admin product fields before persistence", async () => {
+    const admin = await createUser({ email: "admin-product@example.com", isAdmin: true });
+
+    const response = await request(app)
+      .post("/api/products")
+      .set(authHeader(admin))
+      .send({
+        name: "Admin Shoe",
+        gender: "male",
+        category: "Running",
+        image: "/images/admin-shoe.jpg",
+        price: { original: 150, current: 120 },
+        sizes: [40, 41, 42],
+        stock: 10,
+        hiddenCost: 1,
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
   });
 });

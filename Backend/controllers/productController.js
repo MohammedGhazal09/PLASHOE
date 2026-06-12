@@ -162,7 +162,8 @@ export const getCategories = async (req, res) => {
 // @route   POST /api/products
 export const createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const productData = req.body;
+    const product = await Product.create(productData);
     res.status(201).json({
       success: true,
       data: product
@@ -179,9 +180,10 @@ export const createProduct = async (req, res) => {
 // @route   PUT /api/products/:id
 export const updateProduct = async (req, res) => {
   try {
+    const productData = req.body;
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      productData,
       { new: true, runValidators: true }
     );
     

@@ -48,7 +48,8 @@ describe("contact routes", () => {
 
     expect(response.body).toEqual({
       success: false,
-      message: "Name, email and message are required",
+      message: "Invalid request",
+      errors: expect.any(Array),
     });
   });
 });

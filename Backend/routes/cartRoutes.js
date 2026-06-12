@@ -9,6 +9,13 @@ import {
   removeCoupon
 } from '../controllers/cartController.js';
 import { protect } from '../middleware/auth.js';
+import { validateRequest } from '../middleware/validate.js';
+import {
+  addCartItemSchema,
+  cartCouponSchema,
+  cartItemParamsSchema,
+  updateCartItemSchema,
+} from '../validators/cart.js';
 
 const router = express.Router();
 
@@ -16,11 +23,15 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', getCart);
-router.post('/items', addToCart);
-router.put('/items/:itemId', updateCartItem);
-router.delete('/items/:itemId', removeFromCart);
+router.post('/items', validateRequest({ body: addCartItemSchema }), addToCart);
+router.put(
+  '/items/:itemId',
+  validateRequest({ params: cartItemParamsSchema, body: updateCartItemSchema }),
+  updateCartItem
+);
+router.delete('/items/:itemId', validateRequest({ params: cartItemParamsSchema }), removeFromCart);
 router.delete('/', clearCart);
-router.post('/coupon', applyCoupon);
+router.post('/coupon', validateRequest({ body: cartCouponSchema }), applyCoupon);
 router.delete('/coupon', removeCoupon);
 
 export default router;

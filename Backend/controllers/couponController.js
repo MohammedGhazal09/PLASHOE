@@ -49,7 +49,8 @@ export const validateCoupon = async (req, res) => {
 // @route   POST /api/coupons
 export const createCoupon = async (req, res) => {
   try {
-    const coupon = await Coupon.create(req.body);
+    const couponData = req.body;
+    const coupon = await Coupon.create(couponData);
     res.status(201).json({
       success: true,
       data: coupon

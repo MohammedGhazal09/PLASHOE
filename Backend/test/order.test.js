@@ -53,7 +53,7 @@ describe("order routes", () => {
 
     expect(response.body).toMatchObject({
       success: false,
-      message: "phone is required in shipping address",
+      message: "Invalid request",
     });
   });
 

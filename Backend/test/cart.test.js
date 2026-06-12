@@ -99,7 +99,7 @@ describe("cart routes", () => {
 
     expect(response.body).toMatchObject({
       success: false,
-      message: "Valid size (35-45) is required",
+      message: "Invalid request",
     });
   });
 
