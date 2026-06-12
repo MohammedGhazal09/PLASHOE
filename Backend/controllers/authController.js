@@ -128,14 +128,15 @@ export const updateProfile = async (req, res) => {
 export const addAddress = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    const address = { ...req.body };
     
     // If this is the first address or isDefault is true, set as default
-    if (user.addresses.length === 0 || req.body.isDefault) {
+    if (user.addresses.length === 0 || address.isDefault) {
       user.addresses.forEach(addr => addr.isDefault = false);
-      req.body.isDefault = true;
+      address.isDefault = true;
     }
     
-    user.addresses.push(req.body);
+    user.addresses.push(address);
     await user.save();
 
     res.status(201).json({

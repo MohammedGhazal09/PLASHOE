@@ -48,6 +48,23 @@ describe("auth routes", () => {
     });
   });
 
+  it("rejects unknown public registration fields", async () => {
+    const response = await request(app)
+      .post("/api/auth/register")
+      .send({
+        name: "Injected Buyer",
+        email: "injected@example.com",
+        password: "password123",
+        isAdmin: true,
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+  });
+
   it("logs in an existing user and returns an auth token", async () => {
     const user = await createUser({
       email: "login@example.com",
@@ -106,6 +123,103 @@ describe("auth routes", () => {
       email: user.email,
     });
     expect(response.body.data.password).toBeUndefined();
+  });
+
+  it("updates profile through sanitized allowlisted fields", async () => {
+    const user = await createUser({ email: "profile@example.com" });
+
+    const response = await request(app)
+      .put("/api/auth/profile")
+      .set(authHeader(user))
+      .send({
+        name: "  Updated Buyer  ",
+        email: "UPDATED-BUYER@EXAMPLE.COM",
+        phone: " 5551234567 ",
+      })
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toMatchObject({
+      name: "Updated Buyer",
+      email: "updated-buyer@example.com",
+      phone: "5551234567",
+    });
+  });
+
+  it("rejects unknown profile fields including isAdmin", async () => {
+    const user = await createUser({ email: "profile-extra@example.com" });
+
+    const response = await request(app)
+      .put("/api/auth/profile")
+      .set(authHeader(user))
+      .send({
+        name: "Injected Admin",
+        isAdmin: true,
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+  });
+
+  it("adds addresses through sanitized allowlisted fields", async () => {
+    const user = await createUser({ email: "address@example.com" });
+
+    const response = await request(app)
+      .post("/api/auth/addresses")
+      .set(authHeader(user))
+      .send({
+        firstName: " Test ",
+        lastName: " Buyer ",
+        country: " United States ",
+        street: " 123 Test Street ",
+        city: " Testville ",
+        state: " CA ",
+        zipCode: " 90210 ",
+        phone: " 5551234567 ",
+      })
+      .expect(201);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data[0]).toMatchObject({
+      firstName: "Test",
+      lastName: "Buyer",
+      country: "United States",
+      street: "123 Test Street",
+      city: "Testville",
+      state: "CA",
+      zipCode: "90210",
+      phone: "5551234567",
+      isDefault: true,
+    });
+    expect(response.body.data[0].isAdmin).toBeUndefined();
+  });
+
+  it("rejects unknown address fields", async () => {
+    const user = await createUser({ email: "address-extra@example.com" });
+
+    const response = await request(app)
+      .post("/api/auth/addresses")
+      .set(authHeader(user))
+      .send({
+        firstName: "Test",
+        lastName: "Buyer",
+        country: "United States",
+        street: "123 Test Street",
+        city: "Testville",
+        state: "CA",
+        zipCode: "90210",
+        phone: "5551234567",
+        deliveryInstructions: "Persist me",
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
   });
 
   it("rejects missing bearer tokens on protected routes", async () => {
