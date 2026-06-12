@@ -180,13 +180,27 @@ export const useCartStore = create(
           try {
             const response = await cartApi.applyCoupon(code);
             if (response.success) {
+              const couponCode = response.data?.couponCode;
+              const discount = response.data?.discount;
+
+              if (typeof discount !== 'number' || Number.isNaN(discount)) {
+                const message = 'Coupon response did not include a valid discount';
+                set({ error: message, isLoading: false });
+                return { success: false, message };
+              }
+
               set({
-                couponCode: response.data.couponCode,
-                discount: response.data.discount,
+                couponCode,
+                discount,
+                error: null,
                 isLoading: false,
               });
-              return { success: true, message: response.message };
+              return { success: true, message: response.message, discount, couponCode };
             }
+
+            const message = response.message || 'Invalid coupon';
+            set({ error: message, isLoading: false });
+            return { success: false, message };
           } catch (error) {
             const message = error.response?.data?.message || 'Invalid coupon';
             set({ error: message, isLoading: false });

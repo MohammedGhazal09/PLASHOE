@@ -66,6 +66,7 @@ export default function Checkout() {
     const result = await applyCoupon(couponInput);
     if (result.success) {
       toast.success(`Coupon applied! ${result.discount}% off`);
+      setCouponInput('');
     } else {
       toast.error(result.message || 'Invalid coupon');
     }
@@ -76,6 +77,12 @@ export default function Checkout() {
 
     if (items.length === 0) {
       toast.error('Your cart is empty');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error('Please log in to checkout');
+      navigate('/account', { state: { from: { pathname: '/checkout' } }, replace: true });
       return;
     }
 
@@ -92,9 +99,7 @@ export default function Checkout() {
 
     try {
       // Sync cart with backend first to ensure consistency
-      if (isAuthenticated) {
-        await syncCart();
-      }
+      await syncCart();
 
       // Prepare order data - backend uses server-side cart, we just send shipping info
       const orderData = {
@@ -111,21 +116,14 @@ export default function Checkout() {
         notes: undefined,
       };
 
-      if (isAuthenticated) {
-        // Submit to API
-        const response = await ordersApi.create(orderData);
-        if (response.success) {
-          clearCart();
-          toast.success('Order placed successfully!');
-          navigate('/account', { state: { tab: 'orders' } });
-        } else {
-          toast.error(response.message || 'Failed to place order');
-        }
-      } else {
-        // Mock order for guests
+      // Submit to API
+      const response = await ordersApi.create(orderData);
+      if (response.success) {
         clearCart();
-        toast.success('Order placed successfully! Create an account to track your orders.');
-        navigate('/');
+        toast.success('Order placed successfully!');
+        navigate('/account', { state: { tab: 'orders' } });
+      } else {
+        toast.error(response.message || 'Failed to place order');
       }
     } catch (error) {
       console.error('Checkout error:', error);
@@ -158,6 +156,8 @@ export default function Checkout() {
       </div>
     );
   }
+
+  const discountAmount = subtotal * discount / 100;
 
   return (
     <div className="min-h-screen py-10 px-[5%] lg:px-[10%]">
@@ -345,8 +345,8 @@ export default function Checkout() {
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount</span>
-                  <span>-${discount.toFixed(2)}</span>
+                  <span>Discount ({discount}% off)</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between">
