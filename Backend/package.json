@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "seed": "node utils/seedData.js"
+    "seed": "node utils/seedData.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,7 +19,16 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3"
   },
-  "keywords": ["ecommerce", "shoes", "api"],
+  "keywords": [
+    "ecommerce",
+    "shoes",
+    "api"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.8"
+  }
 }
