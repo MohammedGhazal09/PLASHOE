@@ -4,8 +4,10 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 
 let mongoServer;
 
-process.env.JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret";
-process.env.JWT_EXPIRE = process.env.JWT_EXPIRE || "7d";
+process.env.JWT_SECRET =
+  process.env.JWT_SECRET || "test-jwt-secret-with-at-least-32-characters";
+process.env.JWT_EXPIRE = process.env.JWT_EXPIRE || "1h";
+process.env.FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 process.env.NODE_ENV = "test";
 
 beforeAll(async () => {
