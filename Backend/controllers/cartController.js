@@ -257,11 +257,17 @@ export const removeCoupon = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id });
     
-    if (cart) {
-      cart.couponCode = undefined;
-      cart.discount = 0;
-      await cart.save();
+    if (!cart) {
+      return res.json({
+        success: true,
+        message: 'Coupon removed',
+        data: null
+      });
     }
+
+    cart.couponCode = undefined;
+    cart.discount = 0;
+    await cart.save();
 
     await cart.populate('items.product', 'name image price');
 
