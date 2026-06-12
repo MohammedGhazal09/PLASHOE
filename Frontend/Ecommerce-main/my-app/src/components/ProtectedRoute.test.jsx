@@ -3,22 +3,6 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import ProtectedRoute from './ProtectedRoute';
 
-jest.mock('react-router-dom', () => {
-  let currentPathname = '/';
-
-  return {
-    __esModule: true,
-    MemoryRouter: ({ initialEntries = ['/'], children }) => {
-      [currentPathname] = initialEntries;
-      return <>{children}</>;
-    },
-    Routes: ({ children }) => <>{children}</>,
-    Route: ({ path, element }) => (path === currentPathname ? element : null),
-    Navigate: ({ to }) => <h1>Redirected to {to}</h1>,
-    useLocation: () => ({ pathname: currentPathname }),
-  };
-}, { virtual: true });
-
 jest.mock('../api/authApi', () => ({
   authApi: {
     register: jest.fn(),
@@ -32,7 +16,10 @@ jest.mock('../api/authApi', () => ({
 
 const renderProtectedRoute = () =>
   render(
-    <MemoryRouter initialEntries={['/checkout']}>
+    <MemoryRouter
+      initialEntries={['/checkout']}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route
           path="/checkout"
@@ -61,7 +48,7 @@ beforeEach(() => {
 test('redirects unauthenticated users to the account route', () => {
   renderProtectedRoute();
 
-  expect(screen.getByRole('heading', { name: /redirected to \/account/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /account route/i })).toBeInTheDocument();
   expect(screen.queryByText(/protected checkout content/i)).not.toBeInTheDocument();
 });
 

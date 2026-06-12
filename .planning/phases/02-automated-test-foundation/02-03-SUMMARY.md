@@ -78,6 +78,10 @@ completed: 2026-06-12
 
 - ProtectedRoute could not import the real `MemoryRouter` from `react-router-dom` under CRA/Jest because the installed package cannot resolve its declared CommonJS entry point. The test still renders through a `MemoryRouter`-named harness and verifies the route guard behavior without introducing tooling changes.
 
+## Review Fix Addendum
+
+- The virtual router harness deviation was resolved in `02-REVIEW-FIX.md` by pinning `react-router-dom` to `^6.30.2` and updating route-oriented tests to use the real router package.
+
 ---
 
 **Total deviations:** 1 documented.

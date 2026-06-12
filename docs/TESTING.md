@@ -109,7 +109,7 @@ Frontend test files:
 | `Frontend/Ecommerce-main/my-app/src/pages/Checkout.test.jsx` | Coupon success/failure, order submission, empty cart, unauthenticated submit guard |
 | `Frontend/Ecommerce-main/my-app/src/pages/Contact.test.jsx` | Required-field validation, successful submit clear, failed submit preservation |
 
-Use Jest module mocks for API wrappers, toast calls, router behavior, and Leaflet. Do not require a live backend or browser map service for these tests.
+Use Jest module mocks for API wrappers, toast calls, and Leaflet. Route-oriented tests should use the real `react-router-dom` test routers. Do not require a live backend or browser map service for these tests.
 
 ## Static Contract Checker
 

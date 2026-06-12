@@ -1,25 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-jest.mock('react-router-dom', () => {
-  const React = require('react');
-
-  return {
-    __esModule: true,
-    BrowserRouter: ({ children }) => <div>{children}</div>,
-    Routes: ({ children }) => <>{children}</>,
-    Route: ({ path, element }) => (path === '/' ? element : null),
-    Outlet: () => <section>Featured PLASHOE storefront</section>,
-    Link: ({ to, children, ...props }) => (
-      <a href={to} {...props}>
-        {children}
-      </a>
-    ),
-    useLocation: () => ({ pathname: '/' }),
-    Navigate: ({ to }) => <div>Redirected to {to}</div>,
-  };
-}, { virtual: true });
-
 jest.mock('./api/authApi', () => ({
   authApi: {
     register: jest.fn(),

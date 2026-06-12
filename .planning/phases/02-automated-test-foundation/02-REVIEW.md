@@ -1,7 +1,8 @@
 ---
 phase: 02-automated-test-foundation
-status: findings
+status: resolved
 reviewed_at: "2026-06-12T13:15:00Z"
+resolved_at: "2026-06-12T13:30:00Z"
 reviewer: codex-inline
 files_reviewed: 31
 skills_used:
@@ -21,7 +22,7 @@ findings:
 
 ## Verdict
 
-Findings present. The automated test foundation mostly meets the Phase 2 acceptance criteria, but the backend app extraction introduced one runtime configuration regression that should be fixed before closing the phase as clean.
+Resolved. The original review found two issues; both are fixed in the Phase 02 review-fix pass. See `02-REVIEW-FIX.md` for implementation and verification evidence.
 
 ## Findings
 
