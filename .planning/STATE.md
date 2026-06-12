@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 04
-current_plan: None
-status: complete
-last_updated: "2026-06-12T15:55:00.000Z"
-last_activity: 2026-06-12 - Phase 04 complete; checkout data integrity and inventory verified.
+current_phase: 05
+current_plan: Not started
+status: planning
+last_updated: "2026-06-12T18:49:06.041Z"
+last_activity: 2026-06-12 - Phase 05 context gathered; approved Stripe production payment decisions captured.
 progress:
   total_phases: 8
   completed_phases: 4
@@ -17,15 +17,15 @@ progress:
 
 # Project State: PLASHOE
 
-**Current Phase:** 04
-**Status:** Phase 04 complete
-**Current Plan:** None
-**Next recommended run:** `$gsd-verify-work 4`
-**Last Activity:** 2026-06-12 - Phase 04 complete; checkout data integrity and inventory verified.
+**Current Phase:** 05
+**Status:** Ready to plan
+**Current Plan:** Not started
+**Next recommended run:** `$gsd-plan-phase 5`
+**Last Activity:** 2026-06-12 - Phase 05 context gathered; approved Stripe production payment decisions captured.
 
 ## Current Focus
 
-Verify Phase 4: Checkout Data Integrity and Inventory, then prepare Phase 5 production payments.
+Plan Phase 5: Production Payments.
 
 ## Accumulated Context
 
@@ -39,6 +39,7 @@ Verify Phase 4: Checkout Data Integrity and Inventory, then prepare Phase 5 prod
 - 2026-06-12: Completed Phase 3 with backend audit clean, frontend CRA tooling audit risk registered, frontend auth persistence moved to sessionStorage, and MapTiler fallback removed.
 - 2026-06-12: Planned Phase 4 into transactional/idempotent checkout, inventory/coupon/cancellation consistency, frontend cart normalization, and final docs/verification.
 - 2026-06-12: Completed Phase 4 with transactional checkout, idempotency, stock/coupon/cancellation consistency, normalized cart state, updated docs, and full backend/frontend/build/static verification.
+- 2026-06-12: Captured Phase 5 production payment context with approved Stripe Checkout, webhook, payment-state, frontend return, config, docs, and deterministic test decisions.
 
 ### Decisions
 
@@ -50,6 +51,6 @@ Verify Phase 4: Checkout Data Integrity and Inventory, then prepare Phase 5 prod
 ### Known Open Risks
 
 - `Backend/.env.example` remains untracked local work and was not modified by this roadmap setup.
-- Real payment provider choice is deferred to Phase 5 planning.
+- Stripe production payment integration remains unimplemented until Phase 5 execution.
 - Dependency upgrade path may require frontend build-tool migration if Create React App constraints block clean remediation.
 - Frontend `npm audit --omit=dev` remains non-clean due CRA build/test/tooling findings accepted in `03-SECURITY-RISK-REGISTER.md`.
