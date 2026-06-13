@@ -66,7 +66,7 @@ JWT_SECRET=<32-plus-character-random-secret>
 JWT_EXPIRE=1h
 FRONTEND_URL=http://localhost:3000
 PORT=5000
-PAYMENTS_ENABLED=true
+PAYMENTS_ENABLED=false
 STRIPE_SECRET_KEY=<stripe-secret-key-from-dashboard>
 STRIPE_WEBHOOK_SECRET=<stripe-webhook-signing-secret>
 PAYMENT_SUCCESS_URL=http://localhost:3000/checkout/success
@@ -96,7 +96,8 @@ Create React App only exposes custom browser variables that start with `REACT_AP
 
 - Backend startup validation is implemented in `Backend/config/env.js` and is called from `Backend/server.js` before `connectDB()` and `app.listen(...)`.
 - `MONGO_URI`, `JWT_SECRET`, and `FRONTEND_URL` are required for backend startup.
-- `PAYMENTS_ENABLED` defaults to enabled outside tests. Set it to exactly `false` for local backend work that intentionally avoids payment setup.
+- Template placeholders such as `<mongodb-connection-string>` and `<32-plus-character-random-secret>` are rejected outside tests. Replace all placeholder values before running a hosted environment.
+- `PAYMENTS_ENABLED` defaults to enabled outside tests when unset. The local template sets it to `false` so developers can start without Stripe setup; set it to `true` only after adding real Stripe secrets and return URLs.
 - When payments are enabled, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENT_SUCCESS_URL`, and `PAYMENT_CANCEL_URL` are required and validated at startup.
 - `JWT_SECRET` must be at least 32 characters, JWT verification allows HS256 only, and the default token lifetime is `1h`.
 - `PORT` and `JWT_EXPIRE` are optional but validated when present.

@@ -30,6 +30,7 @@ Configure the backend host as a Node app rooted at `Backend`.
 | --- | --- |
 | Install command | `npm ci` |
 | Start command | `npm start` |
+| Runtime | Current Node.js LTS |
 | Health check | `GET /api/health` |
 | Readiness check | `GET /api/ready` |
 

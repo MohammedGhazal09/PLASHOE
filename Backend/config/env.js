@@ -1,6 +1,8 @@
 import { JWT_SECURITY } from './security.js';
 
 const DURATION_PATTERN = /^\d+\s*(ms|s|m|h|d|w|y)?$/i;
+const TEMPLATE_PLACEHOLDER_PATTERN =
+  /^<[^>]+>$|(?:^|[-_\s])(replace(?:[-_\s]?me)?|change(?:[-_\s]?me)?|placeholder|example)(?:[-_\s]|$)|^your[-_\s]/i;
 
 const getTrimmed = (env, key) => {
   const value = env[key];
@@ -51,6 +53,16 @@ const parsePaymentsEnabled = (env) => {
   return raw.toLowerCase() !== 'false';
 };
 
+const rejectTemplatePlaceholder = (value, key, env, errors) => {
+  if (env.NODE_ENV === 'test' || !value) {
+    return;
+  }
+
+  if (TEMPLATE_PLACEHOLDER_PATTERN.test(value)) {
+    errors.push(`${key} must be replaced with a real value, not a template placeholder`);
+  }
+};
+
 export const validateRuntimeEnv = (env = process.env) => {
   const errors = [];
   const mongoUri = getTrimmed(env, 'MONGO_URI');
@@ -66,12 +78,16 @@ export const validateRuntimeEnv = (env = process.env) => {
 
   if (!mongoUri) {
     errors.push('MONGO_URI is required');
+  } else {
+    rejectTemplatePlaceholder(mongoUri, 'MONGO_URI', env, errors);
   }
 
   if (!jwtSecret) {
     errors.push('JWT_SECRET is required');
   } else if (jwtSecret.length < JWT_SECURITY.minSecretLength) {
     errors.push(`JWT_SECRET must be at least ${JWT_SECURITY.minSecretLength} characters`);
+  } else {
+    rejectTemplatePlaceholder(jwtSecret, 'JWT_SECRET', env, errors);
   }
 
   let normalizedFrontendUrl = frontendUrl;
@@ -93,10 +109,14 @@ export const validateRuntimeEnv = (env = process.env) => {
   if (paymentsEnabled) {
     if (!stripeSecretKey) {
       errors.push('STRIPE_SECRET_KEY is required when payments are enabled');
+    } else {
+      rejectTemplatePlaceholder(stripeSecretKey, 'STRIPE_SECRET_KEY', env, errors);
     }
 
     if (!stripeWebhookSecret) {
       errors.push('STRIPE_WEBHOOK_SECRET is required when payments are enabled');
+    } else {
+      rejectTemplatePlaceholder(stripeWebhookSecret, 'STRIPE_WEBHOOK_SECRET', env, errors);
     }
 
     if (!paymentSuccessUrl) {

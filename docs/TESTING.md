@@ -252,7 +252,7 @@ The CI jobs run the same local gates documented above:
 6. Run the retained static checker with `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs`.
 7. Run the audit policy script with `node scripts/ci/check-audits.mjs`.
 
-The workflow preserves the Phase 08 locked Node 20 runtime. Node 20 is now EOL as of the 2026 research pass, so the recommendation is to upgrade the CI runtime to Node 22 or Node 24 in a follow-up spec update rather than changing the locked Phase 08 acceptance criteria during execution.
+The workflow uses `actions/setup-node` with `node-version: lts/*`, which resolves to the current Node.js LTS release on GitHub-hosted runners. This replaces the earlier pinned EOL runtime.
 
 ## Audit Policy
 
@@ -260,7 +260,7 @@ The workflow preserves the Phase 08 locked Node 20 runtime. Node 20 is now EOL a
 
 Backend production findings are blocking unless a future accepted-risk entry explicitly allows them. The current expected backend production audit status is clean.
 
-Frontend audit output remains visible. The script accepts only the Create React App/react-scripts build, test, and dev-server tooling family already documented in `.planning/phases/03-api-security-and-validation/03-SECURITY-RISK-REGISTER.md`. New frontend findings outside that accepted tooling family fail the gate or require a risk-register update.
+Frontend audit output remains visible. The script accepts only the Create React App/react-scripts build, test, and dev-server tooling family already documented in `.planning/phases/03-api-security-and-validation/03-SECURITY-RISK-REGISTER.md`. Acceptance is checked against the frontend lockfile graph, so direct runtime dependencies with the same package names as old CRA findings still fail the gate. New frontend findings outside that accepted tooling family fail the gate or require a risk-register update.
 
 The accepted frontend tooling debt is not fixed by Phase 08. It remains deferred to the frontend tooling migration track; production hosting must deploy the static `npm run build` output and must not expose `react-scripts start` or `webpack-dev-server`.
 
