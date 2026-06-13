@@ -1,15 +1,24 @@
 ---
 phase: 09-production-launch-setup-and-staging-verification
-status: incomplete
+status: blocked
 updated: 2026-06-13
 evidence_policy: redacted
 ---
 
 # Phase 09 User Setup
 
-Status: Incomplete until all required hosted evidence rows are complete.
+Status: Blocked until all required hosted evidence rows are complete.
 
 This file records staging setup evidence without secrets. Public origins may be written when they are safe to share. Dashboard IDs, account IDs, connection strings, API keys, webhook signing secrets, JWT secrets, bearer tokens, raw webhook payloads, and real `.env` files must not be pasted here.
+
+## Execution Notes
+
+- 2026-06-13: Plan 09-02 local pre-deploy gates passed: backend tests, frontend tests, frontend build, static contract checker, and audit policy.
+- 2026-06-13: Hosted backend smoke is blocked because `<staging-backend-origin>` and staging MongoDB isolation proof are not recorded.
+- 2026-06-13: Hosted frontend smoke is blocked because `<staging-frontend-origin>`, staging API URL wiring proof, staging account setup, and MapTiler decision are not recorded.
+- 2026-06-13: Plan 09-03 Stripe proof is blocked because Stripe test-mode endpoint, event selection, host secret storage, and delivery evidence are not recorded.
+
+Recommendation: fill only safe public origins and redacted provider labels here, keep all secret values in host/dashboard secret managers, then rerun Phase 09 verification.
 
 ## Staging Topology
 
@@ -20,8 +29,8 @@ This file records staging setup evidence without secrets. Public origins may be 
 | Backend install command | `npm ci` | `npm ci` | configured-redacted | Matches `docs/DEPLOYMENT.md`. |
 | Backend start command | `npm start` | `npm start` | configured-redacted | Runs `Backend/server.js`. |
 | Backend origin | Public staging backend origin | `<staging-backend-origin>` | blocked | Required before hosted `/api/health`, `/api/ready`, request-id, and Stripe webhook checks. |
-| Backend health path | `/api/health` | `<staging-backend-origin>/api/health` | pending | Fill after backend origin exists. |
-| Backend readiness path | `/api/ready` | `<staging-backend-origin>/api/ready` | pending | Must prove MongoDB connected readiness. |
+| Backend health path | `/api/health` | `<staging-backend-origin>/api/health` | blocked | Fill after backend origin exists. |
+| Backend readiness path | `/api/ready` | `<staging-backend-origin>/api/ready` | blocked | Must prove MongoDB connected readiness. |
 | Frontend provider | Static frontend host | `<frontend-provider-label>` | blocked | User must create or identify the staging frontend host. |
 | Frontend app root | `Frontend/Ecommerce-main/my-app` | `Frontend/Ecommerce-main/my-app` | configured-redacted | Source-controlled app root, not a secret. |
 | Frontend build command | `npm run build` | `npm run build` | configured-redacted | Create React App static build. |
@@ -80,7 +89,7 @@ Create React App embeds `REACT_APP_*` values into the static bundle at build tim
 | Database or cluster label | Redacted staging database/cluster label | blocked | Must prove this is not production data. |
 | Credential boundary | Separate staging user, credential, project, cluster, or database boundary | blocked | Record boundary type only. |
 | Production data exclusion | Confirmation that checkout/payment smoke uses disposable staging data | blocked | Required before hosted payment proof. |
-| Runtime proof | Hosted `/api/ready` returns `ready: true` and MongoDB `connected` | pending | Filled by Plan 09-02 after backend origin exists. |
+| Runtime proof | Hosted `/api/ready` returns `ready: true` and MongoDB `connected` | blocked | Filled by Plan 09-02 after backend origin exists. |
 
 ## Stripe Test-Mode Setup
 
@@ -104,7 +113,7 @@ Create React App embeds `REACT_APP_*` values into the static bundle at build tim
 | Decision | Evidence | Status | Notes |
 | --- | --- | --- | --- |
 | Domain-restricted public key enabled | Key restricted to staging/frontend origins in MapTiler dashboard | blocked | Record dashboard status without key value. |
-| Fallback-only accepted | Contact map uses OpenStreetMap fallback because no key is configured | pending | Acceptable for staging only if explicitly approved. |
+| Fallback-only accepted | Contact map uses OpenStreetMap fallback because no key is configured | blocked | Acceptable for staging only if explicitly approved. |
 
 ## Public Content Placeholders
 
@@ -126,4 +135,3 @@ Create React App embeds `REACT_APP_*` values into the static bundle at build tim
 | User | Staging MongoDB isolation evidence is not recorded | Configure staging MongoDB boundary and provide redacted labels. | No readiness/payment proof. |
 | User | Stripe test-mode endpoint and host secrets are not recorded | Configure Stripe test-mode endpoint/events and backend host secrets. | No Stripe proof. |
 | User | MapTiler decision is not recorded | Restrict public key to staging/frontend domains or approve fallback-only. | Frontend map evidence remains pending. |
-
