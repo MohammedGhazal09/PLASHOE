@@ -116,6 +116,27 @@ PowerShell equivalent:
 Invoke-RestMethod http://localhost:5000/api/health
 ```
 
+Check backend dependency readiness after MongoDB is configured:
+
+```bash
+curl http://localhost:5000/api/ready
+```
+
+Expected ready response:
+
+```json
+{
+  "status": "ready",
+  "ready": true,
+  "dependencies": {
+    "mongodb": {
+      "status": "ready",
+      "state": "connected"
+    }
+  }
+}
+```
+
 With the frontend running, open the React app:
 
 ```text
@@ -135,5 +156,6 @@ The storefront should load product browsing routes such as `/`, `/men`, `/women`
 ## Next Steps
 
 - Read [CONFIGURATION.md](CONFIGURATION.md) for the full runtime variable list and defaults.
+- Read [DEPLOYMENT.md](DEPLOYMENT.md) before preparing a hosted release.
 - Read [ARCHITECTURE.md](ARCHITECTURE.md) for how the React app, API clients, Express routes, controllers, and Mongoose models fit together.
 - Read the root [README.md](../README.md) for command summaries, API route overview, and project structure.

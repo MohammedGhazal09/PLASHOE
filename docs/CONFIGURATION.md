@@ -6,7 +6,7 @@ PLASHOE is configured through environment variables in two nested apps:
 - Backend: `Backend`, loaded with `dotenv` from `Backend/server.js` and `Backend/utils/seedData.js`.
 - Frontend: `Frontend/Ecommerce-main/my-app`, read by Create React App through `REACT_APP_*` variables and centralized in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
 
-Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Frontend/Ecommerce-main/my-app/.env.example` files are currently identical and list the frontend template values, so backend variables below are documented from backend source references.
+Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Frontend/Ecommerce-main/my-app/.env.example` files are app-specific templates: backend secrets and runtime values belong only in the backend template, and public browser build-time values belong only in the frontend template.
 
 ## Environment Variables
 
@@ -61,14 +61,14 @@ Frontend/Ecommerce-main/my-app/.env
 Backend `.env` format:
 
 ```bash
-MONGO_URI=mongodb://localhost:27017/plashoe
-JWT_SECRET=replace-with-a-long-random-secret-at-least-32-characters
+MONGO_URI=<mongodb-connection-string>
+JWT_SECRET=<32-plus-character-random-secret>
 JWT_EXPIRE=1h
 FRONTEND_URL=http://localhost:3000
 PORT=5000
 PAYMENTS_ENABLED=true
-STRIPE_SECRET_KEY=stripe_secret_key_placeholder
-STRIPE_WEBHOOK_SECRET=stripe_webhook_secret_placeholder
+STRIPE_SECRET_KEY=<stripe-secret-key-from-dashboard>
+STRIPE_WEBHOOK_SECRET=<stripe-webhook-signing-secret>
 PAYMENT_SUCCESS_URL=http://localhost:3000/checkout/success
 PAYMENT_CANCEL_URL=http://localhost:3000/checkout/cancel
 ```
@@ -79,8 +79,9 @@ Frontend `.env` format:
 REACT_APP_API_URL=http://localhost:5000/api
 REACT_APP_NAME=PLASHOE
 REACT_APP_DESCRIPTION=Sustainable Footwear for a Better Tomorrow
+PUBLIC_URL=/
 REACT_APP_UNSPLASH_BASE_URL=https://images.unsplash.com
-REACT_APP_MAPTILER_API_KEY=replace-with-your-maptiler-key
+REACT_APP_MAPTILER_API_KEY=<public-maptiler-browser-key>
 REACT_APP_MAP_CENTER_LAT=24.7136
 REACT_APP_MAP_CENTER_LNG=46.6753
 REACT_APP_MAP_ZOOM=14
@@ -139,3 +140,5 @@ No `.env.development`, `.env.production`, or `.env.test` files are checked in. U
 - Production backend: configure `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRE`, `FRONTEND_URL`, and `PORT` in the backend host secret/config manager. <!-- VERIFY: production backend environment is configured in the hosting platform -->
 - Production payment setup: configure backend-only Stripe secret variables and public frontend return URLs in the backend host secret/config manager. Create a Stripe webhook endpoint that points to `/api/webhooks/stripe`. <!-- VERIFY: production Stripe endpoint and return URLs are configured -->
 - Production frontend: configure `REACT_APP_API_URL` and any public display, map, social, company, and feature-flag values before running `npm run build`. If MapTiler tiles are used, set `REACT_APP_MAPTILER_API_KEY` to a domain-restricted public key. <!-- VERIFY: production frontend build environment is configured in the hosting platform -->
+
+For release preparation and smoke checks, follow [DEPLOYMENT.md](DEPLOYMENT.md).
