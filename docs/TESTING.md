@@ -21,7 +21,7 @@ PLASHOE now has local automated coverage for the stabilized purchase-path, Phase
 | Frontend build | Configured through `react-scripts build` | `Frontend/Ecommerce-main/my-app/package.json` |
 | Production dependency audits | Run manually through `npm audit --omit=dev` in each nested app | `Backend/package-lock.json`, `Frontend/Ecommerce-main/my-app/package-lock.json` |
 | Static contract checker | Retained as a root command | `.planning/spikes/001-core-flow-contract-check/check-contracts.mjs` |
-| CI test execution | Not configured | No CI workflow is currently documented as present |
+| CI test execution | Configured through GitHub Actions | `.github/workflows/ci.yml` |
 | Coverage threshold | Not configured | No Jest/Vitest coverage threshold is configured |
 
 ## Commands
@@ -108,6 +108,12 @@ Run frontend production dependency audit:
 ```bash
 cd Frontend/Ecommerce-main/my-app
 npm audit --omit=dev
+```
+
+Run the Phase 08 audit policy gate from the repository root:
+
+```bash
+node scripts/ci/check-audits.mjs
 ```
 
 Run the retained static contract checker from the repository root:
@@ -234,16 +240,28 @@ Do not add hard coverage thresholds in Phase 4. Add thresholds only after the pr
 
 ## CI Integration
 
-No CI workflow is currently present. The local commands above are the source of truth for Phase 4 verification.
+GitHub Actions is configured in `.github/workflows/ci.yml` and runs on `pull_request` and `push` to `main`. The workflow uses minimal repository permissions, cancels duplicate in-progress runs for the same ref, and keeps backend, frontend, static contract, and audit policy checks in separate jobs so failures are localized.
 
-Recommended future CI shape after this phase:
+The CI jobs run the same local gates documented above:
 
-1. Install backend dependencies in `Backend`.
-2. Run `npm test`.
-3. Install frontend dependencies in `Frontend/Ecommerce-main/my-app`.
-4. Run `npm test -- --watchAll=false`.
-5. Run `npm run build`.
-6. Run `npm audit --omit=dev` in both nested apps and fail or require an accepted-risk entry for non-clean output.
-7. Run `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` from the repository root.
+1. Install backend dependencies in `Backend` with `npm ci`.
+2. Run backend tests with `npm test`.
+3. Install frontend dependencies in `Frontend/Ecommerce-main/my-app` with `npm ci`.
+4. Run frontend tests with `npm test -- --watchAll=false`.
+5. Run the frontend production build with `npm run build`.
+6. Run the retained static checker with `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs`.
+7. Run the audit policy script with `node scripts/ci/check-audits.mjs`.
 
-Keep production payment, inventory, admin fulfillment, browser E2E, and frontend tooling migration work in their planned later phases.
+The workflow preserves the Phase 08 locked Node 20 runtime. Node 20 is now EOL as of the 2026 research pass, so the recommendation is to upgrade the CI runtime to Node 22 or Node 24 in a follow-up spec update rather than changing the locked Phase 08 acceptance criteria during execution.
+
+## Audit Policy
+
+`scripts/ci/check-audits.mjs` runs `npm audit --omit=dev --json` in both nested apps and applies the Phase 03 accepted-risk boundary.
+
+Backend production findings are blocking unless a future accepted-risk entry explicitly allows them. The current expected backend production audit status is clean.
+
+Frontend audit output remains visible. The script accepts only the Create React App/react-scripts build, test, and dev-server tooling family already documented in `.planning/phases/03-api-security-and-validation/03-SECURITY-RISK-REGISTER.md`. New frontend findings outside that accepted tooling family fail the gate or require a risk-register update.
+
+The accepted frontend tooling debt is not fixed by Phase 08. It remains deferred to the frontend tooling migration track; production hosting must deploy the static `npm run build` output and must not expose `react-scripts start` or `webpack-dev-server`.
+
+Keep production payment, inventory, admin fulfillment, browser E2E, Lighthouse, ZAP, hard coverage thresholds, and frontend tooling migration work in their planned later phases.
