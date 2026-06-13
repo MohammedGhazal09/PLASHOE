@@ -110,5 +110,4 @@ Phase 09 is not passed until every required local gate and hosted staging check 
 
 ## Status Rule
 
-Set frontmatter `status: passed` only when no required row is `failed`, `blocked`, or `pending`. Until then, keep `status: pending` or `status: blocked` and list exact blockers.
-
+Set the frontmatter status to passed only when no required row is `failed`, `blocked`, or `pending`. Until then, keep the frontmatter status pending or blocked and list exact blockers.
