@@ -2,6 +2,7 @@ import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import app from "../app.js";
 import { handleApplicationErrors } from "../middleware/security.js";
+import { redact, serializeError } from "../utils/logger.js";
 
 const rateLimitHeader = "X-Rate-Limit-Test";
 
@@ -82,12 +83,56 @@ describe("security middleware", () => {
     const json = vi.fn();
     const res = { status, json };
 
-    handleApplicationErrors(new Error("MongoServerError: raw database detail"), {}, res);
+    handleApplicationErrors(
+      new Error("MongoServerError: raw database detail"),
+      { requestId: "req-error-direct" },
+      res
+    );
 
     expect(status).toHaveBeenCalledWith(500);
     expect(json).toHaveBeenCalledWith({
       success: false,
       message: "Server Error",
+      requestId: "req-error-direct",
+    });
+  });
+
+  it("redacts sensitive values from structured metadata", () => {
+    const redacted = redact({
+      authorization: "Bearer abc.def.ghi",
+      password: "plain-password",
+      jwtSecret: "jwt-secret-with-at-least-32-characters",
+      stripeSecret: "sk_test_123456789",
+      webhookPayload: { id: "evt_123" },
+      mongoUri: "mongodb+srv://user:pass@example.mongodb.net/plashoe",
+      nested: {
+        note: "Bearer abc.def.ghi",
+      },
+    });
+
+    expect(redacted).toEqual({
+      authorization: "[REDACTED]",
+      password: "[REDACTED]",
+      jwtSecret: "[REDACTED]",
+      stripeSecret: "[REDACTED]",
+      webhookPayload: "[REDACTED]",
+      mongoUri: "[REDACTED]",
+      nested: {
+        note: "[REDACTED]",
+      },
+    });
+  });
+
+  it("serializes errors without stacks or secret-looking values", () => {
+    const error = new Error("Failed mongodb+srv://user:pass@example.mongodb.net/plashoe");
+    error.code = "MONGO_FAIL";
+    error.status = 503;
+
+    expect(serializeError(error)).toEqual({
+      name: "Error",
+      message: "Failed [REDACTED]",
+      code: "MONGO_FAIL",
+      status: 503,
     });
   });
 });

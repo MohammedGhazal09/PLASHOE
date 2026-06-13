@@ -3,6 +3,8 @@
 
 PLASHOE exposes a JSON HTTP API from the Express backend in `Backend/server.js`. All mounted routes use the `/api` prefix, and the frontend axios instance in `Frontend/Ecommerce-main/my-app/src/api/axios.js` is configured with `config.api.baseUrl`, which defaults to `http://localhost:5000/api` in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
 
+Every backend response includes an `X-Request-Id` response header. Clients may send a safe `X-Request-Id` value for correlation; otherwise the backend generates one. Error responses handled by the application error middleware include the same `requestId` in the JSON body so support can connect a user-visible failure to structured logs.
+
 ## Authentication
 
 Authentication uses JWT bearer tokens. `POST /api/auth/register` and `POST /api/auth/login` return a token at `data.token`. Protected requests must include:
@@ -19,7 +21,8 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 
 | Method | Path | Description | Auth Required | Frontend Wrapper |
 | --- | --- | --- | --- | --- |
-| GET | `/api/health` | Health check for the backend process. | No | None |
+| GET | `/api/health` | Cheap liveness check for the backend process. It does not prove MongoDB-backed routes are ready. | No | None |
+| GET | `/api/ready` | Dependency readiness check. Returns `200` when MongoDB is connected and `503` with sanitized diagnostics when not ready. | No | None |
 | POST | `/api/auth/register` | Create a user and return the user profile plus JWT. | No | `authApi.register(name, email, password)` |
 | POST | `/api/auth/login` | Authenticate a user and return the user profile plus JWT. | No | `authApi.login(email, password)` |
 | GET | `/api/auth/me` | Return the current authenticated user document. | Bearer JWT | `authApi.getMe()` |
@@ -58,6 +61,51 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | DELETE | `/api/contact/:id` | Delete one contact message. | Admin bearer JWT | None |
 
 ## Request Formats
+
+### Operational Checks
+
+`GET /api/health`
+
+```json
+{
+  "status": "ok",
+  "message": "PLASHOE API is running"
+}
+```
+
+`GET /api/ready`
+
+Ready response:
+
+```json
+{
+  "status": "ready",
+  "ready": true,
+  "dependencies": {
+    "mongodb": {
+      "status": "ready",
+      "state": "connected"
+    }
+  }
+}
+```
+
+Not-ready response:
+
+```json
+{
+  "status": "not_ready",
+  "ready": false,
+  "dependencies": {
+    "mongodb": {
+      "status": "not_ready",
+      "state": "disconnected"
+    }
+  }
+}
+```
+
+Readiness diagnostics are intentionally sanitized and do not expose hostnames, connection strings, secrets, tokens, passwords, raw webhook payloads, or stack traces.
 
 ### Auth
 
@@ -405,12 +453,13 @@ Delete and state-change responses may return only a message:
 }
 ```
 
-Error responses use `success: false` and a message:
+Error responses use `success: false` and a message. Application errors also include the request id that matches the `X-Request-Id` response header:
 
 ```json
 {
   "success": false,
-  "message": "Not authorized, no token"
+  "message": "Server Error",
+  "requestId": "8f6de0a2-0d89-4c36-9138-b248f0cdb3bd"
 }
 ```
 

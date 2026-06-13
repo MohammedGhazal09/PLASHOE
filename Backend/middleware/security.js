@@ -2,6 +2,7 @@ import express from 'express';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import helmet from 'helmet';
 import { JSON_BODY_LIMITS, RATE_LIMITS } from '../config/security.js';
+import { logError, serializeError } from '../utils/logger.js';
 
 const TEST_RATE_LIMIT_HEADER = 'x-rate-limit-test';
 
@@ -78,14 +79,20 @@ export const handleSecurityErrors = (err, req, res, next) => {
 export const handleApplicationErrors = (err, req, res, next) => {
   const status = err?.status || err?.statusCode || 500;
 
-  if (status >= 500) {
-    console.error(err?.stack || err);
-  }
+  logError('application-error', {
+    requestId: req?.requestId,
+    status,
+    error: serializeError(err),
+  });
 
   const payload = {
     success: false,
     message: status >= 500 && !err?.expose ? 'Server Error' : err?.message || 'Server Error',
   };
+
+  if (req?.requestId) {
+    payload.requestId = req.requestId;
+  }
 
   if (Array.isArray(err?.errors) && err.errors.length > 0 && (status < 500 || err?.expose)) {
     payload.errors = err.errors;

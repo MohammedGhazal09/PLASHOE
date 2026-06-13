@@ -8,6 +8,7 @@ import orderRoutes from "./routes/orderRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import { requestContext } from "./middleware/requestContext.js";
 import {
   apiLimiter,
   defaultJsonParser,
@@ -16,6 +17,8 @@ import {
   securityHeaders,
   strictJsonParser,
 } from "./middleware/security.js";
+import { logWarn } from "./utils/logger.js";
+import * as readiness from "./utils/readiness.js";
 
 dotenv.config(
   process.env.DOTENV_CONFIG_PATH ? { path: process.env.DOTENV_CONFIG_PATH } : undefined
@@ -28,6 +31,7 @@ const corsOptions = {
   credentials: true,
 };
 
+app.use(requestContext);
 app.use(securityHeaders);
 app.use(cors(corsOptions));
 app.use("/api/webhooks", express.raw({ type: "application/json" }), webhookRoutes);
@@ -44,6 +48,19 @@ app.use("/api/contact", strictJsonParser, contactRoutes);
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "PLASHOE API is running" });
 });
+app.get("/api/ready", (req, res) => {
+  const status = readiness.getReadinessStatus();
+
+  if (!status.ready) {
+    logWarn("readiness-check-failed", {
+      requestId: req.requestId,
+      mongodbState: status.dependencies.mongodb.state,
+    });
+  }
+
+  res.status(status.ready ? 200 : 503).json(status);
+});
+
 
 app.use(handleSecurityErrors);
 

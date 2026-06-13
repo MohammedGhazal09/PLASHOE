@@ -2,15 +2,41 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import { validateRuntimeEnv } from "./config/env.js";
 import app from "./app.js";
+import { logError, logInfo, serializeError } from "./utils/logger.js";
 
 dotenv.config(
   process.env.DOTENV_CONFIG_PATH ? { path: process.env.DOTENV_CONFIG_PATH } : undefined
 );
 
-const config = validateRuntimeEnv(process.env);
+export const startServer = async () => {
+  let config;
 
-connectDB();
+  try {
+    config = validateRuntimeEnv(process.env);
+    logInfo("runtime-config-validated", {
+      environment: process.env.NODE_ENV || "development",
+      paymentsEnabled: config.paymentsEnabled,
+    });
+  } catch (error) {
+    logError("runtime-config-validation-failed", {
+      environment: process.env.NODE_ENV || "development",
+      error: serializeError(error),
+    });
+    throw error;
+  }
 
-app.listen(config.port, () => {
-  console.log(`Server running on port ${config.port}`);
-});
+  await connectDB();
+
+  return app.listen(config.port, () => {
+    logInfo("server-listening", {
+      port: config.port,
+      environment: process.env.NODE_ENV || "development",
+    });
+  });
+};
+
+if (process.env.NODE_ENV !== "test") {
+  startServer().catch(() => {
+    process.exitCode = 1;
+  });
+}
