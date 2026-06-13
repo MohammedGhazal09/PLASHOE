@@ -115,8 +115,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="font-semibold">Address</h4>
-                  <p className="text-gray-500">King Fahd Road, Al Olaya District</p>
-                  <p className="text-gray-500">Riyadh, Saudi Arabia 12212</p>
+                  <p className="text-gray-500">{config.company.address}</p>
                 </div>
               </div>
 
@@ -126,7 +125,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="font-semibold">Phone</h4>
-                  <p className="text-gray-500">+1 (555) 123-4567</p>
+                  <p className="text-gray-500">{config.company.phone}</p>
                 </div>
               </div>
 
@@ -136,7 +135,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="font-semibold">Email</h4>
-                  <p className="text-gray-500">support@plashoe.com</p>
+                  <p className="text-gray-500">{config.company.email}</p>
                 </div>
               </div>
 

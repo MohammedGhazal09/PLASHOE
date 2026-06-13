@@ -1,5 +1,5 @@
 ---
-status: issues_found
+status: resolved
 phase: 09
 phase_name: production-launch-setup-and-staging-verification
 depth: standard
@@ -10,6 +10,7 @@ finding_counts:
   info: 0
   total: 1
 reviewed_at: 2026-06-14
+resolved_at: 2026-06-13T21:20:55Z
 reviewer: codex-inline
 subagents_used: false
 skills_used:
@@ -22,6 +23,8 @@ skills_used:
 ---
 
 # Phase 09 Code Review
+
+Resolved. The original review found one warning; it is fixed in the Phase 09 review-fix pass. See `09-REVIEW-FIX.md` for implementation and verification evidence.
 
 Reviewed Phase 09 inline because repository instructions forbid subagents. Scope was resolved from the Phase 09 summary artifacts, excluding `.planning` artifacts, state files, review summaries, verification artifacts, plans, and lockfiles.
 
@@ -49,6 +52,8 @@ Recommendation: keep these local skills for future Phase 9 review/fix loops; no 
 
 Severity: Warning
 
+Resolution: Fixed in `09-REVIEW-FIX.md`; original review evidence is retained below for traceability.
+
 Files:
 
 - `docs/CONFIGURATION.md:44`
@@ -63,7 +68,7 @@ Evidence:
 - `docs/CONFIGURATION.md` says `REACT_APP_COMPANY_EMAIL`, `REACT_APP_COMPANY_PHONE`, and `REACT_APP_COMPANY_ADDRESS` are company contact values shown by the frontend.
 - `Frontend/Ecommerce-main/my-app/.env.example` gives deployers the same company values to override before hosted builds.
 - `Frontend/Ecommerce-main/my-app/src/pages/Contact.jsx:117-140` still renders hardcoded contact details: `King Fahd Road, Al Olaya District`, `Riyadh, Saudi Arabia 12212`, `+1 (555) 123-4567`, and `support@plashoe.com`.
-- `rg` found `config.company` definitions in `src/config/config.js`, but no component usage of `config.company.*`.
+- At review time, `rg` found `config.company` definitions in `src/config/config.js`, but no component usage of `config.company.*`.
 
 Impact: Phase 09 public-config evidence can be false-positive. A deployer can set and verify `REACT_APP_COMPANY_*` values, but the actual Contact page can still show stale or contradictory public contact details. This matters for launch because Phase 09 explicitly tracks public social/contact/company values as either final or staging placeholders.
 
@@ -92,4 +97,4 @@ Recommendation: wire `Contact.jsx` to `config.company.email`, `config.company.ph
 
 ## Verdict
 
-Phase 09 is not review-clean yet. The launch evidence and secret-handling docs are generally sound, but public company contact configuration is not fully wired to the frontend UI. My recommendation is to fix `Contact.jsx` to render `config.company` values before treating Phase 09 public config proof as reliable.
+Phase 09 code review findings are resolved. The broader Phase 09 launch status remains blocked on external staging and Stripe evidence, as recorded in `09-VERIFICATION.md`.

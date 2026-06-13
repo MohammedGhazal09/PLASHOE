@@ -48,6 +48,24 @@ jest.mock('react-hot-toast', () => ({
   error: jest.fn(),
 }));
 
+jest.mock('../config/config', () => ({
+  config: {
+    map: {
+      apiKey: '',
+      center: {
+        lat: 24.7136,
+        lng: 46.6753,
+      },
+      zoom: 14,
+    },
+    company: {
+      address: 'Launch Suite, Verification Tower',
+      phone: '+966-555-0101',
+      email: 'launch@plashoe.test',
+    },
+  },
+}));
+
 jest.mock('../api/contactApi', () => ({
   contactApi: {
     submit: jest.fn(),
@@ -97,6 +115,14 @@ test('uses OpenStreetMap tiles when no MapTiler key is configured', () => {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: expect.stringContaining('OpenStreetMap'),
   });
+});
+
+test('renders public company contact details from config', () => {
+  render(<Contact />);
+
+  expect(screen.getByText('Launch Suite, Verification Tower')).toBeInTheDocument();
+  expect(screen.getByText('+966-555-0101')).toBeInTheDocument();
+  expect(screen.getByText('launch@plashoe.test')).toBeInTheDocument();
 });
 
 test('submits contact details and clears fields on success', async () => {
