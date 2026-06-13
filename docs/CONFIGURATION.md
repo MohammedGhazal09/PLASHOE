@@ -29,7 +29,7 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
-| `REACT_APP_API_URL` | Optional | `http://localhost:5000/api` | Backend API base URL used by frontend API calls. Set this to the deployed backend API base URL for production. <!-- VERIFY: production REACT_APP_API_URL value --> |
+| `REACT_APP_API_URL` | Optional | `http://localhost:5000/api` | Backend API base URL used by frontend API calls. Set this to the deployed staging or production backend `/api` base URL before running the static build. Because Create React App embeds this at build time, rebuild after changing it. <!-- VERIFY: production REACT_APP_API_URL value --> |
 | `REACT_APP_NAME` | Optional | `PLASHOE` | Display name exposed through the frontend config object. |
 | `REACT_APP_DESCRIPTION` | Optional | `Sustainable Footwear for a Better Tomorrow` | Display description exposed through the frontend config object. |
 | `REACT_APP_UNSPLASH_BASE_URL` | Optional | `https://images.unsplash.com` | Base URL configured for Unsplash image assets. |
@@ -90,7 +90,7 @@ REACT_APP_ENABLE_WISHLIST=false
 REACT_APP_ENABLE_REVIEWS=true
 ```
 
-Create React App only exposes custom browser variables that start with `REACT_APP_`. Restart the frontend dev server after changing `.env` values.
+Create React App only exposes custom browser variables that start with `REACT_APP_`. Restart the frontend dev server after changing local `.env` values, and rebuild hosted staging or production bundles after changing deployment `REACT_APP_*` values.
 
 ## Required vs Optional Settings
 
@@ -101,7 +101,7 @@ Create React App only exposes custom browser variables that start with `REACT_AP
 - When payments are enabled, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYMENT_SUCCESS_URL`, and `PAYMENT_CANCEL_URL` are required and validated at startup.
 - `JWT_SECRET` must be at least 32 characters, JWT verification allows HS256 only, and the default token lifetime is `1h`.
 - `PORT` and `JWT_EXPIRE` are optional but validated when present.
-- Frontend display, external URL, map, and feature-flag variables have fallback behavior in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
+- Frontend display, external URL, map, and feature-flag variables have fallback behavior in `Frontend/Ecommerce-main/my-app/src/config/config.js`. Checked-in social/contact/company defaults are examples for local and staging verification unless the business owner explicitly approves them as final public values.
 - Auth persistence uses browser `sessionStorage` through the `auth-storage` Zustand key. Bearer tokens remain XSS-sensitive while the tab/session is alive; the current compensating controls are the shorter JWT lifetime, logout-on-401 behavior, and no localStorage persistence.
 - `REACT_APP_MAPTILER_API_KEY` is browser-visible and must be treated as a public, domain-restricted key, not a server secret.
 - Boolean feature flags are enabled only by the exact string `true`; missing values are treated as disabled.
@@ -140,6 +140,7 @@ No `.env.development`, `.env.production`, or `.env.test` files are checked in. U
 - Local frontend: `Frontend/Ecommerce-main/my-app/.env`
 - Production backend: configure `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRE`, `FRONTEND_URL`, and `PORT` in the backend host secret/config manager. <!-- VERIFY: production backend environment is configured in the hosting platform -->
 - Production payment setup: configure backend-only Stripe secret variables and public frontend return URLs in the backend host secret/config manager. Create a Stripe webhook endpoint that points to `/api/webhooks/stripe`. <!-- VERIFY: production Stripe endpoint and return URLs are configured -->
+- Staging frontend: configure `REACT_APP_API_URL` to the staging backend `/api` base URL and mark any public social/contact/company placeholders as staging-only before running `npm run build`.
 - Production frontend: configure `REACT_APP_API_URL` and any public display, map, social, company, and feature-flag values before running `npm run build`. If MapTiler tiles are used, set `REACT_APP_MAPTILER_API_KEY` to a domain-restricted public key. <!-- VERIFY: production frontend build environment is configured in the hosting platform -->
 
 For release preparation and smoke checks, follow [DEPLOYMENT.md](DEPLOYMENT.md).

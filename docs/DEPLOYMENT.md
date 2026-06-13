@@ -60,11 +60,11 @@ Build the frontend as a static Create React App bundle.
 | Build command | `npm run build` |
 | Publish directory | `Frontend/Ecommerce-main/my-app/build` |
 
-Set public `REACT_APP_*` build-time values before running `npm run build`. At minimum, production needs `REACT_APP_API_URL` pointing to the deployed backend `/api` base URL. MapTiler keys are browser-visible public keys and should be domain-restricted.
+Set public `REACT_APP_*` build-time values before running `npm run build`. Create React App embeds those values into the static bundle, so staging and production must be rebuilt after changing `REACT_APP_API_URL` or any other `REACT_APP_*` value. At minimum, staging and production need `REACT_APP_API_URL` pointing to the matching deployed backend `/api` base URL. MapTiler keys are browser-visible public keys and should be domain-restricted.
 
 ## Stripe Setup
 
-Production payments require dashboard-managed Stripe setup before release:
+Staging and production payments require dashboard-managed Stripe setup before release. Use Stripe test mode for staging proof and live mode only during the Phase 12 production cutover:
 
 1. Add `STRIPE_SECRET_KEY` to the backend host secret manager.
 2. Create a Stripe webhook endpoint that posts to `<backend-origin>/api/webhooks/stripe`.
