@@ -2,30 +2,30 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 08
+current_phase: 09
 current_plan: Not started
-status: completed
-last_updated: "2026-06-13T01:29:42.697Z"
+status: Ready to execute
+last_updated: "2026-06-13T20:32:15.486Z"
 last_activity: 2026-06-13
 progress:
-  total_phases: 8
+  total_phases: 12
   completed_phases: 8
-  total_plans: 27
+  total_plans: 30
   completed_plans: 27
-  percent: 100
+  percent: 67
 ---
 
 # Project State: PLASHOE
 
-**Current Phase:** 08
-**Status:** Milestone complete
+**Current Phase:** 09
+**Status:** Ready to execute
 **Current Plan:** Not started
-**Next recommended run:** `$gsd-execute-phase 8`
+**Next recommended run:** `$gsd-execute-phase 9`
 **Last Activity:** 2026-06-13
 
 ## Current Focus
 
-Execute Phase 8: run Wave 1 plans 08-01 and 08-02 first, then run Wave 2 plan 08-03 after CI and readiness/logging changes exist.
+Execute Phase 9: run Wave 1 plan 09-01 first, then run Wave 2 plan 09-02 after staging setup evidence exists, then run Wave 3 plan 09-03 after hosted backend/frontend smoke checks pass or are honestly blocked.
 
 ## Accumulated Context
 
@@ -48,6 +48,11 @@ Execute Phase 8: run Wave 1 plans 08-01 and 08-02 first, then run Wave 2 plan 08
 - 2026-06-13: Completed Phase 7 with bounded catalog APIs, Product indexes, normalized frontend catalog service/hook, controlled ProductGrid pagination, split contact/coupon API modules, docs, and full backend/frontend/build/static verification.
 - 2026-06-13: Captured Phase 8 CI/CD, observability, deployment readiness, health/readiness, structured logging, env template, and verification decisions.
 - 2026-06-13: Planned Phase 8 into CI workflow/audit policy, backend readiness/logging, and deployment docs/templates/final verification across 2 execution waves.
+- 2026-06-13: Phase 9 added for production launch setup and staging verification.
+- 2026-06-13: Phase 10 added for frontend tooling modernization and warning cleanup.
+- 2026-06-13: Phase 11 added for operational monitoring, alerting, backup verification, and incident readiness.
+- 2026-06-13: Phase 12 added for final release gate, production cutover, and post-launch review.
+- 2026-06-13: Planned Phase 9 into staging setup evidence, hosted backend/frontend smoke verification, and Stripe webhook launch evidence across 3 execution waves.
 
 ### Decisions
 
@@ -58,7 +63,9 @@ Execute Phase 8: run Wave 1 plans 08-01 and 08-02 first, then run Wave 2 plan 08
 
 ### Known Open Risks
 
-- `Backend/.env.example` remains untracked local work and was not modified by this roadmap setup.
-- Real Stripe dashboard endpoint and production payment environment values still require user setup before production use.
-- Dependency upgrade path may require frontend build-tool migration if Create React App constraints block clean remediation.
-- Frontend `npm audit --omit=dev` remains non-clean due CRA build/test/tooling findings accepted in `03-SECURITY-RISK-REGISTER.md`.
+- Real hosting targets, MongoDB production credentials, Stripe production keys/webhook secret, frontend build variables, and MapTiler domain restrictions still require external setup.
+- Production proof is not complete until deployed `/api/health`, `/api/ready`, frontend smoke checks, request-id propagation, and Stripe webhook delivery are verified.
+- Frontend `npm audit --omit=dev` still relies on the documented CRA/react-scripts tooling-risk acceptance until Phase 10 removes that debt.
+- Frontend test/build warning cleanup remains open, including recurring React test warnings and the known `OrderDetail.jsx` hook dependency warning.
+- External monitoring, alerting, backup/restore verification, and incident-response procedures remain open until Phase 11.
+- Production release, tag/push decisions, rollback readiness, and post-launch review remain open until Phase 12 and require explicit user approval for release actions.

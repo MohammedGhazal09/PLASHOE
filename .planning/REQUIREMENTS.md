@@ -63,12 +63,40 @@
 - [x] **OPS-03**: Backend has structured request/error logging.
 - [x] **OPS-04**: Frontend and backend deployment/environment requirements are documented and verified.
 
+### Production Launch Setup
+
+- [ ] **LAUNCH-01**: Production/staging hosting targets, MongoDB, Stripe, frontend build variables, and MapTiler key restrictions are configured outside the repo.
+- [ ] **LAUNCH-02**: Placeholder production values in docs and env templates are replaced or explicitly marked as non-production examples.
+- [ ] **LAUNCH-03**: Staging `/api/health`, `/api/ready`, frontend load, request-id propagation, and payment return routes are smoke-tested with recorded evidence.
+- [ ] **LAUNCH-04**: Stripe webhook delivery is visible in Stripe and staging backend logs show no sustained 5xx failures.
+
+### Frontend Tooling Modernization
+
+- [ ] **TOOL-01**: Frontend tooling is migrated to a maintained build/test stack or the CRA dependency debt is otherwise removed.
+- [ ] **TOOL-02**: The production audit policy no longer needs to accept CRA/react-scripts tooling findings.
+- [ ] **TOOL-03**: Frontend tests pass without recurring React `act(...)` and React Router future-flag warning noise.
+- [ ] **TOOL-04**: Frontend production build passes without the known hook dependency, stale Browserslist, or Node deprecation warnings.
+
+### Operational Monitoring
+
+- [ ] **MON-01**: Backend logs, health/readiness status, Stripe webhook failures, and deployment events flow to the selected host/logging provider.
+- [ ] **MON-02**: Alerts exist for backend downtime, readiness failure, sustained 5xx errors, Stripe webhook delivery failures, and database connectivity issues.
+- [ ] **MON-03**: MongoDB backup/restore verification and operational access procedures are documented and tested.
+- [ ] **MON-04**: Incident response and rollback runbooks include owners, decision thresholds, communication steps, and first 5/15/60 minute checks.
+
+### Release Cutover
+
+- [ ] **REL-01**: Final local and remote gates pass: backend tests, frontend tests, frontend build, audit policy, static contract checker, and remote GitHub Actions CI.
+- [ ] **REL-02**: Git history, planning state, docs, release notes, and deployment checklist are reconciled before production cutover.
+- [ ] **REL-03**: Production deploy, rollback plan, health/readiness checks, frontend smoke checks, and Stripe webhook/payment checks are executed with evidence.
+- [ ] **REL-04**: A post-launch review records issues, metrics, follow-ups, and any accepted risks that remain for the next milestone.
+
 ## v2 Requirements
 
 - **V2-01**: Wishlist feature works end to end.
 - **V2-02**: Product reviews work end to end.
 - **V2-03**: Full admin product/coupon UI exists.
-- **V2-04**: Frontend build tooling migrates away from Create React App if dependency remediation requires it.
+- **V2-04**: Frontend platform improvements beyond Phase 10 are deferred unless new dependency remediation requires them.
 
 ## Out of Scope
 
@@ -116,6 +144,22 @@
 | OPS-02 | Phase 8 | Complete |
 | OPS-03 | Phase 8 | Complete |
 | OPS-04 | Phase 8 | Complete |
+| LAUNCH-01 | Phase 9 | Not started |
+| LAUNCH-02 | Phase 9 | Not started |
+| LAUNCH-03 | Phase 9 | Not started |
+| LAUNCH-04 | Phase 9 | Not started |
+| TOOL-01 | Phase 10 | Not started |
+| TOOL-02 | Phase 10 | Not started |
+| TOOL-03 | Phase 10 | Not started |
+| TOOL-04 | Phase 10 | Not started |
+| MON-01 | Phase 11 | Not started |
+| MON-02 | Phase 11 | Not started |
+| MON-03 | Phase 11 | Not started |
+| MON-04 | Phase 11 | Not started |
+| REL-01 | Phase 12 | Not started |
+| REL-02 | Phase 12 | Not started |
+| REL-03 | Phase 12 | Not started |
+| REL-04 | Phase 12 | Not started |
 | V2-01 | Post-v1 | Deferred |
 | V2-02 | Post-v1 | Deferred |
 | V2-03 | Post-v1 | Deferred |
@@ -123,8 +167,8 @@
 
 **Coverage:**
 
-- v1 requirements: 34 total
-- Mapped to phases: 34
+- v1 requirements: 50 total
+- Mapped to phases: 50
 - Unmapped: 0
 
 ---

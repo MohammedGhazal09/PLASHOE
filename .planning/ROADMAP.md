@@ -2,7 +2,7 @@
 
 ## Overview
 
-This roadmap turns the verified PLASHOE gaps into execution phases. The sequence starts with defects already proven by spike 001, then adds test coverage, security hardening, checkout integrity, payment readiness, admin fulfillment, catalog/frontend cleanup, and deployment operations.
+This roadmap turns the verified PLASHOE gaps into execution phases. The sequence starts with defects already proven by spike 001, then adds test coverage, security hardening, checkout integrity, payment readiness, admin fulfillment, catalog/frontend cleanup, deployment operations, production launch setup, frontend tooling modernization, operational monitoring, and final release cutover.
 
 ## Phases
 
@@ -19,6 +19,10 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 6: Admin Fulfillment Operations** - Add admin order fulfillment APIs and operational views. (completed 2026-06-12)
 - [x] **Phase 7: Catalog and Frontend Architecture Cleanup** - Normalize product/cart data and reduce fragile frontend/API structure. (completed 2026-06-13)
 - [x] **Phase 8: CI/CD, Observability, and Deployment Readiness** - Add pipeline checks, deployment readiness, logging, and environment verification. (completed 2026-06-13)
+- [ ] **Phase 9: Production Launch Setup and Staging Verification** - Configure real production services, secrets, staging deployment, and live smoke evidence.
+- [ ] **Phase 10: Frontend Tooling Modernization and Warning Cleanup** - Remove accepted CRA/tooling debt and clean non-blocking frontend test/build warnings.
+- [ ] **Phase 11: Operational Monitoring Alerting and Incident Readiness** - Wire live monitoring, alerts, backup verification, and incident response operations.
+- [ ] **Phase 12: Release Gate Production Cutover and Post Launch Review** - Run the final release gate, production cutover, rollback readiness, and post-launch review.
 
 ## Phase Details
 
@@ -291,9 +295,117 @@ Plans:
 
 - D-03: Do all work inline and do not use subagents.
 
+### Phase 9: Production Launch Setup and Staging Verification
+
+**Goal**: Production-equivalent services, secrets, frontend build settings, Stripe dashboard setup, and staging smoke checks are complete before any production cutover.
+**Depends on**: Phase 8
+**Requirements**: LAUNCH-01, LAUNCH-02, LAUNCH-03, LAUNCH-04
+**Canonical refs**: `.planning/phases/08-ci-cd-observability-and-deployment-readiness/08-USER-SETUP.md`, `docs/CONFIGURATION.md`, `docs/DEPLOYMENT.md`, `docs/TESTING.md`
+**Success Criteria** (what must be TRUE):
+
+  1. Production/staging hosting targets, MongoDB, Stripe, frontend build variables, and MapTiler key restrictions are configured outside the repo.
+  2. Placeholder production values in docs and env templates are replaced or explicitly marked as non-production examples.
+  3. Staging `/api/health`, `/api/ready`, frontend load, request-id propagation, and payment return routes are smoke-tested with recorded evidence.
+  4. Stripe webhook delivery is visible in the Stripe dashboard and staging backend logs show no sustained 5xx failures.
+
+**Plans**: 3 plans
+
+Plan candidates:
+
+- 09-01: Complete external account, secret, domain, and build-environment setup.
+- 09-02: Deploy staging and run backend/frontend/readiness smoke checks.
+- 09-03: Verify Stripe webhook, payment redirect/return, and production-content configuration evidence.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-50: Do not commit real `.env` files, API keys, Stripe secrets, MongoDB credentials, or dashboard-only values.
+- D-51: Treat staging as the release proving ground; production cutover belongs to Phase 12.
+
+### Phase 10: Frontend Tooling Modernization and Warning Cleanup
+
+**Goal**: Frontend build/test tooling no longer depends on accepted CRA/react-scripts audit debt, and routine test/build output is clean enough that new warnings are visible.
+**Depends on**: Phase 9
+**Requirements**: TOOL-01, TOOL-02, TOOL-03, TOOL-04
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/package.json`, `Frontend/Ecommerce-main/my-app/package-lock.json`, `scripts/ci/check-audits.mjs`, `docs/TESTING.md`
+**Success Criteria** (what must be TRUE):
+
+  1. Frontend tooling is migrated to a maintained build/test stack or the CRA dependency debt is otherwise removed.
+  2. `node scripts/ci/check-audits.mjs` no longer needs to accept CRA/react-scripts tooling findings.
+  3. Frontend tests pass without recurring React `act(...)` and React Router future-flag warning noise.
+  4. Frontend production build passes without the known `OrderDetail.jsx` hook dependency warning, stale Browserslist warning, or Node deprecation noise.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 10-01: Select and migrate the maintained frontend build/test toolchain.
+- 10-02: Update test harness, environment variables, static asset handling, and CI commands.
+- 10-03: Remove the audit allowlist debt and clean remaining frontend warnings.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-52: Preserve customer-facing routes, env var names, payment return behavior, cart normalization, and existing test intent during migration.
+- D-53: Prefer a small, reversible migration over unrelated visual or feature changes.
+
+### Phase 11: Operational Monitoring Alerting and Incident Readiness
+
+**Goal**: The deployed app has live operational signals, alert paths, backup verification, and incident-response practices that make production failures diagnosable and actionable.
+**Depends on**: Phase 10
+**Requirements**: MON-01, MON-02, MON-03, MON-04
+**Canonical refs**: `Backend/utils/logger.js`, `Backend/utils/readiness.js`, `Backend/app.js`, `docs/DEPLOYMENT.md`
+**Success Criteria** (what must be TRUE):
+
+  1. Backend logs, health/readiness status, Stripe webhook failures, and deployment events flow to the selected host/logging provider.
+  2. Alerts exist for backend downtime, readiness failure, sustained 5xx errors, Stripe webhook delivery failures, and database connectivity issues.
+  3. MongoDB backup/restore verification and operational access procedures are documented and tested.
+  4. Incident response and rollback runbooks include owners, decision thresholds, communication steps, and first 5/15/60 minute checks.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 11-01: Connect runtime logs, uptime checks, and readiness metrics to the selected operations stack.
+- 11-02: Configure actionable alerts for service, payment, and database failure modes.
+- 11-03: Verify backup/restore and write the incident/rollback runbook.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-54: Alerts must be actionable and low-noise; avoid broad metrics that nobody will review.
+- D-55: Logs and alert payloads must not expose bearer tokens, Stripe secrets, webhook payloads, passwords, or raw PII.
+
+### Phase 12: Release Gate Production Cutover and Post Launch Review
+
+**Goal**: PLASHOE is cut over to production through a repeatable release gate with rollback readiness, remote CI proof, smoke evidence, and post-launch review.
+**Depends on**: Phase 11
+**Requirements**: REL-01, REL-02, REL-03, REL-04
+**Canonical refs**: `.github/workflows/ci.yml`, `docs/DEPLOYMENT.md`, `docs/TESTING.md`, `.planning/phases/08-ci-cd-observability-and-deployment-readiness/08-VERIFICATION.md`
+**Success Criteria** (what must be TRUE):
+
+  1. The final local and remote gates pass: backend tests, frontend tests, frontend build, audit policy, static contract checker, and remote GitHub Actions CI.
+  2. Git history, planning state, docs, release notes, and deployment checklist are reconciled before production cutover.
+  3. Production deploy, rollback plan, health/readiness checks, frontend smoke checks, and Stripe webhook/payment checks are executed with evidence.
+  4. A post-launch review records issues, metrics, follow-ups, and whether any accepted risks remain for the next milestone.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 12-01: Run final local and remote release gates and reconcile repo/planning state.
+- 12-02: Execute production cutover with rollback plan and smoke checks open.
+- 12-03: Monitor the launch window and write the post-launch review.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-56: Do not tag or push a production release until the user explicitly approves release actions.
+- D-57: Production deploy must use environment secret stores rather than committed configuration.
+
 ## Progress
 
-**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8
+**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -305,9 +417,14 @@ Plans:
 | 6. Admin Fulfillment Operations | 3/3 | Complete   | 2026-06-12 |
 | 7. Catalog and Frontend Architecture Cleanup | 3/3 | Complete | 2026-06-13 |
 | 8. CI/CD, Observability, and Deployment Readiness | 3/3 | Complete    | 2026-06-13 |
+| 9. Production Launch Setup and Staging Verification | 0/3 | Planned | |
+| 10. Frontend Tooling Modernization and Warning Cleanup | 0/0 | Not started | |
+| 11. Operational Monitoring Alerting and Incident Readiness | 0/0 | Not started | |
+| 12. Release Gate Production Cutover and Post Launch Review | 0/0 | Not started | |
 
 ## Recommendations
 
-- Start Phase 8 specification/planning next so CI/CD, observability, and deployment readiness validate the cleaned catalog/API architecture.
-- Use Phase 7's backend/frontend/build/static checks as the baseline commands for Phase 8 automation.
+- Start Phase 9 execution next because production launch setup blocks credible staging and production evidence.
+- Keep Phase 10 separate from launch setup so tooling migration risk does not block external account/configuration work.
+- Treat Phase 12 as the only production cutover phase; earlier phases should produce staging proof and operational readiness.
 - Preserve the no-subagent constraint for GSD execution unless the repository instruction changes.
