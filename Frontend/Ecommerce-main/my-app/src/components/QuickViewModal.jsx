@@ -1,25 +1,34 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faStar, faStarHalfAlt, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarEmpty } from '@fortawesome/free-regular-svg-icons';
 import { useCartStore } from '../store/cartStore';
 import toast from 'react-hot-toast';
 
+const DEFAULT_SIZES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
+
 export default function QuickViewModal({ product, onClose }) {
-  const [selectedSize, setSelectedSize] = useState(40);
   const [quantity, setQuantity] = useState(1);
   const { addItem, openCart } = useCartStore();
+  const sizes = product?.sizes?.length ? product.sizes : DEFAULT_SIZES;
+  const [selectedSize, setSelectedSize] = useState(() => sizes[0]);
+
+  useEffect(() => {
+    if (!sizes.includes(selectedSize)) {
+      setSelectedSize(sizes[0]);
+    }
+  }, [selectedSize, sizes]);
 
   if (!product) return null;
 
-  const price = product.price?.current || parseFloat(product.price?.new?.replace('$', '')) || 0;
-  const originalPrice = product.price?.original || parseFloat(product.price?.old?.replace('$', '')) || price;
+  const price = product.price?.current || 0;
+  const originalPrice = product.price?.original || price;
   const hasDiscount = originalPrice > price;
-  const image = product.image || product.img;
+  const image = product.image || '';
 
   const handleAddToCart = async () => {
     const productData = {
-      _id: product._id || product.name,
+      _id: product.id,
       name: product.name,
       image: image,
       price: {
@@ -74,7 +83,7 @@ export default function QuickViewModal({ product, onClose }) {
           {/* Image */}
           <div className="md:w-1/2">
             <img
-              src={`${process.env.PUBLIC_URL}${image}`}
+              src={image}
               alt={product.name}
               className="w-full h-full object-cover"
             />
@@ -116,7 +125,7 @@ export default function QuickViewModal({ product, onClose }) {
             <div className="mb-6">
               <h4 className="font-semibold mb-2">Size:</h4>
               <div className="flex flex-wrap gap-2">
-                {[35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45].map((size) => (
+                {sizes.map((size) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}

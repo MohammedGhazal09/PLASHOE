@@ -57,6 +57,7 @@ const product = {
   name: 'PLASHOE Runner',
   image: '/shoe.jpg',
   price: {
+    original: 120,
     current: 100,
   },
 };
@@ -97,7 +98,7 @@ test('normalizes backend cart sync items into one view model', async () => {
             _id: 'product-1',
             name: 'Backend Runner',
             image: '/runner.jpg',
-            price: { current: 125 },
+            price: { original: 150, current: 125 },
           },
           quantity: 2,
           size: 43,
@@ -122,6 +123,7 @@ test('normalizes backend cart sync items into one view model', async () => {
     size: 43,
     quantity: 2,
     unitPrice: 110,
+    originalPrice: 150,
     lineTotal: 220,
     source: 'backend',
   });
@@ -148,6 +150,7 @@ test('accumulates duplicate guest product and size quantities without API calls'
     quantity: 3,
     size: 42,
     unitPrice: 100,
+    originalPrice: 120,
     lineTotal: 300,
     source: 'local',
   });
@@ -198,6 +201,7 @@ test('migrates older persisted guest cart shapes instead of wiping them', async 
     productId: product._id,
     name: product.name,
     unitPrice: 100,
+    originalPrice: 120,
     lineTotal: 200,
     source: 'local',
   });
@@ -222,7 +226,47 @@ test('normalizes legacy item shapes directly', () => {
     productId: product._id,
     name: product.name,
     unitPrice: 90,
+    originalPrice: 120,
     lineTotal: 180,
+  });
+});
+
+test('rehydrates current persisted cart items with normalized original prices', async () => {
+  localStorage.setItem(
+    'cart-storage',
+    JSON.stringify({
+      state: {
+        items: [
+          {
+            id: 'local-sale-1',
+            productId: product._id,
+            name: product.name,
+            image: product.image,
+            size: 41,
+            quantity: 2,
+            unitPrice: 80,
+            originalPrice: 120,
+            lineTotal: 160,
+            source: 'local',
+          },
+        ],
+        couponCode: null,
+        discount: 0,
+      },
+      version: 1,
+    })
+  );
+
+  await act(async () => {
+    await useCartStore.persist.rehydrate();
+  });
+
+  expect(useCartStore.getState().items[0]).toMatchObject({
+    productId: product._id,
+    unitPrice: 80,
+    originalPrice: 120,
+    lineTotal: 160,
+    source: 'local',
   });
 });
 

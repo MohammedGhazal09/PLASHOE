@@ -12,7 +12,7 @@ const generateToken = (id) => {
 
 // @desc    Register user
 // @route   POST /api/auth/register
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
@@ -39,16 +39,13 @@ export const register = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Login user
 // @route   POST /api/auth/login
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -81,10 +78,7 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
@@ -99,7 +93,7 @@ export const getMe = async (req, res) => {
 
 // @desc    Update user profile
 // @route   PUT /api/auth/profile
-export const updateProfile = async (req, res) => {
+export const updateProfile = async (req, res, next) => {
   try {
     const { name, email, phone } = req.body;
     
@@ -116,16 +110,13 @@ export const updateProfile = async (req, res) => {
       data: user
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Add address
 // @route   POST /api/auth/addresses
-export const addAddress = async (req, res) => {
+export const addAddress = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
     const address = { ...req.body };
@@ -144,16 +135,13 @@ export const addAddress = async (req, res) => {
       data: user.addresses
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Delete address
 // @route   DELETE /api/auth/addresses/:id
-export const deleteAddress = async (req, res) => {
+export const deleteAddress = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
     
@@ -168,9 +156,6 @@ export const deleteAddress = async (req, res) => {
       data: user.addresses
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };

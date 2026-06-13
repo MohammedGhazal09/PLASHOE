@@ -30,9 +30,9 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | POST | `/api/auth/addresses` | Add an address to the current user. | Bearer JWT | `authApi.addAddress(address)` |
 | DELETE | `/api/auth/addresses/:id` | Delete one address from the current user. | Bearer JWT | `authApi.deleteAddress(addressId)` |
 | GET | `/api/products` | List products with optional filtering, sorting, and pagination. | No | `productsApi.getAll(params)` |
-| GET | `/api/products/men` | List products where `gender` is `male`. | No | `productsApi.getMen()` |
-| GET | `/api/products/women` | List products where `gender` is `female`. | No | `productsApi.getWomen()` |
-| GET | `/api/products/sale` | List products where `isOnSale` is `true`. | No | `productsApi.getSale()` |
+| GET | `/api/products/men` | List products where `gender` is `male` using the bounded product list envelope. | No | `productsApi.getMen()` |
+| GET | `/api/products/women` | List products where `gender` is `female` using the bounded product list envelope. | No | `productsApi.getWomen()` |
+| GET | `/api/products/sale` | List products where `isOnSale` is `true` using the bounded product list envelope. | No | `productsApi.getSale()` |
 | GET | `/api/products/bestsellers` | List up to 8 products sorted by descending rating. | No | `productsApi.getBestsellers()` |
 | GET | `/api/products/categories` | Return distinct product categories. | No | `productsApi.getCategories()` |
 | GET | `/api/products/:id` | Return one product by MongoDB id. | No | `productsApi.getById(id)` |
@@ -50,13 +50,16 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | GET | `/api/orders` | List the current user's orders sorted newest first. | Bearer JWT | `ordersApi.getAll()` |
 | GET | `/api/orders/:id` | Return one order if owned by the user or requested by an admin. | Bearer JWT, owner or admin | `ordersApi.getById(id)` |
 | PUT | `/api/orders/:id/cancel` | Cancel an owned order unless it is shipped or delivered. | Bearer JWT, owner only | `ordersApi.cancel(id)` |
+| GET | `/api/admin/orders` | List all orders for admins with bounded pagination and filters. | Admin bearer JWT | `adminApi.getOrders(params)` |
+| GET | `/api/admin/orders/:id` | Return full admin order detail with limited user identity. | Admin bearer JWT | `adminApi.getOrder(id)` |
+| PATCH | `/api/admin/orders/:id/fulfillment` | Advance fulfillment and update carrier/tracking fields. | Admin bearer JWT | `adminApi.updateOrderFulfillment(id, payload)` |
 | POST | `/api/webhooks/stripe` | Receive Stripe payment events through a raw-body signature-verified webhook. | Stripe signature | None |
 | POST | `/api/coupons/validate` | Validate a coupon code and return discount details. | No | `couponApi.validate(code)` |
-| GET | `/api/coupons` | List all coupons sorted newest first. | Admin bearer JWT | None |
+| GET | `/api/coupons` | List coupons with bounded admin pagination and filters. | Admin bearer JWT | `adminApi.getCoupons(params)` |
 | POST | `/api/coupons` | Create a coupon. | Admin bearer JWT | None |
 | DELETE | `/api/coupons/:id` | Delete a coupon. | Admin bearer JWT | None |
 | POST | `/api/contact` | Submit a contact message. | No | `contactApi.submit(name, email, subject, message)` |
-| GET | `/api/contact` | List all contact messages sorted newest first. | Admin bearer JWT | None |
+| GET | `/api/contact` | List contact messages with bounded admin pagination and filters. | Admin bearer JWT | `adminApi.getContactMessages(params)` |
 | PUT | `/api/contact/:id/read` | Mark one contact message as read. | Admin bearer JWT | None |
 | DELETE | `/api/contact/:id` | Delete one contact message. | Admin bearer JWT | None |
 
@@ -158,7 +161,7 @@ Readiness diagnostics are intentionally sanitized and do not expose hostnames, c
 
 ### Products
 
-`GET /api/products` accepts these query parameters:
+`GET /api/products`, `GET /api/products/men`, `GET /api/products/women`, and `GET /api/products/sale` accept these query parameters. The convenience routes force their route filter after validation, so `/men` always returns male products, `/women` always returns female products, and `/sale` always returns sale products.
 
 | Query Parameter | Description |
 | --- | --- |
@@ -256,6 +259,44 @@ Required `shippingAddress` fields are `firstName`, `lastName`, `country`, `stree
 
 `Idempotency-Key` is required for checkout. Generate a new high-entropy key for each new checkout attempt and reuse the same key only for retrying that exact attempt. The backend scopes the key to the authenticated user and stores a cart fingerprint on the order.
 
+Admin `GET /api/admin/orders` requires an admin bearer token and accepts these query parameters:
+
+| Query Parameter | Description |
+| --- | --- |
+| `page` | Page number. Defaults to `1` and must be at least `1`. |
+| `limit` | Maximum rows returned. Defaults to `20` and is capped at `100`. |
+| `status` | Filters fulfillment status: `pending`, `processing`, `shipped`, `delivered`, or `cancelled`. |
+| `paymentStatus` | Filters by the documented payment status values. |
+| `q` | Searches `orderNumber` plus limited user `name` and `email`. |
+| `createdFrom` | Includes orders created at or after this ISO date. |
+| `createdTo` | Includes orders created at or before this ISO date. |
+
+Admin order list rows are compact operational summaries with `_id`, `orderNumber`, limited `user` identity, `status`, `paymentStatus`, `total`, `itemCount`, tracking summary fields, and timestamps. Full order items and shipping/payment details belong on `GET /api/admin/orders/:id`, which populates user `name` and `email` only.
+
+`PATCH /api/admin/orders/:id/fulfillment`
+
+```json
+{
+  "status": "shipped",
+  "carrier": "DHL",
+  "trackingNumber": "TRACK123",
+  "estimatedDeliveryDate": "2026-06-20T00:00:00.000Z",
+  "description": "Package handed to carrier",
+  "location": "Warehouse"
+}
+```
+
+Allowed fulfillment flow is `processing` -> `shipped` -> `delivered`. Shipping and delivery updates are accepted only when `paymentStatus` is `paid` or `not_required`. Setting `shipped` requires `carrier` and `trackingNumber`; setting `delivered` requires the order to already be `shipped` with complete shipment tracking fields. Accepted updates append one server-timestamped `trackingHistory` event and set `shippedAt` or `deliveredAt`. Repeating the same shipped update returns `200` without duplicating history; changed shipped tracking data appends one correction event.
+
+Fulfillment conflicts return `409` with machine-readable codes:
+
+| Code | Meaning |
+| --- | --- |
+| `INVALID_FULFILLMENT_TRANSITION` | The requested status skips, reverses, or leaves the supported flow. |
+| `PAYMENT_NOT_SHIPPABLE` | The payment state is not `paid` or `not_required`. |
+| `TRACKING_REQUIRED` | Required carrier/tracking fields are missing. |
+| `ORDER_NOT_FOUND` | The requested order id does not exist. |
+
 ### Coupons
 
 `POST /api/coupons/validate`
@@ -280,6 +321,8 @@ Admin `POST /api/coupons`
 }
 ```
 
+Admin `GET /api/coupons` accepts `page`, `limit`, `isActive`, `q`, `validFrom`, and `validUntil`. It keeps the existing `/api/coupons` path, requires admin bearer auth, and returns the shared admin pagination envelope.
+
 ### Contact
 
 `POST /api/contact`
@@ -295,6 +338,8 @@ Admin `POST /api/coupons`
 
 `name`, `email`, and `message` are required. `subject` is optional.
 
+Admin `GET /api/contact` accepts `page`, `limit`, `isRead`, `q`, `createdFrom`, and `createdTo`. It keeps the existing `/api/contact` path, requires admin bearer auth, and returns the shared admin pagination envelope.
+
 ## Response Formats
 
 Most successful responses use a `success: true` envelope and return resource data in `data`:
@@ -306,13 +351,29 @@ Most successful responses use a `success: true` envelope and return resource dat
 }
 ```
 
-List endpoints commonly include `count`; paginated product lists also include `total` and `pages`:
+List endpoints commonly include `count`; paginated product lists also include `total`, `page`, `limit`, and `pages`:
 
 ```json
 {
   "success": true,
   "count": 20,
   "total": 57,
+  "page": 1,
+  "limit": 20,
+  "pages": 3,
+  "data": []
+}
+```
+
+Admin order, coupon, and contact list responses use this shared bounded pagination envelope:
+
+```json
+{
+  "success": true,
+  "count": 20,
+  "total": 45,
+  "page": 1,
+  "limit": 20,
   "pages": 3,
   "data": []
 }
@@ -427,7 +488,7 @@ Cart stock, checkout stock, coupon usage, and stale idempotency conflicts return
 }
 ```
 
-Possible conflict `code` values include `INSUFFICIENT_STOCK`, `PRODUCT_UNAVAILABLE`, `COUPON_USAGE_LIMIT_REACHED`, `COUPON_UNAVAILABLE`, `COUPON_MINIMUM_NOT_MET`, and `IDEMPOTENCY_KEY_CONFLICT`.
+Possible conflict `code` values include `INSUFFICIENT_STOCK`, `PRODUCT_UNAVAILABLE`, `COUPON_USAGE_LIMIT_REACHED`, `COUPON_UNAVAILABLE`, `COUPON_MINIMUM_NOT_MET`, `IDEMPOTENCY_KEY_CONFLICT`, `INVALID_FULFILLMENT_TRANSITION`, `PAYMENT_NOT_SHIPPABLE`, and `TRACKING_REQUIRED`.
 
 Cancelling an owned `pending` or `processing` order restores ordered product stock once when that order was created by the checkout path and marked as inventory-decremented. Legacy or manually-created cancellable orders without the inventory marker are cancelled without changing stock. Repeating cancellation for an already cancelled order returns success without restoring stock again. Orders with `paymentStatus` of `paid`, `refunded`, or `partially_refunded` cannot be customer-cancelled. `shipped` and `delivered` orders still return `400`.
 
@@ -486,7 +547,7 @@ Validator failures include an `errors` array with field-level details:
 | `401` | `protect` middleware and login controller | Missing token, failed token verification with the allowed HS256 algorithm, missing authenticated user, or invalid login credentials. |
 | `403` | `admin` middleware and order ownership checks | Authenticated user is not an admin, or the user is not authorized to access the requested order. |
 | `404` | Controllers | Product, cart, cart item, order, coupon, or contact message was not found. |
-| `409` | Cart and checkout conflict handling | Requested stock is unavailable, a cart product was deleted, coupon usage is exhausted, coupon rules changed, or an idempotency key was reused for a different checkout state. |
+| `409` | Cart, checkout, and fulfillment conflict handling | Requested stock is unavailable, a cart product was deleted, coupon usage is exhausted, coupon rules changed, an idempotency key was reused for a different checkout state, or an admin fulfillment update violates payment/status/tracking rules. |
 | `413` | JSON body parser | Request body exceeded the configured JSON limit and returns `Request body too large`. |
 | `429` | Rate-limit middleware | The request exceeded the global or route-specific limit. |
 | `500` | Controllers and global error handler | Unexpected server error; errors routed through the global handler return a generic `Server Error` message. |
@@ -524,7 +585,8 @@ The frontend wrappers are relative to the configured axios `baseURL`; with the d
 | `Frontend/Ecommerce-main/my-app/src/api/productsApi.js` | `productsApi` | Public product read endpoints only: `GET /api/products`, `GET /api/products/:id`, `GET /api/products/men`, `GET /api/products/women`, `GET /api/products/sale`, `GET /api/products/bestsellers`, `GET /api/products/categories` |
 | `Frontend/Ecommerce-main/my-app/src/api/cartApi.js` | `cartApi` | `GET /api/cart`, `POST /api/cart/items`, `PUT /api/cart/items/:itemId`, `DELETE /api/cart/items/:itemId`, `DELETE /api/cart`, `POST /api/cart/coupon`, `DELETE /api/cart/coupon` |
 | `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `ordersApi` | `POST /api/orders` with optional `Idempotency-Key`, `GET /api/orders`, `GET /api/orders/:id`, `PUT /api/orders/:id/cancel` |
-| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `contactApi` | `POST /api/contact` |
-| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `couponApi` | `POST /api/coupons/validate` |
+| `Frontend/Ecommerce-main/my-app/src/api/contactApi.js` | `contactApi` | `POST /api/contact` |
+| `Frontend/Ecommerce-main/my-app/src/api/couponApi.js` | `couponApi` | `POST /api/coupons/validate` |
+| `Frontend/Ecommerce-main/my-app/src/api/adminApi.js` | `adminApi` | `GET /api/admin/orders`, `GET /api/admin/orders/:id`, `PATCH /api/admin/orders/:id/fulfillment`, `GET /api/coupons`, `GET /api/contact` |
 
-The backend admin endpoints for products, coupons, and contact messages are implemented in `Backend/routes`, but no frontend wrapper in `Frontend/Ecommerce-main/my-app/src/api` maps those admin operations.
+The backend admin product create/update/delete endpoints are implemented in `Backend/routes`, but no frontend wrapper in `Frontend/Ecommerce-main/my-app/src/api` maps those product admin operations yet.

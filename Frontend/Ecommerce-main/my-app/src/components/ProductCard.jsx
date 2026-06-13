@@ -1,26 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar, faStarHalfAlt } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarEmpty } from '@fortawesome/free-regular-svg-icons';
 import { useCartStore } from '../store/cartStore';
 import toast from 'react-hot-toast';
 
+const DEFAULT_SIZES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
+
 export default function ProductCard({ product, onQuickView }) {
   const { addItem, openCart } = useCartStore();
-  const [selectedSize, setSelectedSize] = useState(40);
   const [isHovered, setIsHovered] = useState(false);
 
-  const price = product.price?.current || parseFloat(product.price?.new?.replace('$', '')) || 0;
-  const originalPrice = product.price?.original || parseFloat(product.price?.old?.replace('$', '')) || price;
+  const price = product.price?.current || 0;
+  const originalPrice = product.price?.original || price;
   const hasDiscount = originalPrice > price;
-  const image = product.image || product.img;
+  const image = product.image || '';
+  const sizes = product.sizes?.length ? product.sizes : DEFAULT_SIZES;
+  const [selectedSize, setSelectedSize] = useState(() => sizes[0]);
+
+  useEffect(() => {
+    if (!sizes.includes(selectedSize)) {
+      setSelectedSize(sizes[0]);
+    }
+  }, [selectedSize, sizes]);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     const productData = {
-      _id: product._id || product.name,
+      _id: product.id,
       name: product.name,
       image: image,
       price: {
@@ -64,7 +73,7 @@ export default function ProductCard({ product, onQuickView }) {
     >
       <div className="relative overflow-hidden">
         <img
-          src={`${process.env.PUBLIC_URL}${image}`}
+          src={image}
           alt={product.name}
           className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-105"
         />
@@ -82,7 +91,7 @@ export default function ProductCard({ product, onQuickView }) {
           }`}
         >
           <div className="flex gap-2 mb-3">
-            {[35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45].map((size) => (
+            {sizes.map((size) => (
               <button
                 key={size}
                 onClick={(e) => {

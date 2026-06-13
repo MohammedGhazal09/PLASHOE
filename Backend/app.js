@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import adminOrderRoutes from "./routes/adminOrderRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
@@ -40,6 +41,7 @@ app.use("/api", apiLimiter);
 app.use("/api/auth", strictJsonParser, authRoutes);
 app.use("/api/products", defaultJsonParser, productRoutes);
 app.use("/api/cart", defaultJsonParser, cartRoutes);
+app.use("/api/admin/orders", defaultJsonParser, adminOrderRoutes);
 app.use("/api/orders", defaultJsonParser, orderRoutes);
 app.use("/api/coupons/validate", strictJsonParser);
 app.use("/api/coupons", defaultJsonParser, couponRoutes);
@@ -48,6 +50,7 @@ app.use("/api/contact", strictJsonParser, contactRoutes);
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "PLASHOE API is running" });
 });
+
 app.get("/api/ready", (req, res) => {
   const status = readiness.getReadinessStatus();
 
@@ -60,7 +63,6 @@ app.get("/api/ready", (req, res) => {
 
   res.status(status.ready ? 200 : 503).json(status);
 });
-
 
 app.use(handleSecurityErrors);
 

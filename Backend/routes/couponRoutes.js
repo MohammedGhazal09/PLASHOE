@@ -9,6 +9,7 @@ import { protect, admin } from '../middleware/auth.js';
 import { couponValidationLimiter } from '../middleware/security.js';
 import { validateRequest } from '../middleware/validate.js';
 import {
+  couponAdminListQuerySchema,
   couponCreateSchema,
   couponParamsSchema,
   couponValidationSchema,
@@ -25,7 +26,7 @@ router.post(
 );
 
 // Admin routes
-router.get('/', protect, admin, getCoupons);
+router.get('/', protect, admin, validateRequest({ query: couponAdminListQuerySchema }), getCoupons);
 router.post('/', protect, admin, validateRequest({ body: couponCreateSchema }), createCoupon);
 router.delete('/:id', protect, admin, validateRequest({ params: couponParamsSchema }), deleteCoupon);
 

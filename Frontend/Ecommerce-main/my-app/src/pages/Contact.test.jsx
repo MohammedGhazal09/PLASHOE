@@ -48,7 +48,7 @@ jest.mock('react-hot-toast', () => ({
   error: jest.fn(),
 }));
 
-jest.mock('../api/ordersApi', () => ({
+jest.mock('../api/contactApi', () => ({
   contactApi: {
     submit: jest.fn(),
   },
@@ -56,7 +56,7 @@ jest.mock('../api/ordersApi', () => ({
 
 const toast = require('react-hot-toast');
 const L = require('leaflet').default;
-const { contactApi } = require('../api/ordersApi');
+const { contactApi } = require('../api/contactApi');
 const { default: Contact, getContactTileLayer } = require('./Contact');
 
 const fillContactForm = (container) => {

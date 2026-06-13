@@ -1,0 +1,86 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import ProductCard from './ProductCard';
+
+const mockAddItem = jest.fn();
+const mockOpenCart = jest.fn();
+const mockToastSuccess = jest.fn();
+const mockToastError = jest.fn();
+
+jest.mock('../store/cartStore', () => ({
+  useCartStore: () => ({
+    addItem: mockAddItem,
+    openCart: mockOpenCart,
+  }),
+}));
+
+jest.mock('react-hot-toast', () => ({
+  success: (...args) => mockToastSuccess(...args),
+  error: (...args) => mockToastError(...args),
+}));
+
+const product = {
+  id: 'local-male-0',
+  name: 'Normalized Runner',
+  image: '/database/Male/0.jpg',
+  price: { current: 60, original: 90 },
+  rating: 4.5,
+  sizes: [40, 41],
+};
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockAddItem.mockResolvedValue({ success: true });
+});
+
+test('renders normalized product image and price fields', () => {
+  render(<ProductCard product={product} />);
+
+  expect(screen.getByAltText('Normalized Runner')).toHaveAttribute(
+    'src',
+    '/database/Male/0.jpg'
+  );
+  expect(screen.getByText('$90.00')).toBeInTheDocument();
+  expect(screen.getByText('$60.00')).toBeInTheDocument();
+});
+
+test('adds a normalized cart-compatible product payload', async () => {
+  render(<ProductCard product={product} />);
+
+  fireEvent.click(screen.getByText('ADD TO CART'));
+
+  await waitFor(() =>
+    expect(mockAddItem).toHaveBeenCalledWith(
+      {
+        _id: 'local-male-0',
+        name: 'Normalized Runner',
+        image: '/database/Male/0.jpg',
+        price: { current: 60, original: 90 },
+      },
+      1,
+      40
+    )
+  );
+  await waitFor(() =>
+    expect(mockToastSuccess).toHaveBeenCalledWith('Normalized Runner added to cart!')
+  );
+  expect(mockOpenCart).toHaveBeenCalled();
+});
+
+test('uses the first available product size when size 40 is unavailable', async () => {
+  render(<ProductCard product={{ ...product, sizes: [41, 42] }} />);
+
+  fireEvent.click(screen.getByText('ADD TO CART'));
+
+  await waitFor(() =>
+    expect(mockAddItem).toHaveBeenCalledWith(
+      {
+        _id: 'local-male-0',
+        name: 'Normalized Runner',
+        image: '/database/Male/0.jpg',
+        price: { current: 60, original: 90 },
+      },
+      1,
+      41
+    )
+  );
+});

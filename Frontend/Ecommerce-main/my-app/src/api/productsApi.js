@@ -11,18 +11,18 @@ export const productsApi = {
     return data;
   },
 
-  getMen: async () => {
-    const { data } = await api.get('/products/men');
+  getMen: async (params = {}) => {
+    const { data } = await api.get('/products/men', { params });
     return data;
   },
 
-  getWomen: async () => {
-    const { data } = await api.get('/products/women');
+  getWomen: async (params = {}) => {
+    const { data } = await api.get('/products/women', { params });
     return data;
   },
 
-  getSale: async () => {
-    const { data } = await api.get('/products/sale');
+  getSale: async (params = {}) => {
+    const { data } = await api.get('/products/sale', { params });
     return data;
   },
 

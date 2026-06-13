@@ -1,55 +1,12 @@
-import { useState, useEffect } from 'react';
-import { productsApi } from '../api/productsApi';
+import { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
+import { useCatalogProducts } from '../hooks/useCatalogProducts';
 
 export default function Collection() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState({ page: 1, limit: 20 });
+  const { products, pagination, loading, source } = useCatalogProducts(query);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await productsApi.getAll();
-        if (response.success) {
-          setProducts(response.data);
-        } else {
-          throw new Error('API failed');
-        }
-      } catch (error) {
-        // Fallback to static JSON
-        try {
-          const res = await fetch(`${process.env.PUBLIC_URL}/database/database.json`);
-          const json = await res.json();
-          const allProducts = [
-            ...json.female.map((p) => ({
-              ...p,
-              gender: 'female',
-              price: {
-                current: parseFloat(p.price.new.replace('$', '')),
-                original: parseFloat(p.price.old.replace('$', '')),
-              },
-            })),
-            ...json.male.map((p) => ({
-              ...p,
-              gender: 'male',
-              price: {
-                current: parseFloat(p.price.new.replace('$', '')),
-                original: parseFloat(p.price.old.replace('$', '')),
-              },
-            })),
-          ];
-          setProducts(allProducts);
-        } catch (err) {
-          console.error('Failed to load products:', err);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
-
-  if (loading) {
+  if (loading && products.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl">Loading...</div>
@@ -64,7 +21,16 @@ export default function Collection() {
         <h1 className="text-5xl font-bold">Full Collection</h1>
       </div>
 
-      <ProductGrid products={products} title="" showFilters={true} />
+      <ProductGrid
+        products={products}
+        title=""
+        showFilters={true}
+        query={query}
+        pagination={pagination}
+        source={source}
+        onQueryChange={setQuery}
+        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+      />
     </div>
   );
 }

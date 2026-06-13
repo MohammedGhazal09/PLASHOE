@@ -1,49 +1,12 @@
-import { useState, useEffect } from 'react';
-import { productsApi } from '../api/productsApi';
+import { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
+import { useCatalogProducts } from '../hooks/useCatalogProducts';
 
 export default function Sale() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState({ sale: 'true', page: 1, limit: 20 });
+  const { products, pagination, loading, source } = useCatalogProducts(query);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await productsApi.getSale();
-        if (response.success && response.data.length > 0) {
-          setProducts(response.data);
-        } else {
-          throw new Error('API failed or no sale products');
-        }
-      } catch (error) {
-        // Fallback to static JSON - filter for discounted products
-        try {
-          const res = await fetch(`${process.env.PUBLIC_URL}/database/database.json`);
-          const json = await res.json();
-          const allProducts = [...json.female, ...json.male];
-          const saleProducts = allProducts
-            .filter((p) => p.price.old !== p.price.new)
-            .map((p, index) => ({
-              ...p,
-              _id: `local-sale-${index}`,
-              isOnSale: true,
-              price: {
-                current: parseFloat(p.price.new.replace('$', '')),
-                original: parseFloat(p.price.old.replace('$', '')),
-              },
-            }));
-          setProducts(saleProducts);
-        } catch (err) {
-          console.error('Failed to load products:', err);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
-
-  if (loading) {
+  if (loading && products.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl">Loading...</div>
@@ -61,14 +24,19 @@ export default function Sale() {
         </div>
       </div>
 
-      <ProductGrid products={products} title="" showFilters={true} />
+      <ProductGrid
+        products={products}
+        title=""
+        showFilters={true}
+        query={query}
+        pagination={pagination}
+        source={source}
+        onQueryChange={(nextQuery) =>
+          setQuery({ ...nextQuery, sale: 'true', page: nextQuery.page || 1 })
+        }
+        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+      />
 
-      {products.length === 0 && !loading && (
-        <div className="text-center py-20">
-          <h2 className="text-2xl text-gray-500">No sale items available at the moment</h2>
-          <p className="text-gray-400 mt-2">Check back soon for new deals!</p>
-        </div>
-      )}
     </div>
   );
 }

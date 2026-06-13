@@ -28,4 +28,24 @@ export const nonNegativeNumber = (field) =>
 
 export const booleanSchema = z.boolean();
 
+export const queryBoolean = z.preprocess((value) => {
+  if (value === undefined || typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === 'true') {
+      return true;
+    }
+
+    if (normalized === 'false') {
+      return false;
+    }
+  }
+
+  return value;
+}, z.boolean().optional());
+
 export const strictObject = (shape) => z.object(shape).strict();

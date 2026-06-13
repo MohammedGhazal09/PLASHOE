@@ -31,6 +31,14 @@ export const normalizeCartItem = (item = {}) => {
       rawProduct?.price?.current,
     0
   );
+  const originalPrice = toNumber(
+    item.originalPrice ??
+      item.price?.original ??
+      rawProduct?.price?.original ??
+      item.raw?.product?.price?.original ??
+      item.raw?.price?.original,
+    unitPrice
+  );
 
   return {
     id,
@@ -41,6 +49,7 @@ export const normalizeCartItem = (item = {}) => {
     size: item.size || 'N/A',
     quantity,
     unitPrice,
+    originalPrice,
     lineTotal: unitPrice * quantity,
     source: item.source || (cartItemId ? 'backend' : 'local'),
     raw: item.raw || item,
@@ -52,6 +61,11 @@ const normalizeCartItems = (items = []) => items.map(normalizeCartItem);
 const mutationIdFor = (item) => item.cartItemId || item.id || item._id;
 
 const serializeCartItem = ({ raw, ...item }) => item;
+
+const normalizePersistedState = (persistedState = {}) => ({
+  ...persistedState,
+  items: normalizeCartItems(persistedState?.items || []),
+});
 
 // External selectors for computed values (more performant than getters)
 export const selectItemCount = (state) =>
@@ -296,9 +310,10 @@ export const useCartStore = create(
     {
       name: 'cart-storage',
       version: 1,
-      migrate: (persistedState) => ({
-        ...persistedState,
-        items: normalizeCartItems(persistedState?.items || []),
+      migrate: normalizePersistedState,
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...normalizePersistedState(persistedState),
       }),
       partialize: (state) => ({
         items: state.items.map(serializeCartItem),

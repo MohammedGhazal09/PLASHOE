@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPinterestP, faXTwitter, faFacebook, faInstagram } from '@fortawesome/free-brands-svg-icons';
 import Rating from '@mui/material/Rating';
 import Avatar from '@mui/material/Avatar';
 import Skeleton from '@mui/material/Skeleton';
-import { productsApi } from '../api/productsApi';
 import ProductCard from '../components/ProductCard';
 import QuickViewModal from '../components/QuickViewModal';
 import { config } from '../config/config';
+import { useCatalogProducts } from '../hooks/useCatalogProducts';
 
 // Import images
 import asSeen1 from '../assets/images/asSeen1.png';
@@ -31,39 +31,8 @@ const MaleCustomer2 = `${config.external.unsplashBase}/photo-1472099645785-5658a
 const MaleCustomer3 = `${config.external.unsplashBase}/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face`;
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        // Try API first, fallback to static JSON
-        const response = await productsApi.getAll();
-        if (response.success && response.data.length > 0) {
-          setProducts(response.data);
-        } else {
-          throw new Error('No products from API');
-        }
-      } catch (error) {
-        // Fallback to static JSON
-        try {
-          const res = await fetch(`${process.env.PUBLIC_URL}/database/database.json`);
-          const json = await res.json();
-          const allProducts = [
-            ...json.female.map((p) => ({ ...p, gender: 'female' })),
-            ...json.male.map((p) => ({ ...p, gender: 'male' })),
-          ];
-          setProducts(allProducts);
-        } catch (err) {
-          console.error('Failed to load products:', err);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+  const { products, loading } = useCatalogProducts({ limit: 100 });
 
   // Bestsellers (rating >= 4.5)
   const bestsellers = products
@@ -172,7 +141,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {bestsellers.map((product, index) => (
               <ProductCard
-                key={product._id || index}
+                key={product.id || index}
                 product={product}
                 onQuickView={setQuickViewProduct}
               />
@@ -226,7 +195,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {newArrivals.map((product, index) => (
               <ProductCard
-                key={product._id || index}
+                key={product.id || index}
                 product={product}
                 onQuickView={setQuickViewProduct}
               />

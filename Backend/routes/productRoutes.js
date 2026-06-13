@@ -24,9 +24,9 @@ const router = express.Router();
 
 // Public routes
 router.get('/', validateRequest({ query: productQuerySchema }), getProducts);
-router.get('/men', getMenProducts);
-router.get('/women', getWomenProducts);
-router.get('/sale', getSaleProducts);
+router.get('/men', validateRequest({ query: productQuerySchema }), getMenProducts);
+router.get('/women', validateRequest({ query: productQuerySchema }), getWomenProducts);
+router.get('/sale', validateRequest({ query: productQuerySchema }), getSaleProducts);
 router.get('/bestsellers', getBestsellers);
 router.get('/categories', getCategories);
 router.get('/:id', validateRequest({ params: productParamsSchema }), getProduct);

@@ -1,8 +1,13 @@
 import Coupon from '../models/Coupon.js';
+import {
+  buildPagination,
+  buildPaginationEnvelope,
+  escapeRegex,
+} from '../utils/adminListQuery.js';
 
 // @desc    Validate coupon code
 // @route   POST /api/coupons/validate
-export const validateCoupon = async (req, res) => {
+export const validateCoupon = async (req, res, next) => {
   try {
     const { code } = req.body;
     
@@ -38,16 +43,13 @@ export const validateCoupon = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Create coupon (admin)
 // @route   POST /api/coupons
-export const createCoupon = async (req, res) => {
+export const createCoupon = async (req, res, next) => {
   try {
     const couponData = req.body;
     const coupon = await Coupon.create(couponData);
@@ -56,33 +58,48 @@ export const createCoupon = async (req, res) => {
       data: coupon
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Get all coupons (admin)
 // @route   GET /api/coupons
-export const getCoupons = async (req, res) => {
+export const getCoupons = async (req, res, next) => {
   try {
-    const coupons = await Coupon.find().sort({ createdAt: -1 });
-    res.json({
-      success: true,
-      data: coupons
-    });
+    const query = req.validated?.query || req.query;
+    const { page, limit, skip } = buildPagination(query);
+    const filter = {};
+
+    if (query.isActive !== undefined) {
+      filter.isActive = query.isActive;
+    }
+
+    if (query.q) {
+      filter.code = new RegExp(escapeRegex(query.q), 'i');
+    }
+
+    if (query.validFrom) {
+      filter.validFrom = { $gte: query.validFrom };
+    }
+
+    if (query.validUntil) {
+      filter.validUntil = { $lte: query.validUntil };
+    }
+
+    const [total, coupons] = await Promise.all([
+      Coupon.countDocuments(filter),
+      Coupon.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    ]);
+
+    res.json(buildPaginationEnvelope({ total, page, limit, data: coupons }));
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Delete coupon (admin)
 // @route   DELETE /api/coupons/:id
-export const deleteCoupon = async (req, res) => {
+export const deleteCoupon = async (req, res, next) => {
   try {
     const coupon = await Coupon.findByIdAndDelete(req.params.id);
     
@@ -98,9 +115,6 @@ export const deleteCoupon = async (req, res) => {
       message: 'Coupon deleted'
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };

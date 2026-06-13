@@ -44,24 +44,24 @@
 
 ### Admin Fulfillment
 
-- [ ] **ADM-01**: Admins can list and inspect orders.
-- [ ] **ADM-02**: Admins can update fulfillment status, carrier, tracking number, and tracking history.
-- [ ] **ADM-03**: Admin list endpoints support pagination and safe filtering.
-- [ ] **ADM-04**: Admin routes are protected by authentication and admin authorization tests.
+- [x] **ADM-01**: Admins can list and inspect orders.
+- [x] **ADM-02**: Admins can update fulfillment status, carrier, tracking number, and tracking history.
+- [x] **ADM-03**: Admin list endpoints support pagination and safe filtering.
+- [x] **ADM-04**: Admin routes are protected by authentication and admin authorization tests.
 
 ### Catalog and Frontend Architecture
 
-- [ ] **CAT-01**: Product loading uses one normalized product shape across static fallback and backend data.
-- [ ] **CAT-02**: Catalog filtering/pagination has backend limits and supporting indexes.
-- [ ] **CAT-03**: API modules are split by resource instead of mixing contact/coupon into orders.
-- [ ] **CAT-04**: Large checkout/account/product page logic is extracted into smaller components/hooks where useful.
+- [x] **CAT-01**: Product loading uses one normalized product shape across static fallback and backend data.
+- [x] **CAT-02**: Catalog filtering/pagination has backend limits and supporting indexes.
+- [x] **CAT-03**: API modules are split by resource instead of mixing contact/coupon into orders.
+- [x] **CAT-04**: Large checkout/account/product page logic is extracted into smaller components/hooks where useful.
 
 ### Operations
 
-- [ ] **OPS-01**: CI installs backend/frontend dependencies and runs tests/build/audit checks.
-- [ ] **OPS-02**: Backend has health/readiness behavior suitable for deployment.
-- [ ] **OPS-03**: Backend has structured request/error logging.
-- [ ] **OPS-04**: Frontend and backend deployment/environment requirements are documented and verified.
+- [x] **OPS-01**: CI installs backend/frontend dependencies and runs tests/build/audit checks.
+- [x] **OPS-02**: Backend has health/readiness behavior suitable for deployment.
+- [x] **OPS-03**: Backend has structured request/error logging.
+- [x] **OPS-04**: Frontend and backend deployment/environment requirements are documented and verified.
 
 ## v2 Requirements
 
@@ -104,18 +104,18 @@
 | PAY-02 | Phase 5 | Complete |
 | PAY-03 | Phase 5 | Complete |
 | PAY-04 | Phase 5 | Complete |
-| ADM-01 | Phase 6 | Pending |
-| ADM-02 | Phase 6 | Pending |
-| ADM-03 | Phase 6 | Pending |
-| ADM-04 | Phase 6 | Pending |
-| CAT-01 | Phase 7 | Pending |
-| CAT-02 | Phase 7 | Pending |
-| CAT-03 | Phase 7 | Pending |
-| CAT-04 | Phase 7 | Pending |
-| OPS-01 | Phase 8 | Pending |
-| OPS-02 | Phase 8 | Pending |
-| OPS-03 | Phase 8 | Pending |
-| OPS-04 | Phase 8 | Pending |
+| ADM-01 | Phase 6 | Complete |
+| ADM-02 | Phase 6 | Complete |
+| ADM-03 | Phase 6 | Complete |
+| ADM-04 | Phase 6 | Complete |
+| CAT-01 | Phase 7 | Complete |
+| CAT-02 | Phase 7 | Complete |
+| CAT-03 | Phase 7 | Complete |
+| CAT-04 | Phase 7 | Complete |
+| OPS-01 | Phase 8 | Complete |
+| OPS-02 | Phase 8 | Complete |
+| OPS-03 | Phase 8 | Complete |
+| OPS-04 | Phase 8 | Complete |
 | V2-01 | Post-v1 | Deferred |
 | V2-02 | Post-v1 | Deferred |
 | V2-03 | Post-v1 | Deferred |

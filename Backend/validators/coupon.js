@@ -4,6 +4,7 @@ import {
   objectIdSchema,
   optionalTrimmedString,
   positiveInteger,
+  queryBoolean,
   strictObject,
   trimmedString,
 } from './shared.js';
@@ -30,4 +31,21 @@ export const couponCodeOnlySchema = strictObject({
   code: optionalTrimmedString(64).transform((value) =>
     typeof value === 'string' ? value.toUpperCase() : value
   ),
+});
+
+const paginationNumber = (defaultValue, max) =>
+  z.coerce
+    .number()
+    .int()
+    .min(1)
+    .default(defaultValue)
+    .transform((value) => (max ? Math.min(value, max) : value));
+
+export const couponAdminListQuerySchema = strictObject({
+  page: paginationNumber(1),
+  limit: paginationNumber(20, 100),
+  isActive: queryBoolean,
+  q: optionalTrimmedString(120),
+  validFrom: z.coerce.date().optional(),
+  validUntil: z.coerce.date().optional(),
 });

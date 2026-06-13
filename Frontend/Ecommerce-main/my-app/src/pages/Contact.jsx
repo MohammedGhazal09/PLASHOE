@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMapMarkerAlt, faPhone, faEnvelope, faClock } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
-import { contactApi } from '../api/ordersApi';
+import { contactApi } from '../api/contactApi';
 import { config } from '../config/config';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';

@@ -46,6 +46,12 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
+productSchema.index({ gender: 1, category: 1, createdAt: -1 });
+productSchema.index({ isOnSale: 1, createdAt: -1 });
+productSchema.index({ 'price.current': 1 });
+productSchema.index({ rating: -1 });
+productSchema.index({ createdAt: -1 });
+
 // Virtual for discount percentage
 productSchema.virtual('discountPercentage').get(function() {
   if (this.price.original > this.price.current) {

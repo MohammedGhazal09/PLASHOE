@@ -17,8 +17,8 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 4: Checkout Data Integrity and Inventory** - Make order creation, coupons, carts, stock, and order numbers consistent under real usage. (completed 2026-06-12)
 - [x] **Phase 5: Production Payments** - Replace demo checkout with a real payment flow and payment-state model. (completed 2026-06-12)
 - [x] **Phase 6: Admin Fulfillment Operations** - Add admin order fulfillment APIs and operational views. (completed 2026-06-12)
-- [ ] **Phase 7: Catalog and Frontend Architecture Cleanup** - Normalize product/cart data and reduce fragile frontend/API structure.
-- [ ] **Phase 8: CI/CD, Observability, and Deployment Readiness** - Add pipeline checks, deployment readiness, logging, and environment verification.
+- [x] **Phase 7: Catalog and Frontend Architecture Cleanup** - Normalize product/cart data and reduce fragile frontend/API structure. (completed 2026-06-13)
+- [x] **Phase 8: CI/CD, Observability, and Deployment Readiness** - Add pipeline checks, deployment readiness, logging, and environment verification. (completed 2026-06-13)
 
 ## Phase Details
 
@@ -246,15 +246,15 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 07-01: Backend catalog contract, bounds, and indexes.
+- [x] 07-01: Backend catalog contract, bounds, and indexes.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 07-02: Frontend normalized catalog boundary.
+- [x] 07-02: Frontend normalized catalog boundary.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 07-03: API module split, focused extraction, and docs.
+- [x] 07-03: API module split, focused extraction, and docs.
 
 **Cross-cutting constraints:**
 
@@ -277,12 +277,19 @@ Plans:
   4. Deployment and environment requirements are documented and verified.
 
 **Plans**: TBD
-
 Plans:
+**Wave 1**
 
-- [ ] 08-01: Add CI workflow for backend/frontend checks.
-- [ ] 08-02: Add deployment readiness and observability basics.
-- [ ] 08-03: Verify deployment documentation and environment templates.
+- [x] 08-01: Add CI workflow for backend/frontend checks.
+- [x] 08-02: Add deployment readiness and observability basics.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 08-03: Verify deployment documentation and environment templates.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
 
 ## Progress
 
@@ -296,11 +303,11 @@ Plans:
 | 4. Checkout Data Integrity and Inventory | 3/3 | Complete   | 2026-06-12 |
 | 5. Production Payments | 5/5 | Complete    | 2026-06-12 |
 | 6. Admin Fulfillment Operations | 3/3 | Complete   | 2026-06-12 |
-| 7. Catalog and Frontend Architecture Cleanup | 0/3 | Planned | - |
-| 8. CI/CD, Observability, and Deployment Readiness | 0/3 | Not started | - |
+| 7. Catalog and Frontend Architecture Cleanup | 3/3 | Complete | 2026-06-13 |
+| 8. CI/CD, Observability, and Deployment Readiness | 3/3 | Complete    | 2026-06-13 |
 
 ## Recommendations
 
-- Start Phase 7 execution next with 07-01 so frontend catalog work can rely on one backend product list contract.
-- Keep Phase 8 after Phase 7; CI/CD and observability should validate the cleaned catalog/API architecture rather than current duplicate frontend loading paths.
+- Start Phase 8 specification/planning next so CI/CD, observability, and deployment readiness validate the cleaned catalog/API architecture.
+- Use Phase 7's backend/frontend/build/static checks as the baseline commands for Phase 8 automation.
 - Preserve the no-subagent constraint for GSD execution unless the repository instruction changes.

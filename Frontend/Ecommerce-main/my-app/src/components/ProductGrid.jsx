@@ -2,70 +2,88 @@ import { useState, useMemo } from 'react';
 import ProductCard from './ProductCard';
 import QuickViewModal from './QuickViewModal';
 
-export default function ProductGrid({ products, title, showFilters = true }) {
+const CATEGORY_OPTIONS = ['all', 'Training', 'Running', 'Sneaker', 'Classic'];
+
+const sortProducts = (products, sortBy) => {
+  const sorted = [...products];
+
+  switch (sortBy) {
+    case 'price-asc':
+      return sorted.sort((a, b) => a.price.current - b.price.current);
+    case 'price-desc':
+      return sorted.sort((a, b) => b.price.current - a.price.current);
+    case 'rating':
+      return sorted.sort((a, b) => b.rating - a.rating);
+    default:
+      return sorted;
+  }
+};
+
+export default function ProductGrid({
+  products = [],
+  title,
+  showFilters = true,
+  query = {},
+  pagination = {},
+  source = 'backend',
+  onQueryChange,
+  onPageChange,
+}) {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
-  const [sortBy, setSortBy] = useState('default');
-  const [priceRange, setPriceRange] = useState([0, 200]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedRating, setSelectedRating] = useState(0);
+  const [localQuery, setLocalQuery] = useState({ category: 'all', sort: 'default', page: 1 });
+  const isControlled = Boolean(onQueryChange || onPageChange);
+  const activeQuery = isControlled ? query : localQuery;
+  const selectedCategory = activeQuery.category || 'all';
+  const sortBy = activeQuery.sort || 'default';
 
-  // Get unique categories
-  const categories = useMemo(() => {
-    const cats = [...new Set(products.map((p) => p.category))];
-    return ['all', ...cats];
-  }, [products]);
-
-  // Filter and sort products
-  const filteredProducts = useMemo(() => {
+  const displayedProducts = useMemo(() => {
+    if (isControlled) return products;
     let result = [...products];
 
-    // Filter by category
     if (selectedCategory !== 'all') {
       result = result.filter((p) => p.category === selectedCategory);
     }
 
-    // Filter by rating
-    if (selectedRating > 0) {
-      result = result.filter((p) => (p.rating || 0) >= selectedRating);
+    return sortProducts(result, sortBy);
+  }, [isControlled, products, selectedCategory, sortBy]);
+
+  const updateQuery = (updates) => {
+    const nextQuery = {
+      ...activeQuery,
+      ...updates,
+      page: 1,
+    };
+
+    if (!nextQuery.category || nextQuery.category === 'all') delete nextQuery.category;
+    if (!nextQuery.sort || nextQuery.sort === 'default') delete nextQuery.sort;
+
+    if (onQueryChange) {
+      onQueryChange(nextQuery);
+    } else {
+      setLocalQuery({
+        category: nextQuery.category || 'all',
+        sort: nextQuery.sort || 'default',
+        page: nextQuery.page,
+      });
     }
+  };
 
-    // Filter by price
-    result = result.filter((p) => {
-      const price = p.price?.current || parseFloat(p.price?.new?.replace('$', '')) || 0;
-      return price >= priceRange[0] && price <= priceRange[1];
-    });
+  const currentPage = pagination.page || activeQuery.page || 1;
+  const totalPages = pagination.pages || 0;
+  const totalProducts = pagination.total ?? products.length;
+  const canGoPrevious = currentPage > 1;
+  const canGoNext = totalPages > 0 && currentPage < totalPages;
 
-    // Sort
-    switch (sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => {
-          const priceA = a.price?.current || parseFloat(a.price?.new?.replace('$', '')) || 0;
-          const priceB = b.price?.current || parseFloat(b.price?.new?.replace('$', '')) || 0;
-          return priceA - priceB;
-        });
-        break;
-      case 'price-desc':
-        result.sort((a, b) => {
-          const priceA = a.price?.current || parseFloat(a.price?.new?.replace('$', '')) || 0;
-          const priceB = b.price?.current || parseFloat(b.price?.new?.replace('$', '')) || 0;
-          return priceB - priceA;
-        });
-        break;
-      case 'rating':
-        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case 'name':
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-        break;
+  const changePage = (page) => {
+    if (onPageChange) {
+      onPageChange(page);
+    } else {
+      setLocalQuery((current) => ({ ...current, page }));
     }
-
-    return result;
-  }, [products, sortBy, priceRange, selectedCategory, selectedRating]);
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8" data-catalog-source={source}>
       {title && <h1 className="text-3xl font-bold text-center mb-8">{title}</h1>}
 
       {showFilters && (
@@ -73,82 +91,76 @@ export default function ProductGrid({ products, title, showFilters = true }) {
           {/* Sort */}
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => updateQuery({ sort: e.target.value })}
+            aria-label="Sort products"
             className="border border-gray-300 px-4 py-2 rounded"
           >
             <option value="default">Default Sorting</option>
+            <option value="newest">Newest</option>
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
             <option value="rating">Rating</option>
-            <option value="name">Name</option>
           </select>
 
           {/* Category */}
           <select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            onChange={(e) => updateQuery({ category: e.target.value })}
+            aria-label="Filter by category"
             className="border border-gray-300 px-4 py-2 rounded"
           >
-            {categories.map((cat) => (
+            {CATEGORY_OPTIONS.map((cat) => (
               <option key={cat} value={cat}>
                 {cat === 'all' ? 'All Categories' : cat}
               </option>
             ))}
           </select>
-
-          {/* Rating */}
-          <select
-            value={selectedRating}
-            onChange={(e) => setSelectedRating(Number(e.target.value))}
-            className="border border-gray-300 px-4 py-2 rounded"
-          >
-            <option value={0}>All Ratings</option>
-            <option value={4}>4+ Stars</option>
-            <option value={3}>3+ Stars</option>
-            <option value={2}>2+ Stars</option>
-          </select>
-
-          {/* Price Range */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Price:</span>
-            <input
-              type="number"
-              value={priceRange[0]}
-              onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-              className="w-20 border border-gray-300 px-2 py-1 rounded"
-              min="0"
-            />
-            <span>-</span>
-            <input
-              type="number"
-              value={priceRange[1]}
-              onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-              className="w-20 border border-gray-300 px-2 py-1 rounded"
-              min="0"
-            />
-          </div>
         </div>
       )}
 
       {/* Products count */}
       <p className="text-center text-gray-500 mb-4">
-        Showing {filteredProducts.length} of {products.length} products
+        Showing {displayedProducts.length} of {totalProducts} products
       </p>
 
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredProducts.map((product, index) => (
+        {displayedProducts.map((product) => (
           <ProductCard
-            key={product._id || index}
+            key={product.id}
             product={product}
             onQuickView={setQuickViewProduct}
           />
         ))}
       </div>
 
-      {filteredProducts.length === 0 && (
+      {displayedProducts.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No products found matching your criteria.</p>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            type="button"
+            onClick={() => changePage(currentPage - 1)}
+            disabled={!canGoPrevious}
+            className="border border-gray-300 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed hover:border-black"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-500">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => changePage(currentPage + 1)}
+            disabled={!canGoNext}
+            className="border border-gray-300 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed hover:border-black"
+          >
+            Next
+          </button>
         </div>
       )}
 

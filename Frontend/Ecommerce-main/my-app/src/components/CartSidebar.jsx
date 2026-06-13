@@ -37,8 +37,7 @@ export default function CartSidebar() {
               <div className="flex flex-col gap-4">
                 {items.map((item) => {
                   const mutationId = item.cartItemId || item.id;
-                  const originalPrice =
-                    item.raw?.product?.price?.original || item.raw?.price?.original || item.unitPrice;
+                  const originalPrice = item.originalPrice ?? item.unitPrice;
                   const hasDiscount = originalPrice > item.unitPrice;
 
                   return (

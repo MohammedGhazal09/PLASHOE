@@ -55,8 +55,10 @@ Run from `Backend`.
 | `npm start` | Starts `server.js` with Node. |
 | `npm run dev` | Starts `server.js` with Node watch mode for local backend development. |
 | `npm run seed` | Runs `utils/seedData.js` to clear and seed products, coupons, and an admin user in MongoDB. |
+| `npm test` | Runs backend Vitest tests once. |
+| `npm test -- product.test.js validation.test.js` | Runs a focused backend route/validation test target. |
 
-The backend does not define a `test`, `lint`, `format`, or `build` script in `Backend/package.json`.
+The backend does not define a `lint`, `format`, or `build` script in `Backend/package.json`.
 
 ### Frontend
 
@@ -130,7 +132,7 @@ Frontend/Ecommerce-main/my-app/src/
 └── store/          # Auth and cart Zustand stores
 ```
 
-Pages should compose screens and call API/store boundaries rather than constructing raw backend requests. Product pages use `productsApi` and render `ProductGrid`; checkout and order pages use `ordersApi`; account flows use `useAuthStore`; cart UI uses `useCartStore`.
+Pages should compose screens and call API/store boundaries rather than constructing raw backend requests. Product catalog pages use `useCatalogProducts`, which calls the catalog service and `productsApi.getAll(params)` before rendering `ProductGrid`; checkout and order pages use `ordersApi`; contact forms use `contactApi`; coupon validation wrappers live in `couponApi`; account flows use `useAuthStore`; cart UI uses `useCartStore`.
 
 API calls should go through `src/api/axios.js`. The shared Axios instance sets `config.api.baseUrl`, sends JSON headers, attaches `Authorization: Bearer <token>` from `useAuthStore`, and logs the user out on `401` responses.
 
@@ -141,7 +143,7 @@ Use Zustand for state that crosses routes or reloads:
 - `cartStore.js` uses local cart items for guests and backend cart synchronization for authenticated users.
 - `selectItemCount`, `selectSubtotal`, and `selectTotal` are exported selectors; prefer them over duplicating cart math inside components.
 
-Use page-local React state for one-screen UI concerns such as filters, loading flags, modal state, form fields, and selected product size.
+Use page-local React state for one-screen UI concerns such as filters, modal state, form fields, and selected product size. Keep catalog list loading in the service/hook boundary rather than a global Zustand store.
 
 ## Recommended Workflows
 
@@ -157,7 +159,7 @@ Use page-local React state for one-screen UI concerns such as filters, loading f
 ### Frontend Feature Change
 
 1. Add the backend call in `src/api` first if the feature needs server data.
-2. Put cross-route state in `src/store`; keep page-only state in the page component.
+2. Put cross-route state in `src/store`; keep page-only state in the page component or a focused hook.
 3. Add or update reusable UI in `src/components` only when more than one page needs it.
 4. Wire routes in `src/App.js`; wrap authenticated screens with `ProtectedRoute`.
 5. Run a production build after significant UI, routing, or dependency changes.
@@ -185,7 +187,14 @@ npm test -- --watchAll=false
 npm run build
 ```
 
-The current frontend test file is the default CRA sample test and may not reflect the actual PLASHOE UI. Treat a passing test run as basic runner health, not complete product coverage.
+For backend changes:
+
+```bash
+cd Backend
+npm test
+```
+
+Use focused targets while iterating, then run the broader regression commands before handoff when the change crosses backend/frontend boundaries.
 
 ## High-Risk Areas
 
@@ -197,9 +206,9 @@ The current frontend test file is the default CRA sample test and may not reflec
 - Admin authorization only exists where routes explicitly add `admin`. New mutation or management routes need protection reviewed route by route.
 - `src/api/axios.js` imports `useAuthStore`, while `authStore.js` calls `authApi`, which uses the shared Axios instance. Be careful changing auth initialization or interceptor behavior because this coupling can create circular timing problems.
 - Guest cart and authenticated cart behavior diverge. Guest items use local IDs, while authenticated items use backend cart item IDs. Test login, add, update quantity, remove, coupon, checkout, and logout flows when changing cart code.
-- Product pages fall back to `public/database/database.json` if backend product API calls fail. This can hide backend failures during manual UI testing.
-- `Contact.jsx` currently calls `contactApi.send(formData)`, while `src/api/ordersApi.js` exports `contactApi.submit(name, email, subject, message)`. Treat contact form changes carefully and verify the form against the API wrapper.
-- `ordersApi.js` also exports `contactApi` and `couponApi`. This is convenient but makes the file broader than its name suggests; avoid adding more unrelated API clients there unless the project intentionally keeps shared checkout APIs together.
+- Product catalog fallback lives in `src/services/catalog/catalogService.js` and should trigger only on backend request failure. Valid empty backend catalog responses should stay empty.
+- `Contact.jsx` imports `contactApi` from `src/api/contactApi.js` and calls `contactApi.submit(name, email, subject, message)`. Treat contact form changes carefully and verify the form against the API wrapper.
+- `ordersApi.js` is order-only. Keep contact and coupon calls in `contactApi.js` and `couponApi.js` so resource ownership remains clear.
 - `Order.js` builds order numbers from `Date.now()` plus `countDocuments()`. This is simple, but concurrent order creation can still be a sensitive area because `orderNumber` is unique.
 - Contact information appears both in frontend configuration defaults and hard-coded `Contact.jsx` display text. Keep these in sync when changing public business details.
 

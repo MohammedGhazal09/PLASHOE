@@ -1,10 +1,15 @@
 import request from "supertest";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import app from "../app.js";
 import { handleApplicationErrors } from "../middleware/security.js";
+import Product from "../models/Product.js";
 import { redact, serializeError } from "../utils/logger.js";
 
 const rateLimitHeader = "X-Rate-Limit-Test";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("security middleware", () => {
   it("applies route-specific authentication rate limits with stable 429 envelopes", async () => {
@@ -95,6 +100,23 @@ describe("security middleware", () => {
       message: "Server Error",
       requestId: "req-error-direct",
     });
+  });
+
+  it("hides controller-level unexpected error details from client envelopes", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(Product, "find").mockImplementationOnce(() => {
+      throw new Error("MongoServerError: leaked product collection detail");
+    });
+
+    const response = await request(app).get("/api/products").expect(500);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Server Error",
+      requestId: response.headers["x-request-id"],
+    });
+    expect(response.text).not.toContain("leaked product collection detail");
+    expect(consoleError).toHaveBeenCalled();
   });
 
   it("redacts sensitive values from structured metadata", () => {

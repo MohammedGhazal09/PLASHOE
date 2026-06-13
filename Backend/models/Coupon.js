@@ -38,6 +38,9 @@ const couponSchema = new mongoose.Schema({
   timestamps: true
 });
 
+couponSchema.index({ isActive: 1, createdAt: -1 });
+couponSchema.index({ validFrom: 1, validUntil: 1 });
+
 // Check if coupon is valid
 couponSchema.methods.isValid = function() {
   const now = new Date();

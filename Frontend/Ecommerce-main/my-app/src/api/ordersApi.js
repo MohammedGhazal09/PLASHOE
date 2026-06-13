@@ -24,17 +24,3 @@ export const ordersApi = {
     return data;
   },
 };
-
-export const contactApi = {
-  submit: async (name, email, subject, message) => {
-    const { data } = await api.post('/contact', { name, email, subject, message });
-    return data;
-  },
-};
-
-export const couponApi = {
-  validate: async (code) => {
-    const { data } = await api.post('/coupons/validate', { code });
-    return data;
-  },
-};

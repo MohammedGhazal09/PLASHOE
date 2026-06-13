@@ -210,6 +210,8 @@ orderSchema.index(
     }
   }
 );
+orderSchema.index({ status: 1, paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ user: 1, createdAt: -1 });
 
 const generateOrderNumber = () => {
   const timePart = Date.now().toString(36).toUpperCase();

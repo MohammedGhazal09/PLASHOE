@@ -22,4 +22,7 @@ const contactMessageSchema = new mongoose.Schema({
   timestamps: true
 });
 
+contactMessageSchema.index({ isRead: 1, createdAt: -1 });
+contactMessageSchema.index({ email: 1, createdAt: -1 });
+
 export default mongoose.model('ContactMessage', contactMessageSchema);

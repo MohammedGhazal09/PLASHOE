@@ -1,8 +1,14 @@
 import ContactMessage from '../models/ContactMessage.js';
+import {
+  buildDateRangeFilter,
+  buildPagination,
+  buildPaginationEnvelope,
+  escapeRegex,
+} from '../utils/adminListQuery.js';
 
 // @desc    Submit contact form
 // @route   POST /api/contact
-export const submitContact = async (req, res) => {
+export const submitContact = async (req, res, next) => {
   try {
     const { name, email, subject, message } = req.body;
 
@@ -26,34 +32,49 @@ export const submitContact = async (req, res) => {
       data: contact
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Get all messages (admin)
 // @route   GET /api/contact
-export const getMessages = async (req, res) => {
+export const getMessages = async (req, res, next) => {
   try {
-    const messages = await ContactMessage.find().sort({ createdAt: -1 });
-    res.json({
-      success: true,
-      count: messages.length,
-      data: messages
+    const query = req.validated?.query || req.query;
+    const { page, limit, skip } = buildPagination(query);
+    const filter = {};
+
+    if (query.isRead !== undefined) {
+      filter.isRead = query.isRead;
+    }
+
+    if (query.q) {
+      const pattern = new RegExp(escapeRegex(query.q), 'i');
+      filter.$or = [{ name: pattern }, { email: pattern }];
+    }
+
+    const createdAt = buildDateRangeFilter({
+      from: query.createdFrom,
+      to: query.createdTo,
     });
+    if (createdAt) {
+      filter.createdAt = createdAt;
+    }
+
+    const [total, messages] = await Promise.all([
+      ContactMessage.countDocuments(filter),
+      ContactMessage.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    ]);
+
+    res.json(buildPaginationEnvelope({ total, page, limit, data: messages }));
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Mark message as read (admin)
 // @route   PUT /api/contact/:id/read
-export const markAsRead = async (req, res) => {
+export const markAsRead = async (req, res, next) => {
   try {
     const message = await ContactMessage.findByIdAndUpdate(
       req.params.id,
@@ -73,16 +94,13 @@ export const markAsRead = async (req, res) => {
       data: message
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Delete message (admin)
 // @route   DELETE /api/contact/:id
-export const deleteMessage = async (req, res) => {
+export const deleteMessage = async (req, res, next) => {
   try {
     const message = await ContactMessage.findByIdAndDelete(req.params.id);
 
@@ -98,9 +116,6 @@ export const deleteMessage = async (req, res) => {
       message: 'Message deleted'
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    next(error);
   }
 };

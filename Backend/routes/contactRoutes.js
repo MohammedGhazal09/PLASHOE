@@ -8,7 +8,11 @@ import {
 import { protect, admin } from '../middleware/auth.js';
 import { contactLimiter } from '../middleware/security.js';
 import { validateRequest } from '../middleware/validate.js';
-import { contactParamsSchema, contactSubmissionSchema } from '../validators/contact.js';
+import {
+  contactAdminListQuerySchema,
+  contactParamsSchema,
+  contactSubmissionSchema,
+} from '../validators/contact.js';
 
 const router = express.Router();
 
@@ -16,7 +20,7 @@ const router = express.Router();
 router.post('/', contactLimiter, validateRequest({ body: contactSubmissionSchema }), submitContact);
 
 // Admin routes
-router.get('/', protect, admin, getMessages);
+router.get('/', protect, admin, validateRequest({ query: contactAdminListQuerySchema }), getMessages);
 router.put('/:id/read', protect, admin, validateRequest({ params: contactParamsSchema }), markAsRead);
 router.delete('/:id', protect, admin, validateRequest({ params: contactParamsSchema }), deleteMessage);
 
