@@ -2,6 +2,7 @@ import Order from '../models/Order.js';
 import PaymentEvent from '../models/PaymentEvent.js';
 import * as paymentProvider from '../services/paymentProvider.js';
 import { transitionOrderPaymentState } from '../services/paymentState.js';
+import { logError, logInfo, logWarn, serializeError } from '../utils/logger.js';
 
 const PROVIDER = 'stripe';
 
@@ -121,6 +122,29 @@ const getFailureReason = (stripeObject) =>
 const amountFromMinorUnits = (amount) => Number(amount || 0) / 100;
 
 const isDuplicateKeyError = (error) => error?.code === 11000;
+
+const getWebhookLogMetadata = ({
+  req,
+  event,
+  duplicate,
+  status,
+  error,
+  signaturePresent,
+} = {}) => {
+  const metadata = {};
+
+  if (req?.requestId) metadata.requestId = req.requestId;
+  if (event?.id) metadata.eventId = event.id;
+  if (event?.type) metadata.eventType = event.type;
+  if (status) metadata.status = status;
+  if (typeof duplicate === 'boolean') metadata.duplicate = duplicate;
+  if (typeof signaturePresent === 'boolean') {
+    metadata.signaturePresent = signaturePresent;
+  }
+  if (error) metadata.error = serializeError(error);
+
+  return metadata;
+};
 
 const claimPaymentEvent = async (event) => {
   try {
@@ -331,6 +355,11 @@ export const handleStripeWebhook = async (req, res) => {
       signature,
     });
   } catch {
+    logWarn(
+      'stripe-webhook-invalid-signature',
+      getWebhookLogMetadata({ req, signaturePresent: Boolean(signature) })
+    );
+
     return res.status(400).json({
       success: false,
       message: 'Invalid Stripe webhook signature',
@@ -343,6 +372,16 @@ export const handleStripeWebhook = async (req, res) => {
     const claim = await claimPaymentEvent(event);
 
     if (claim.duplicate) {
+      logInfo(
+        'stripe-webhook-duplicate',
+        getWebhookLogMetadata({
+          req,
+          event,
+          duplicate: true,
+          status: claim.eventRecord?.status || 'unknown',
+        })
+      );
+
       return res.json({
         success: true,
         message: 'Webhook event already accepted',
@@ -359,6 +398,16 @@ export const handleStripeWebhook = async (req, res) => {
 
     await markPaymentEventProcessed({ eventRecord, order });
 
+    logInfo(
+      'stripe-webhook-accepted',
+      getWebhookLogMetadata({
+        req,
+        event,
+        duplicate: false,
+        status: 'processed',
+      })
+    );
+
     return res.json({
       success: true,
       message: 'Webhook accepted',
@@ -373,7 +422,16 @@ export const handleStripeWebhook = async (req, res) => {
       await markPaymentEventFailed({ eventRecord, error });
     }
 
-    console.error(error?.stack || error);
+    logError(
+      'stripe-webhook-processing-failed',
+      getWebhookLogMetadata({
+        req,
+        event,
+        status: 'failed',
+        error,
+      })
+    );
+
     return res.status(500).json({
       success: false,
       message: 'Webhook processing failed',
