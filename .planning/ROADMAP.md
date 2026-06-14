@@ -383,7 +383,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 11-03: Backup restore procedure, incident runbook, and final verification.
+- [x] 11-03: Backup restore procedure, incident runbook, and final verification.
 
 **Cross-cutting constraints:**
 
@@ -440,7 +440,7 @@ Plan candidates:
 | 8. CI/CD, Observability, and Deployment Readiness | 3/3 | Complete    | 2026-06-13 |
 | 9. Production Launch Setup and Staging Verification | 3/3 | Blocked on external setup |  |
 | 10. Frontend Tooling Modernization and Warning Cleanup | 3/3 | Complete | 2026-06-14 |
-| 11. Operational Monitoring Alerting and Incident Readiness | 2/3 | In Progress|  |
+| 11. Operational Monitoring Alerting and Incident Readiness | 3/3 | Blocked on external setup |  |
 | 12. Release Gate Production Cutover and Post Launch Review | 0/0 | Not started | |
 
 ## Recommendations
