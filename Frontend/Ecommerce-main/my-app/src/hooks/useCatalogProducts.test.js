@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { loadCatalogProducts } from '../services/catalog/catalogService';
 import { useCatalogProducts } from './useCatalogProducts';
 
-jest.mock('../services/catalog/catalogService', () => ({
-  loadCatalogProducts: jest.fn(),
+vi.mock('../services/catalog/catalogService', () => ({
+  loadCatalogProducts: vi.fn(),
 }));
 
 const pageOne = {
@@ -21,7 +22,7 @@ const pageTwo = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 test('returns products, pagination, loading, error, source, and reload', async () => {

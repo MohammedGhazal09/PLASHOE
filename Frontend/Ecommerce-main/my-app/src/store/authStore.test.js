@@ -1,23 +1,24 @@
+import { vi } from 'vitest';
 import { act } from '@testing-library/react';
 import axiosInstance from '../api/axios';
 import { authApi } from '../api/authApi';
 import { useAuthStore } from './authStore';
 
-jest.mock('../api/authApi', () => ({
+vi.mock('../api/authApi', () => ({
   authApi: {
-    register: jest.fn(),
-    login: jest.fn(),
-    getMe: jest.fn(),
-    updateProfile: jest.fn(),
-    addAddress: jest.fn(),
-    deleteAddress: jest.fn(),
+    register: vi.fn(),
+    login: vi.fn(),
+    getMe: vi.fn(),
+    updateProfile: vi.fn(),
+    addAddress: vi.fn(),
+    deleteAddress: vi.fn(),
   },
 }));
 
 const resetAuthStore = () => {
   localStorage.clear();
   sessionStorage.clear();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   useAuthStore.setState({
     user: null,
     token: null,

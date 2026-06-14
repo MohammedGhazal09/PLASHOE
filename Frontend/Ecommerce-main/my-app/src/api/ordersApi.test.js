@@ -1,10 +1,13 @@
+import { vi } from 'vitest';
 import api from './axios';
 import { ordersApi } from './ordersApi';
 
-jest.mock('./axios', () => ({
-  post: jest.fn(),
-  get: jest.fn(),
-  put: jest.fn(),
+vi.mock('./axios', () => ({
+  default: {
+    post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
+  },
 }));
 
 test('create sends an Idempotency-Key header when provided', async () => {

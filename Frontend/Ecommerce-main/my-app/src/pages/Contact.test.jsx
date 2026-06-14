@@ -1,6 +1,16 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import L from 'leaflet';
+import toast from 'react-hot-toast';
+import { contactApi } from '../api/contactApi';
+import Contact, { getContactTileLayer } from './Contact';
 
-jest.mock('leaflet', () => {
+const toastMock = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+}));
+
+vi.mock('leaflet', () => {
   const mockMap = {
     setView() {
       return mockMap;
@@ -8,7 +18,7 @@ jest.mock('leaflet', () => {
     remove() {},
   };
   const mockTileLayer = {
-    addTo: jest.fn(() => {
+    addTo: vi.fn(() => {
       return mockTileLayer;
     }),
   };
@@ -27,7 +37,7 @@ jest.mock('leaflet', () => {
     map() {
       return mockMap;
     },
-    tileLayer: jest.fn(() => {
+    tileLayer: vi.fn(() => {
       return mockTileLayer;
     }),
     marker() {
@@ -43,12 +53,13 @@ jest.mock('leaflet', () => {
   };
 });
 
-jest.mock('react-hot-toast', () => ({
-  success: jest.fn(),
-  error: jest.fn(),
+vi.mock('react-hot-toast', () => ({
+  default: toastMock,
+  success: toastMock.success,
+  error: toastMock.error,
 }));
 
-jest.mock('../config/config', () => ({
+vi.mock('../config/config', () => ({
   config: {
     map: {
       apiKey: '',
@@ -66,16 +77,11 @@ jest.mock('../config/config', () => ({
   },
 }));
 
-jest.mock('../api/contactApi', () => ({
+vi.mock('../api/contactApi', () => ({
   contactApi: {
-    submit: jest.fn(),
+    submit: vi.fn(),
   },
 }));
-
-const toast = require('react-hot-toast');
-const L = require('leaflet').default;
-const { contactApi } = require('../api/contactApi');
-const { default: Contact, getContactTileLayer } = require('./Contact');
 
 const fillContactForm = (container) => {
   fireEvent.change(container.querySelector('input[name="name"]'), {
@@ -93,7 +99,7 @@ const fillContactForm = (container) => {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   L.tileLayer.mockImplementation(() => L.__mockTileLayer);
 });
 

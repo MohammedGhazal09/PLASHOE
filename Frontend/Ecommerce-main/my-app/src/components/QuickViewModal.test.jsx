@@ -1,19 +1,26 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import QuickViewModal from './QuickViewModal';
 
-const mockAddItem = jest.fn();
-const mockOpenCart = jest.fn();
-const mockToastSuccess = jest.fn();
-const mockToastError = jest.fn();
+const { mockAddItem, mockOpenCart, mockToastSuccess, mockToastError } = vi.hoisted(() => ({
+  mockAddItem: vi.fn(),
+  mockOpenCart: vi.fn(),
+  mockToastSuccess: vi.fn(),
+  mockToastError: vi.fn(),
+}));
 
-jest.mock('../store/cartStore', () => ({
+vi.mock('../store/cartStore', () => ({
   useCartStore: () => ({
     addItem: mockAddItem,
     openCart: mockOpenCart,
   }),
 }));
 
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', () => ({
+  default: {
+    success: (...args) => mockToastSuccess(...args),
+    error: (...args) => mockToastError(...args),
+  },
   success: (...args) => mockToastSuccess(...args),
   error: (...args) => mockToastError(...args),
 }));
@@ -29,12 +36,12 @@ const product = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockAddItem.mockResolvedValue({ success: true });
 });
 
 test('renders normalized quick-view product fields', () => {
-  render(<QuickViewModal product={product} onClose={jest.fn()} />);
+  render(<QuickViewModal product={product} onClose={vi.fn()} />);
 
   expect(screen.getByAltText('Backend Runner')).toHaveAttribute('src', '/images/runner.jpg');
   expect(screen.getByText('$150.00')).toBeInTheDocument();
@@ -43,7 +50,7 @@ test('renders normalized quick-view product fields', () => {
 });
 
 test('adds normalized quick-view payload to cart and closes modal', async () => {
-  const handleClose = jest.fn();
+  const handleClose = vi.fn();
   render(<QuickViewModal product={product} onClose={handleClose} />);
 
   fireEvent.click(screen.getByText('ADD TO CART - $120.00'));

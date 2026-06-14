@@ -1,8 +1,11 @@
+import { vi } from 'vitest';
 import api from './axios';
 import { couponApi } from './couponApi';
 
-jest.mock('./axios', () => ({
-  post: jest.fn(),
+vi.mock('./axios', () => ({
+  default: {
+    post: vi.fn(),
+  },
 }));
 
 test('validate posts coupon code and returns unwrapped response data', async () => {

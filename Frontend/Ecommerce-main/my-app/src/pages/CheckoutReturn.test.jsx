@@ -1,11 +1,12 @@
+import { vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ordersApi } from '../api/ordersApi';
 import CheckoutReturn from './CheckoutReturn';
 
-jest.mock('../api/ordersApi', () => ({
+vi.mock('../api/ordersApi', () => ({
   ordersApi: {
-    getById: jest.fn(),
+    getById: vi.fn(),
   },
 }));
 
@@ -17,7 +18,7 @@ const renderReturnPage = (path, variant = 'success') =>
   );
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 test('refetches the order before showing paid success state', async () => {

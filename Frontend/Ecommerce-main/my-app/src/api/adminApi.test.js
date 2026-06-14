@@ -1,13 +1,16 @@
+import { vi } from 'vitest';
 import api from './axios';
 import { adminApi } from './adminApi';
 
-jest.mock('./axios', () => ({
-  get: jest.fn(),
-  patch: jest.fn(),
+vi.mock('./axios', () => ({
+  default: {
+    get: vi.fn(),
+    patch: vi.fn(),
+  },
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 test('getOrders calls the admin order list endpoint with params', async () => {

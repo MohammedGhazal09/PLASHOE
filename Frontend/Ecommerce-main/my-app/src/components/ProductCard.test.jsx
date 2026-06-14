@@ -1,19 +1,26 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ProductCard from './ProductCard';
 
-const mockAddItem = jest.fn();
-const mockOpenCart = jest.fn();
-const mockToastSuccess = jest.fn();
-const mockToastError = jest.fn();
+const { mockAddItem, mockOpenCart, mockToastSuccess, mockToastError } = vi.hoisted(() => ({
+  mockAddItem: vi.fn(),
+  mockOpenCart: vi.fn(),
+  mockToastSuccess: vi.fn(),
+  mockToastError: vi.fn(),
+}));
 
-jest.mock('../store/cartStore', () => ({
+vi.mock('../store/cartStore', () => ({
   useCartStore: () => ({
     addItem: mockAddItem,
     openCart: mockOpenCart,
   }),
 }));
 
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', () => ({
+  default: {
+    success: (...args) => mockToastSuccess(...args),
+    error: (...args) => mockToastError(...args),
+  },
   success: (...args) => mockToastSuccess(...args),
   error: (...args) => mockToastError(...args),
 }));
@@ -28,7 +35,7 @@ const product = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockAddItem.mockResolvedValue({ success: true });
 });
 

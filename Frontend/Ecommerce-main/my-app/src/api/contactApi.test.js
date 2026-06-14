@@ -1,8 +1,11 @@
+import { vi } from 'vitest';
 import api from './axios';
 import { contactApi } from './contactApi';
 
-jest.mock('./axios', () => ({
-  post: jest.fn(),
+vi.mock('./axios', () => ({
+  default: {
+    post: vi.fn(),
+  },
 }));
 
 test('submit posts contact fields and returns unwrapped response data', async () => {

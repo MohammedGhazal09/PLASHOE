@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import toast from 'react-hot-toast';
@@ -7,10 +8,16 @@ import { useAuthStore } from '../store/authStore';
 import { normalizeCartItem, useCartStore } from '../store/cartStore';
 import Checkout from './Checkout';
 
-const mockNavigate = jest.fn();
-const assignMock = jest.fn();
+const { mockNavigate, assignMock, toastMock } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+  assignMock: vi.fn(),
+  toastMock: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
-jest.mock('react-router-dom', () => {
+vi.mock('react-router-dom', () => {
   return {
     __esModule: true,
     Link: ({ to, children, ...props }) => (
@@ -22,37 +29,38 @@ jest.mock('react-router-dom', () => {
   };
 }, { virtual: true });
 
-jest.mock('react-hot-toast', () => ({
-  success: jest.fn(),
-  error: jest.fn(),
+vi.mock('react-hot-toast', () => ({
+  default: toastMock,
+  success: toastMock.success,
+  error: toastMock.error,
 }));
 
-jest.mock('../api/cartApi', () => ({
+vi.mock('../api/cartApi', () => ({
   cartApi: {
-    getCart: jest.fn(),
-    addItem: jest.fn(),
-    updateItem: jest.fn(),
-    removeItem: jest.fn(),
-    clearCart: jest.fn(),
-    applyCoupon: jest.fn(),
-    removeCoupon: jest.fn(),
+    getCart: vi.fn(),
+    addItem: vi.fn(),
+    updateItem: vi.fn(),
+    removeItem: vi.fn(),
+    clearCart: vi.fn(),
+    applyCoupon: vi.fn(),
+    removeCoupon: vi.fn(),
   },
 }));
 
-jest.mock('../api/ordersApi', () => ({
+vi.mock('../api/ordersApi', () => ({
   ordersApi: {
-    create: jest.fn(),
+    create: vi.fn(),
   },
 }));
 
-jest.mock('../api/authApi', () => ({
+vi.mock('../api/authApi', () => ({
   authApi: {
-    register: jest.fn(),
-    login: jest.fn(),
-    getMe: jest.fn(),
-    updateProfile: jest.fn(),
-    addAddress: jest.fn(),
-    deleteAddress: jest.fn(),
+    register: vi.fn(),
+    login: vi.fn(),
+    getMe: vi.fn(),
+    updateProfile: vi.fn(),
+    addAddress: vi.fn(),
+    deleteAddress: vi.fn(),
   },
 }));
 
@@ -78,7 +86,7 @@ const cartData = (overrides = {}) => ({
 
 const resetStores = ({ authenticated = true, cart = cartData() } = {}) => {
   localStorage.clear();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockNavigate.mockClear();
   cartApi.getCart.mockResolvedValue({ success: true, data: cart });
   useAuthStore.setState({
@@ -107,12 +115,22 @@ const renderCheckout = async () => {
   return result;
 };
 
-const fillShippingForm = (container) => {
-  userEvent.type(container.querySelector('input[name="phone"]'), '5551234567');
-  userEvent.type(container.querySelector('input[name="address"]'), '123 Test Street');
-  userEvent.type(container.querySelector('input[name="city"]'), 'Testville');
-  userEvent.type(container.querySelector('input[name="state"]'), 'CA');
-  userEvent.type(container.querySelector('input[name="zipCode"]'), '90210');
+const fillShippingForm = async (container, user) => {
+  const typeIfBlank = async (selector, value) => {
+    const input = container.querySelector(selector);
+    if (!input.value) {
+      await user.type(input, value);
+    }
+  };
+
+  await typeIfBlank('input[name="firstName"]', 'Test');
+  await typeIfBlank('input[name="lastName"]', 'Buyer');
+  await typeIfBlank('input[name="email"]', 'buyer@example.com');
+  await user.type(container.querySelector('input[name="phone"]'), '5551234567');
+  await user.type(container.querySelector('input[name="address"]'), '123 Test Street');
+  await user.type(container.querySelector('input[name="city"]'), 'Testville');
+  await user.type(container.querySelector('input[name="state"]'), 'CA');
+  await user.type(container.querySelector('input[name="zipCode"]'), '90210');
 };
 
 beforeEach(() => {
@@ -138,9 +156,10 @@ test('applies a coupon, shows success, and clears the coupon input', async () =>
 
   await renderCheckout();
 
+  const user = userEvent.setup();
   const couponInput = screen.getByPlaceholderText(/coupon code/i);
-  userEvent.type(couponInput, 'save20');
-  userEvent.click(screen.getByRole('button', { name: /apply/i }));
+  await user.type(couponInput, 'save20');
+  await user.click(screen.getByRole('button', { name: /apply/i }));
 
   await waitFor(() => {
     expect(toast.success).toHaveBeenCalledWith('Coupon applied! 20% off');
@@ -158,9 +177,10 @@ test('preserves coupon input when coupon application fails', async () => {
 
   await renderCheckout();
 
+  const user = userEvent.setup();
   const couponInput = screen.getByPlaceholderText(/coupon code/i);
-  userEvent.type(couponInput, 'missing');
-  userEvent.click(screen.getByRole('button', { name: /apply/i }));
+  await user.type(couponInput, 'missing');
+  await user.click(screen.getByRole('button', { name: /apply/i }));
 
   await waitFor(() => {
     expect(toast.error).toHaveBeenCalledWith('Coupon not found');
@@ -178,11 +198,12 @@ test('submits authenticated checkout-start and redirects to hosted payment', asy
     },
   });
   const { container } = await renderCheckout();
+  const user = userEvent.setup();
 
-  fillShippingForm(container);
+  await fillShippingForm(container, user);
   expect(screen.queryByText(new RegExp('no real payment will be ' + 'processed', 'i'))).not.toBeInTheDocument();
   expect(screen.queryByText(new RegExp('automatically ' + 'confirmed', 'i'))).not.toBeInTheDocument();
-  userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
+  await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
   await waitFor(() => {
     expect(ordersApi.create).toHaveBeenCalledWith(
@@ -211,9 +232,10 @@ test('submits authenticated checkout-start and redirects to hosted payment', asy
 test('shows an error when checkout-start succeeds without a payment URL', async () => {
   ordersApi.create.mockResolvedValue({ success: true, data: { payment: {} } });
   const { container } = await renderCheckout();
+  const user = userEvent.setup();
 
-  fillShippingForm(container);
-  userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
+  await fillShippingForm(container, user);
+  await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
   await waitFor(() => {
     expect(toast.error).toHaveBeenCalledWith('Failed to start payment');
@@ -229,12 +251,13 @@ test('keeps cart state and syncs after checkout conflict responses', async () =>
     },
   });
   const { container } = await renderCheckout();
+  const user = userEvent.setup();
 
-  fillShippingForm(container);
-  userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
+  await fillShippingForm(container, user);
+  await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
   await waitFor(() => {
-  expect(toast.error).toHaveBeenCalledWith('Insufficient stock for one or more cart items');
+    expect(toast.error).toHaveBeenCalledWith('Insufficient stock for one or more cart items');
   });
   expect(cartApi.clearCart).not.toHaveBeenCalled();
   expect(cartApi.getCart).toHaveBeenCalledTimes(3);
@@ -256,9 +279,10 @@ test('shows the empty-cart message without calling the order API', async () => {
 test('defensively redirects unauthenticated submit attempts to account', async () => {
   resetStores({ authenticated: false });
   const { container } = await renderCheckout();
+  const user = userEvent.setup();
 
-  fillShippingForm(container);
-  userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
+  await fillShippingForm(container, user);
+  await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
   await waitFor(() => {
     expect(toast.error).toHaveBeenCalledWith('Please log in to checkout');

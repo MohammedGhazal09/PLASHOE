@@ -1,15 +1,18 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import ProductGrid from './ProductGrid';
 
-jest.mock('./ProductCard', () => ({ product, onQuickView }) => (
-  <button type="button" onClick={() => onQuickView(product)}>
-    {product.name}
-  </button>
-));
+vi.mock('./ProductCard', () => ({
+  default: ({ product, onQuickView }) => (
+    <button type="button" onClick={() => onQuickView(product)}>
+      {product.name}
+    </button>
+  ),
+}));
 
-jest.mock('./QuickViewModal', () => ({ product }) => (
-  <div>Quick view: {product.name}</div>
-));
+vi.mock('./QuickViewModal', () => ({
+  default: ({ product }) => <div>Quick view: {product.name}</div>,
+}));
 
 const products = [
   {
@@ -34,8 +37,8 @@ test('renders backend-supported controls without legacy local filters', () => {
       products={products}
       query={{ page: 1, limit: 20 }}
       pagination={{ page: 1, limit: 20, total: 2, count: 2, pages: 1 }}
-      onQueryChange={jest.fn()}
-      onPageChange={jest.fn()}
+      onQueryChange={vi.fn()}
+      onPageChange={vi.fn()}
     />
   );
 
@@ -47,7 +50,7 @@ test('renders backend-supported controls without legacy local filters', () => {
 });
 
 test('emits controlled query changes with page reset', () => {
-  const handleQueryChange = jest.fn();
+  const handleQueryChange = vi.fn();
 
   render(
     <ProductGrid
@@ -55,7 +58,7 @@ test('emits controlled query changes with page reset', () => {
       query={{ gender: 'male', page: 2, limit: 20 }}
       pagination={{ page: 2, limit: 20, total: 40, count: 20, pages: 2 }}
       onQueryChange={handleQueryChange}
-      onPageChange={jest.fn()}
+      onPageChange={vi.fn()}
     />
   );
 
@@ -72,14 +75,14 @@ test('emits controlled query changes with page reset', () => {
 });
 
 test('emits previous and next page changes from pagination metadata', () => {
-  const handlePageChange = jest.fn();
+  const handlePageChange = vi.fn();
 
   render(
     <ProductGrid
       products={products}
       query={{ page: 2, limit: 20 }}
       pagination={{ page: 2, limit: 20, total: 60, count: 20, pages: 3 }}
-      onQueryChange={jest.fn()}
+      onQueryChange={vi.fn()}
       onPageChange={handlePageChange}
     />
   );

@@ -1,16 +1,17 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import ProtectedRoute from './ProtectedRoute';
 
-jest.mock('../api/authApi', () => ({
+vi.mock('../api/authApi', () => ({
   authApi: {
-    register: jest.fn(),
-    login: jest.fn(),
-    getMe: jest.fn(),
-    updateProfile: jest.fn(),
-    addAddress: jest.fn(),
-    deleteAddress: jest.fn(),
+    register: vi.fn(),
+    login: vi.fn(),
+    getMe: vi.fn(),
+    updateProfile: vi.fn(),
+    addAddress: vi.fn(),
+    deleteAddress: vi.fn(),
   },
 }));
 

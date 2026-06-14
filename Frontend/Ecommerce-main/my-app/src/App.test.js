@@ -1,30 +1,31 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-jest.mock('./api/authApi', () => ({
+vi.mock('./api/authApi', () => ({
   authApi: {
-    register: jest.fn(),
-    login: jest.fn(),
-    getMe: jest.fn(),
-    updateProfile: jest.fn(),
-    addAddress: jest.fn(),
-    deleteAddress: jest.fn(),
+    register: vi.fn(),
+    login: vi.fn(),
+    getMe: vi.fn(),
+    updateProfile: vi.fn(),
+    addAddress: vi.fn(),
+    deleteAddress: vi.fn(),
   },
 }));
 
-jest.mock('./api/cartApi', () => ({
+vi.mock('./api/cartApi', () => ({
   cartApi: {
-    getCart: jest.fn(),
-    addItem: jest.fn(),
-    updateItem: jest.fn(),
-    removeItem: jest.fn(),
-    clearCart: jest.fn(),
-    applyCoupon: jest.fn(),
-    removeCoupon: jest.fn(),
+    getCart: vi.fn(),
+    addItem: vi.fn(),
+    updateItem: vi.fn(),
+    removeItem: vi.fn(),
+    clearCart: vi.fn(),
+    applyCoupon: vi.fn(),
+    removeCoupon: vi.fn(),
   },
 }));
 
-jest.mock('./pages', () => ({
+vi.mock('./pages', () => ({
   Home: () => <section>Featured PLASHOE storefront</section>,
   Men: () => <section>Men page</section>,
   Women: () => <section>Women page</section>,
