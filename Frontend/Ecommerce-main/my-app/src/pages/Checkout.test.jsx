@@ -244,25 +244,31 @@ test('shows an error when checkout-start succeeds without a payment URL', async 
 });
 
 test('keeps cart state and syncs after checkout conflict responses', async () => {
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
   ordersApi.create.mockRejectedValue({
     response: {
       status: 409,
       data: { message: 'Insufficient stock for one or more cart items' },
     },
   });
-  const { container } = await renderCheckout();
-  const user = userEvent.setup();
+  try {
+    const { container } = await renderCheckout();
+    const user = userEvent.setup();
 
-  await fillShippingForm(container, user);
-  await user.click(screen.getByRole('button', { name: /continue to payment/i }));
+    await fillShippingForm(container, user);
+    await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
-  await waitFor(() => {
-    expect(toast.error).toHaveBeenCalledWith('Insufficient stock for one or more cart items');
-  });
-  expect(cartApi.clearCart).not.toHaveBeenCalled();
-  expect(cartApi.getCart).toHaveBeenCalledTimes(3);
-  expect(assignMock).not.toHaveBeenCalled();
-  expect(mockNavigate).not.toHaveBeenCalledWith('/account', { state: { tab: 'orders' } });
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Insufficient stock for one or more cart items');
+    });
+    expect(consoleError).toHaveBeenCalledWith('Checkout error:', expect.any(Object));
+    expect(cartApi.clearCart).not.toHaveBeenCalled();
+    expect(cartApi.getCart).toHaveBeenCalledTimes(3);
+    expect(assignMock).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalledWith('/account', { state: { tab: 'orders' } });
+  } finally {
+    consoleError.mockRestore();
+  }
 });
 
 test('shows the empty-cart message without calling the order API', async () => {

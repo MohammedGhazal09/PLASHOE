@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import { ordersApi } from '../api/ordersApi';
+import { TestMemoryRouter } from '../test/routerTestUtils';
 import CheckoutReturn from './CheckoutReturn';
 
 vi.mock('../api/ordersApi', () => ({
@@ -12,9 +12,9 @@ vi.mock('../api/ordersApi', () => ({
 
 const renderReturnPage = (path, variant = 'success') =>
   render(
-    <MemoryRouter initialEntries={[path]}>
+    <TestMemoryRouter initialEntries={[path]}>
       <CheckoutReturn variant={variant} />
-    </MemoryRouter>
+    </TestMemoryRouter>
   );
 
 beforeEach(() => {

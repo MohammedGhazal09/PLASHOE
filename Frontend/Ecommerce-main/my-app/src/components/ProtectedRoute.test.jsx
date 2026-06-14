@@ -1,7 +1,8 @@
 import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { TestMemoryRouter } from '../test/routerTestUtils';
 import ProtectedRoute from './ProtectedRoute';
 
 vi.mock('../api/authApi', () => ({
@@ -17,10 +18,7 @@ vi.mock('../api/authApi', () => ({
 
 const renderProtectedRoute = () =>
   render(
-    <MemoryRouter
-      initialEntries={['/checkout']}
-      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-    >
+    <TestMemoryRouter initialEntries={['/checkout']}>
       <Routes>
         <Route
           path="/checkout"
@@ -32,7 +30,7 @@ const renderProtectedRoute = () =>
         />
         <Route path="/account" element={<h1>Account route</h1>} />
       </Routes>
-    </MemoryRouter>
+    </TestMemoryRouter>
   );
 
 beforeEach(() => {
