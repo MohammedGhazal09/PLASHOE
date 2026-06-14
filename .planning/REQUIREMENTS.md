@@ -72,10 +72,10 @@
 
 ### Frontend Tooling Modernization
 
-- [ ] **TOOL-01**: Frontend tooling is migrated to a maintained build/test stack or the CRA dependency debt is otherwise removed.
+- [x] **TOOL-01**: Frontend tooling is migrated to a maintained build/test stack or the CRA dependency debt is otherwise removed.
 - [ ] **TOOL-02**: The production audit policy no longer needs to accept CRA/react-scripts tooling findings.
 - [ ] **TOOL-03**: Frontend tests pass without recurring React `act(...)` and React Router future-flag warning noise.
-- [ ] **TOOL-04**: Frontend production build passes without the known hook dependency, stale Browserslist, or Node deprecation warnings.
+- [x] **TOOL-04**: Frontend production build passes without the known hook dependency, stale Browserslist, or Node deprecation warnings.
 
 ### Operational Monitoring
 
