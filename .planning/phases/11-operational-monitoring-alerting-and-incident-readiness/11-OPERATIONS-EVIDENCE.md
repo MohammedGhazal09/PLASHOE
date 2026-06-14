@@ -59,6 +59,28 @@ This ledger records operational readiness evidence only. It does not prove that 
 | `docs/OPERATIONS.md` operational access matrix | MON-04 | passed | blocked | Covers backend host/logs, frontend host, MongoDB backups/restores, Stripe dashboard/webhooks, MapTiler, GitHub Actions, secret/config stores, and notification channel. |
 | `docs/DEPLOYMENT.md` operations cross-link | MON-01, MON-02, MON-04 | passed | blocked | Deployment monitoring windows link to `docs/OPERATIONS.md` for signal routing, alert ownership, dashboard checklist, and access responsibilities. |
 
+## MongoDB Backup and Restore Evidence
+
+| Evidence row | Requirement coverage | Local status | Live-provider status | Evidence or blocker |
+| --- | --- | --- | --- | --- |
+| Provider-managed backup requirement | MON-03 | passed | blocked | `docs/OPERATIONS.md` requires provider-managed backups; live proof blocked by missing Phase 09 MongoDB isolation/provider evidence. |
+| Backup schedule/status | MON-03 | passed | blocked | Evidence shape is documented; actual schedule/status proof blocked by missing MongoDB provider dashboard access and safe backup summary. |
+| Disposable staging restore target | MON-03 | passed | blocked | Restore target requirements are documented; drill blocked by missing disposable staging database/cluster/project/credential boundary. |
+| Restore drill procedure | MON-03 | passed | blocked | Procedure exists and forbids production targets, committed connection strings, backup artifacts, account ids, and secret-bearing screenshots. |
+| `/api/ready` proof after restore | MON-03 | pending | blocked | Hosted proof blocked by missing Phase 09 staging backend origin and restored disposable staging target. |
+| Read-only smoke proof after restore | MON-03 | pending | blocked | Smoke proof blocked by missing staging backend/frontend origins and disposable staging setup. |
+
+## Incident and Rollback Evidence
+
+| Artifact or evidence row | Requirement coverage | Local status | Live-provider status | Evidence or blocker |
+| --- | --- | --- | --- | --- |
+| `docs/INCIDENT-RESPONSE.md` severity and roles | MON-04 | passed | blocked | Defines SEV1-SEV4 plus Primary Operator, Backup Operator, Business Owner, and Provider Admin role responsibilities. |
+| Incident command flow and communication cadence | MON-04 | passed | blocked | Documents acknowledgment, severity declaration, role assignment, next update timing, mitigation, verification, monitoring, closure, and follow-up notes. |
+| First 5/15/60 minute checks | MON-04 | passed | blocked | Reuses deployment signals: startup, health, readiness, MongoDB logs, API 4xx/5xx, checkout-start, Stripe webhook errors, payment completion, admin fulfillment, and support reports. |
+| Scenario runbooks | MON-04 | passed | blocked | Covers API down, MongoDB not ready, Stripe webhook failures, checkout/payment degradation, and noisy or missing alerts. |
+| Host-specific rollback command slots | MON-04 | passed | blocked | Slots are marked required-before-Phase-12; live commands blocked by missing selected backend/frontend hosts and provider rollback details. |
+| `docs/DEPLOYMENT.md` incident cross-link | MON-04 | passed | blocked | Deployment rollback section links to `docs/INCIDENT-RESPONSE.md`; live runbook proof remains blocked until Phase 12 cutover rehearsal. |
+
 ## Live Provider Blockers from Phase 09
 
 | Missing input | Blocks | Required safe evidence |
