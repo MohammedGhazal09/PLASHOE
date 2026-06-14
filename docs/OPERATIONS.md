@@ -71,6 +71,51 @@ Use one small operator view or checklist. Until providers are selected, each che
 | Deployment events | GitHub Actions plus host deploy history | CI/deploy/startup/smoke correlate to commit | Deploy missing smoke proof | Deploy correlates with health/readiness/5xx regression | blocked |
 | Checkout/payment path | Checkout smoke, payment return routes, Stripe dashboard | Checkout starts, return routes render, webhook updates order | Non-critical checkout warning | Checkout start or webhook path fails for real orders | blocked |
 
+## MongoDB Backup and Restore
+
+MongoDB backup and restore readiness must use provider-managed backups. Do not add ad hoc dump files, exported backup artifacts, production connection strings, account ids, or secret-bearing screenshots to the repository.
+
+### Backup Evidence Shape
+
+| Evidence item | Required safe evidence | Current status | Blocker |
+| --- | --- | --- | --- |
+| Provider label | Redacted MongoDB provider name, such as provider product label only | blocked | Missing Phase 09 MongoDB isolation/provider evidence. |
+| Backup schedule/status | Provider-managed backup frequency and most recent successful backup status, recorded without private dashboard URLs | blocked | Missing MongoDB provider dashboard access and safe backup status summary. |
+| Retention policy | Provider retention setting or required-before-Phase-12 placeholder | blocked | Missing provider-managed backup configuration evidence. |
+| Restore permissions | Role with least-privilege restore access for Primary Operator or Provider Admin | blocked | Missing operational access proof. |
+
+### Disposable Staging Restore Target
+
+The restore drill target must be a disposable staging database, cluster, project, or credential boundary. It must never be production data and must never reuse production connection strings.
+
+Required before the drill:
+
+1. Record a safe provider label and disposable staging restore target label.
+2. Confirm the target is isolated from production data and production credentials.
+3. Point a staged backend environment at the restored target through the host secret manager only.
+4. Keep all connection strings, backup artifacts, account ids, and screenshots with secrets outside source control.
+
+### Restore Drill Procedure
+
+1. In the MongoDB provider dashboard, start a provider-managed restore from the selected backup into the disposable staging target.
+2. Configure the staging backend host to use the restored target through its secret/config manager.
+3. Restart or redeploy the staging backend.
+4. Verify hosted `GET /api/ready` returns `ready: true` and MongoDB state `connected`.
+5. Run safe read-only smoke checks: `GET /api/health`, public product browsing, current-user auth check with a disposable staging account, and admin order read only if an admin staging account exists.
+6. Record only redacted result summaries in this document or the Phase 11 evidence ledger.
+7. Remove or archive the disposable restore target when the drill is complete according to provider policy.
+
+### Backup and Restore Evidence
+
+| Row | Evidence source | Healthy state | Current status | Blocker notes |
+| --- | --- | --- | --- | --- |
+| Provider-managed backup source | MongoDB provider dashboard | Backups enabled for staging/production-equivalent database | blocked | Missing MongoDB provider label and dashboard access. |
+| Backup schedule/status | MongoDB provider dashboard | Recent successful backup and retention policy recorded safely | blocked | Missing backup schedule/status evidence. |
+| Disposable restore target | MongoDB provider dashboard and staging host config | Restore target is isolated from production data and credentials | blocked | Missing disposable staging restore target. |
+| Restore drill procedure source | This `MongoDB Backup and Restore` section | Procedure exists and forbids production targets and committed secrets | passed | Local docs evidence only. |
+| `/api/ready` after restore | Hosted staging backend | `ready: true`, MongoDB `connected` | blocked | Missing staging backend origin and restored staging target. |
+| Read-only smoke after restore | Hosted staging backend/frontend | Health, product browsing, and safe auth/admin reads succeed | blocked | Missing staging origins and disposable staging account/setup. |
+
 ## Operational Access Matrix
 
 Use role placeholders only. Do not write account ids, dashboard ids, secret values, private dashboard links, or provider-internal URLs in source-controlled docs.
