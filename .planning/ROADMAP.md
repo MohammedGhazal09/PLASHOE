@@ -418,7 +418,7 @@ Plan candidates:
 | 7. Catalog and Frontend Architecture Cleanup | 3/3 | Complete | 2026-06-13 |
 | 8. CI/CD, Observability, and Deployment Readiness | 3/3 | Complete    | 2026-06-13 |
 | 9. Production Launch Setup and Staging Verification | 3/3 | Blocked on external setup |  |
-| 10. Frontend Tooling Modernization and Warning Cleanup | 0/0 | Not started | |
+| 10. Frontend Tooling Modernization and Warning Cleanup | 0/3 | Planned    |  |
 | 11. Operational Monitoring Alerting and Incident Readiness | 0/0 | Not started | |
 | 12. Release Gate Production Cutover and Post Launch Review | 0/0 | Not started | |
 
