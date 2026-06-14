@@ -20,7 +20,7 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 7: Catalog and Frontend Architecture Cleanup** - Normalize product/cart data and reduce fragile frontend/API structure. (completed 2026-06-13)
 - [x] **Phase 8: CI/CD, Observability, and Deployment Readiness** - Add pipeline checks, deployment readiness, logging, and environment verification. (completed 2026-06-13)
 - [ ] **Phase 9: Production Launch Setup and Staging Verification** - Configure real production services, secrets, staging deployment, and live smoke evidence.
-- [ ] **Phase 10: Frontend Tooling Modernization and Warning Cleanup** - Remove accepted CRA/tooling debt and clean non-blocking frontend test/build warnings.
+- [x] **Phase 10: Frontend Tooling Modernization and Warning Cleanup** - Remove accepted CRA/tooling debt and clean non-blocking frontend test/build warnings. (completed 2026-06-14)
 - [ ] **Phase 11: Operational Monitoring Alerting and Incident Readiness** - Wire live monitoring, alerts, backup verification, and incident response operations.
 - [ ] **Phase 12: Release Gate Production Cutover and Post Launch Review** - Run the final release gate, production cutover, rollback readiness, and post-launch review.
 
@@ -348,7 +348,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 10-03: Remove CRA audit allowlist debt and reconcile CI/docs verification.
+- [x] 10-03: Remove CRA audit allowlist debt and reconcile CI/docs verification.
 
 **Cross-cutting constraints:**
 
@@ -425,7 +425,7 @@ Plan candidates:
 | 7. Catalog and Frontend Architecture Cleanup | 3/3 | Complete | 2026-06-13 |
 | 8. CI/CD, Observability, and Deployment Readiness | 3/3 | Complete    | 2026-06-13 |
 | 9. Production Launch Setup and Staging Verification | 3/3 | Blocked on external setup |  |
-| 10. Frontend Tooling Modernization and Warning Cleanup | 2/3 | In Progress|  |
+| 10. Frontend Tooling Modernization and Warning Cleanup | 3/3 | Complete | 2026-06-14 |
 | 11. Operational Monitoring Alerting and Incident Readiness | 0/0 | Not started | |
 | 12. Release Gate Production Cutover and Post Launch Review | 0/0 | Not started | |
 
