@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 11
 current_plan: 0
-status: Ready for Phase 11
-last_updated: "2026-06-14T01:53:10.607Z"
+status: Ready to execute Phase 11
+last_updated: "2026-06-14T02:05:57.702Z"
 last_activity: 2026-06-14
 progress:
   total_phases: 12
   completed_phases: 10
-  total_plans: 33
+  total_plans: 36
   completed_plans: 33
   percent: 83
 ---
@@ -18,14 +18,14 @@ progress:
 # Project State: PLASHOE
 
 **Current Phase:** 11
-**Status:** Ready for Phase 11
+**Status:** Ready to execute Phase 11
 **Current Plan:** 0
-**Next recommended run:** `$gsd-spec-phase 11` or `$gsd-execute-phase 11` for operational monitoring, alerting, backup verification, and incident readiness. Revisit `$gsd-execute-phase 9` when external staging and Stripe evidence are available.
+**Next recommended run:** `$gsd-execute-phase 11` for operational monitoring, alerting, backup verification, and incident readiness. Revisit `$gsd-execute-phase 9` when external staging and Stripe evidence are available.
 **Last Activity:** 2026-06-14
 
 ## Current Focus
 
-Phase 10 is complete. Phase 9 remains blocked on external staging/Stripe evidence, and Phase 11 operational monitoring/alerting is the next implementation phase.
+Phase 10 is complete. Phase 9 remains blocked on external staging/Stripe evidence, and Phase 11 is planned and ready to execute.
 
 ## Accumulated Context
 
@@ -57,6 +57,7 @@ Phase 10 is complete. Phase 9 remains blocked on external staging/Stripe evidenc
 - 2026-06-14: Completed Phase 10 Plan 10-01 with Vite/Vitest tooling, preserved `REACT_APP_*` env handling, Vite build output in `build`, and public asset helpers.
 - 2026-06-14: Completed Phase 10 Plan 10-02 with Vitest-native tests, shared router test helper, scoped expected-console suppression, and the `OrderDetail.jsx` hook warning fix.
 - 2026-06-14: Completed Phase 10 Plan 10-03 with strict frontend audit policy, Vitest CI command, active Vite/Vitest docs, and full Phase 10 verification.
+- 2026-06-14: Planned Phase 11 into structured webhook logging/evidence baseline, operations docs/alert/access matrix, and backup/incident/final verification across 3 waves.
 
 ### Decisions
 
@@ -69,6 +70,6 @@ Phase 10 is complete. Phase 9 remains blocked on external staging/Stripe evidenc
 
 - Real hosting targets, MongoDB production credentials, Stripe production keys/webhook secret, frontend build variables, and MapTiler domain restrictions still require external setup.
 - Production proof is not complete until deployed `/api/health`, `/api/ready`, frontend smoke checks, request-id propagation, and Stripe webhook delivery are verified.
-- External monitoring, alerting, backup/restore verification, and incident-response procedures remain open until Phase 11.
+- External monitoring, alerting, backup/restore verification, and incident-response procedures are planned for Phase 11 execution.
 - Production release, tag/push decisions, rollback readiness, and post-launch review remain open until Phase 12 and require explicit user approval for release actions.
 - Phase 9 cannot be marked passed until staging backend/frontend origins, MongoDB isolation proof, Stripe test-mode dashboard evidence, and MapTiler/public config decisions are supplied.

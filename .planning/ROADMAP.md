@@ -369,19 +369,33 @@ Plans:
   3. MongoDB backup/restore verification and operational access procedures are documented and tested.
   4. Incident response and rollback runbooks include owners, decision thresholds, communication steps, and first 5/15/60 minute checks.
 
-**Plans**: 0 plans
+**Plans**: 3 plans
 
-Plan candidates:
+Plans:
 
-- 11-01: Connect runtime logs, uptime checks, and readiness metrics to the selected operations stack.
-- 11-02: Configure actionable alerts for service, payment, and database failure modes.
-- 11-03: Verify backup/restore and write the incident/rollback runbook.
+**Wave 1**
+
+- [ ] 11-01: Structured webhook logging and Phase 11 evidence baseline.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 11-02: Operations docs, signal routing, alert catalog, and access matrix.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 11-03: Backup restore procedure, incident runbook, and final verification.
 
 **Cross-cutting constraints:**
 
-- D-03: Do all work inline and do not use subagents.
-- D-54: Alerts must be actionable and low-noise; avoid broad metrics that nobody will review.
-- D-55: Logs and alert payloads must not expose bearer tokens, Stripe secrets, webhook payloads, passwords, or raw PII.
+- D-01: Use find-skills, incident-response, runbook, observability-engineer, and devops-engineer as supporting guidance.
+- D-02: Do all work inline and do not use subagents.
+- D-03: Preserve unrelated dirty and untracked work; stage only explicit Phase 11 files.
+- D-04: Produce both phase-local proof artifacts and durable operator docs.
+- D-05: Keep provider guidance based on host-native logs/alerts plus MongoDB and Stripe native dashboards.
+- D-06: Mark unavailable live staging/provider proof as blocked with exact Phase 9 inputs.
+- D-07: Evidence artifacts use pass/blocked/pending/failed status tables without fabricated links or secrets.
+- D-30: Verification includes required artifact checks and secret-pattern scans.
+- D-32: Live-provider evidence can be marked passed only from real safe evidence.
 
 ### Phase 12: Release Gate Production Cutover and Post Launch Review
 
@@ -426,7 +440,7 @@ Plan candidates:
 | 8. CI/CD, Observability, and Deployment Readiness | 3/3 | Complete    | 2026-06-13 |
 | 9. Production Launch Setup and Staging Verification | 3/3 | Blocked on external setup |  |
 | 10. Frontend Tooling Modernization and Warning Cleanup | 3/3 | Complete | 2026-06-14 |
-| 11. Operational Monitoring Alerting and Incident Readiness | 0/0 | Not started | |
+| 11. Operational Monitoring Alerting and Incident Readiness | 0/3 | Ready to execute | |
 | 12. Release Gate Production Cutover and Post Launch Review | 0/0 | Not started | |
 
 ## Recommendations
