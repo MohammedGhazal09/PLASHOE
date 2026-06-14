@@ -1,6 +1,6 @@
 ---
 phase: 11-operational-monitoring-alerting-and-incident-readiness
-status: pending
+status: blocked
 evidence_policy: redacted
 requirements:
   - MON-01
@@ -45,8 +45,10 @@ This ledger records operational readiness evidence only. It does not prove that 
 | Command | Status | Result |
 | --- | --- | --- |
 | `cd Backend; npx vitest run test/payment-webhook.test.js` | passed | 1 test file and 9 tests passed on 2026-06-14. |
+| `cd Backend; npm test` | passed | 14 test files and 129 tests passed on 2026-06-14. |
 | Static raw-console removal check | passed | `console.error(error?.stack || error)` has no matches in `Backend/controllers/webhookController.js`. |
-| Evidence secret-pattern scan | passed | No secret-looking values matched in this evidence file. |
+| Required operations/incident section checks | passed | `docs/OPERATIONS.md` and `docs/INCIDENT-RESPONSE.md` contain required Phase 11 sections and scenario coverage. |
+| Broad Phase 11 secret-pattern scan | passed | No secret-looking values matched in Phase 11 artifacts or touched operations/deployment/webhook files. |
 
 ## Durable Documentation Evidence
 
