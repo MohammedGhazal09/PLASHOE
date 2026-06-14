@@ -103,6 +103,8 @@ Start rollback when any of these happen after deploy:
 
 Rollback verification must re-run the same health, readiness, auth, product, cart/checkout, payment-return, and admin-critical smoke checks against the restored version.
 
+Incident command, communication cadence, scenario triage, and host-specific rollback command slots are documented in [INCIDENT-RESPONSE.md](INCIDENT-RESPONSE.md).
+
 ## Monitoring Windows
 
 Use three post-deploy windows:
