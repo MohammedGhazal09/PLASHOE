@@ -3,29 +3,29 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 10
-current_plan: 1
+current_plan: 2
 status: executing
-last_updated: "2026-06-14T01:03:17.027Z"
+last_updated: "2026-06-14T01:13:50.479Z"
 last_activity: 2026-06-14
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 33
-  completed_plans: 31
-  percent: 75
+  completed_plans: 32
+  percent: 81
 ---
 
 # Project State: PLASHOE
 
 **Current Phase:** 10
 **Status:** Executing Phase 10
-**Current Plan:** 1
-**Next recommended run:** Fill external setup evidence in `09-USER-SETUP.md`, then rerun `$gsd-execute-phase 9` or `$gsd-verify-work 9`.
+**Current Plan:** 2
+**Next recommended run:** `$gsd-execute-phase 10` for Plan 10-03 audit policy and docs/CI reconciliation.
 **Last Activity:** 2026-06-14
 
 ## Current Focus
 
-Execute Phase 9: all Phase 09 plan artifacts are written, local gates passed, and final verification is blocked on missing external staging and Stripe setup.
+Execute Phase 10: Plans 10-01 and 10-02 are complete; Plan 10-03 remains to remove CRA audit allowlist debt and reconcile CI/docs verification.
 
 ## Accumulated Context
 
@@ -54,6 +54,8 @@ Execute Phase 9: all Phase 09 plan artifacts are written, local gates passed, an
 - 2026-06-13: Phase 12 added for final release gate, production cutover, and post-launch review.
 - 2026-06-13: Planned Phase 9 into staging setup evidence, hosted backend/frontend smoke verification, and Stripe webhook launch evidence across 3 execution waves.
 - 2026-06-13: Executed Phase 9 evidence capture; local gates and secret scan passed, while hosted backend/frontend smoke and Stripe dashboard delivery proof remain blocked on external setup.
+- 2026-06-14: Completed Phase 10 Plan 10-01 with Vite/Vitest tooling, preserved `REACT_APP_*` env handling, Vite build output in `build`, and public asset helpers.
+- 2026-06-14: Completed Phase 10 Plan 10-02 with Vitest-native tests, shared router test helper, scoped expected-console suppression, and the `OrderDetail.jsx` hook warning fix.
 
 ### Decisions
 
@@ -66,8 +68,7 @@ Execute Phase 9: all Phase 09 plan artifacts are written, local gates passed, an
 
 - Real hosting targets, MongoDB production credentials, Stripe production keys/webhook secret, frontend build variables, and MapTiler domain restrictions still require external setup.
 - Production proof is not complete until deployed `/api/health`, `/api/ready`, frontend smoke checks, request-id propagation, and Stripe webhook delivery are verified.
-- Frontend `npm audit --omit=dev` still relies on the documented CRA/react-scripts tooling-risk acceptance until Phase 10 removes that debt.
-- Frontend test/build warning cleanup remains open, including recurring React test warnings and the known `OrderDetail.jsx` hook dependency warning.
+- Frontend audit policy still needs Plan 10-03 cleanup to remove CRA/react-scripts allowlist debt from CI/audit documentation.
 - External monitoring, alerting, backup/restore verification, and incident-response procedures remain open until Phase 11.
 - Production release, tag/push decisions, rollback readiness, and post-launch review remain open until Phase 12 and require explicit user approval for release actions.
 - Phase 9 cannot be marked passed until staging backend/frontend origins, MongoDB isolation proof, Stripe test-mode dashboard evidence, and MapTiler/public config decisions are supplied.

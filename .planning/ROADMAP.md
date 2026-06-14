@@ -335,13 +335,20 @@ Plan candidates:
   3. Frontend tests pass without recurring React `act(...)` and React Router future-flag warning noise.
   4. Frontend production build passes without the known `OrderDetail.jsx` hook dependency warning, stale Browserslist warning, or Node deprecation noise.
 
-**Plans**: 0 plans
+**Plans**: 3 plans
 
-Plan candidates:
+Plans:
+**Wave 1**
 
-- 10-01: Select and migrate the maintained frontend build/test toolchain.
-- 10-02: Update test harness, environment variables, static asset handling, and CI commands.
-- 10-03: Remove the audit allowlist debt and clean remaining frontend warnings.
+- [x] 10-01: Migrate to Vite/Vitest tooling and preserve runtime compatibility.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 10-02: Convert the Vitest harness and clean frontend warning surfaces.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 10-03: Remove CRA audit allowlist debt and reconcile CI/docs verification.
 
 **Cross-cutting constraints:**
 
@@ -418,7 +425,7 @@ Plan candidates:
 | 7. Catalog and Frontend Architecture Cleanup | 3/3 | Complete | 2026-06-13 |
 | 8. CI/CD, Observability, and Deployment Readiness | 3/3 | Complete    | 2026-06-13 |
 | 9. Production Launch Setup and Staging Verification | 3/3 | Blocked on external setup |  |
-| 10. Frontend Tooling Modernization and Warning Cleanup | 1/3 | In Progress|  |
+| 10. Frontend Tooling Modernization and Warning Cleanup | 2/3 | In Progress|  |
 | 11. Operational Monitoring Alerting and Incident Readiness | 0/0 | Not started | |
 | 12. Release Gate Production Cutover and Post Launch Review | 0/0 | Not started | |
 
