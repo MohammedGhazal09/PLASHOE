@@ -1,9 +1,10 @@
+import { beforeEach, expect, test, vi } from 'vitest';
 import { productsApi } from '../../api/productsApi';
 import { loadCatalogProducts } from './catalogService';
 
-jest.mock('../../api/productsApi', () => ({
+vi.mock('../../api/productsApi', () => ({
   productsApi: {
-    getAll: jest.fn(),
+    getAll: vi.fn(),
   },
 }));
 
@@ -36,8 +37,9 @@ const fallbackDatabase = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  global.fetch = jest.fn().mockResolvedValue({
+  vi.clearAllMocks();
+  vi.unstubAllEnvs();
+  global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => fallbackDatabase,
   });
@@ -105,14 +107,21 @@ test('loads and filters static fallback products only when the backend request t
 
   const result = await loadCatalogProducts({ sale: 'true', sort: 'price-asc', limit: 10 });
 
-  expect(global.fetch).toHaveBeenCalledWith(
-    ['/', 'database', 'database.json'].join('/').replace('//', '/')
-  );
+  expect(global.fetch).toHaveBeenCalledWith('/database/database.json');
   expect(result.source).toBe('fallback');
   expect(result.error).toEqual(expect.any(Error));
   expect(result.pagination).toMatchObject({ count: 2, total: 2, page: 1, limit: 10, pages: 1 });
   expect(result.products.map((product) => product.id)).toEqual(['local-sale-1', 'local-sale-0']);
   expect(result.products.every((product) => product.isOnSale)).toBe(true);
+});
+
+test('loads static fallback products from a non-root Vite base URL', async () => {
+  vi.stubEnv('BASE_URL', '/storefront/');
+  productsApi.getAll.mockRejectedValue(new Error('network'));
+
+  await loadCatalogProducts({ sale: 'true', limit: 10 });
+
+  expect(global.fetch).toHaveBeenCalledWith('/storefront/database/database.json');
 });
 
 test('returns an empty fallback result when static fallback loading also fails', async () => {

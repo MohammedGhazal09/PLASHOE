@@ -1,4 +1,5 @@
 import { productsApi } from '../../api/productsApi';
+import { joinPublicPath } from '../../utils/publicPath';
 import { normalizeProduct, normalizeProducts } from './normalizeProduct';
 
 const DEFAULT_PAGE = 1;
@@ -57,9 +58,7 @@ const sortFallbackProducts = (products, sort) => {
 };
 
 const readFallbackDatabase = async () => {
-  const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
-  const databasePath = ['database', 'database.json'].join('/');
-  const response = await fetch(`${publicUrl}/${databasePath}`);
+  const response = await fetch(joinPublicPath('database/database.json'));
 
   if (!response.ok) {
     throw new Error('Failed to load fallback product catalog');

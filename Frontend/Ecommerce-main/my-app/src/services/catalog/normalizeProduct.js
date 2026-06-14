@@ -1,3 +1,5 @@
+import { joinPublicPath } from '../../utils/publicPath';
+
 const DEFAULT_SIZES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 const absoluteUrlPattern = /^(https?:|data:|blob:)/i;
@@ -16,10 +18,7 @@ const renderReadyImage = (value = '') => {
   if (!value) return '';
   if (absoluteUrlPattern.test(value)) return value;
 
-  const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
-  const path = value.startsWith('/') ? value : `/${value}`;
-
-  return `${publicUrl}${path}`;
+  return joinPublicPath(value);
 };
 
 export const normalizeProduct = (

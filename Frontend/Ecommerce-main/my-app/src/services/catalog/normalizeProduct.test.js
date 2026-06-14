@@ -1,4 +1,9 @@
+import { afterEach, expect, test, vi } from 'vitest';
 import { normalizeProduct, normalizeProducts } from './normalizeProduct';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 test('normalizes backend products into the catalog view model', () => {
   const product = normalizeProduct({
@@ -72,6 +77,28 @@ test('uses stable defaults when optional fields are missing', () => {
     description: '',
   });
   expect(product.sizes).toContain(40);
+});
+
+test('normalizes relative image paths against a non-root Vite base URL', () => {
+  vi.stubEnv('BASE_URL', '/storefront/');
+
+  const product = normalizeProduct({
+    _id: 'backend-2',
+    image: '/images/subpath-runner.jpg',
+    price: { current: 120 },
+  });
+
+  expect(product.image).toBe('/storefront/images/subpath-runner.jpg');
+});
+
+test('preserves absolute product image URLs', () => {
+  const product = normalizeProduct({
+    _id: 'backend-3',
+    image: 'https://cdn.example.com/shoe.jpg',
+    price: { current: 120 },
+  });
+
+  expect(product.image).toBe('https://cdn.example.com/shoe.jpg');
 });
 
 test('normalizes product lists with indexed fallback ids', () => {

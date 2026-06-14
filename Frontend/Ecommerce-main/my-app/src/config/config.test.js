@@ -1,26 +1,28 @@
-const ORIGINAL_ENV = process.env;
+import { afterEach, expect, test, vi } from 'vitest';
 
-const loadConfig = (env = {}) => {
-  jest.resetModules();
-  process.env = { ...ORIGINAL_ENV };
-  delete process.env.REACT_APP_MAPTILER_API_KEY;
-  Object.assign(process.env, env);
+const loadConfig = async (env = {}) => {
+  vi.resetModules();
+  vi.unstubAllEnvs();
 
-  return require('./config').config;
+  Object.entries({ REACT_APP_MAPTILER_API_KEY: '', ...env }).forEach(([name, value]) => {
+    vi.stubEnv(name, value);
+  });
+
+  return (await import('./config')).config;
 };
 
 afterEach(() => {
-  process.env = ORIGINAL_ENV;
+  vi.unstubAllEnvs();
 });
 
-test('uses an empty MapTiler key when no public key is configured', () => {
-  const config = loadConfig();
+test('uses an empty MapTiler key when no public key is configured', async () => {
+  const config = await loadConfig();
 
   expect(config.map.apiKey).toBe('');
 });
 
-test('uses the configured public MapTiler key when provided', () => {
-  const config = loadConfig({ REACT_APP_MAPTILER_API_KEY: 'public-domain-restricted-key' });
+test('uses the configured public MapTiler key when provided', async () => {
+  const config = await loadConfig({ REACT_APP_MAPTILER_API_KEY: 'public-domain-restricted-key' });
 
   expect(config.map.apiKey).toBe('public-domain-restricted-key');
 });
