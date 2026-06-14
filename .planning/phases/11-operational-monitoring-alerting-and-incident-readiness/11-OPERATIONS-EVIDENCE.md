@@ -48,6 +48,17 @@ This ledger records operational readiness evidence only. It does not prove that 
 | Static raw-console removal check | passed | `console.error(error?.stack || error)` has no matches in `Backend/controllers/webhookController.js`. |
 | Evidence secret-pattern scan | passed | No secret-looking values matched in this evidence file. |
 
+## Durable Documentation Evidence
+
+| Artifact | Requirement coverage | Local status | Live-provider status | Evidence |
+| --- | --- | --- | --- | --- |
+| `docs/OPERATIONS.md` purpose and stack decision | MON-01, MON-02, MON-04 | passed | blocked | Documents host-native logs/alerts first, MongoDB provider dashboard, Stripe dashboard, and GitHub Actions/host deploy events without adding a new APM vendor. |
+| `docs/OPERATIONS.md` runtime signal routing | MON-01 | passed | blocked | Covers backend JSON logs, `api-request-completed`, startup events, MongoDB events, `/api/health`, `/api/ready`, webhook events, and deployment events. |
+| `docs/OPERATIONS.md` alert catalog | MON-02 | passed | blocked | Covers backend downtime, readiness failure, sustained 5xx, Stripe delivery, Stripe processing, MongoDB connectivity, and checkout/payment-path degradation with owner roles and response actions. |
+| `docs/OPERATIONS.md` minimal dashboard checklist | MON-01, MON-02 | passed | blocked | Covers health, readiness, 5xx behavior, webhook failures, MongoDB state, backup status, deployment events, and checkout/payment path. |
+| `docs/OPERATIONS.md` operational access matrix | MON-04 | passed | blocked | Covers backend host/logs, frontend host, MongoDB backups/restores, Stripe dashboard/webhooks, MapTiler, GitHub Actions, secret/config stores, and notification channel. |
+| `docs/DEPLOYMENT.md` operations cross-link | MON-01, MON-02, MON-04 | passed | blocked | Deployment monitoring windows link to `docs/OPERATIONS.md` for signal routing, alert ownership, dashboard checklist, and access responsibilities. |
+
 ## Live Provider Blockers from Phase 09
 
 | Missing input | Blocks | Required safe evidence |

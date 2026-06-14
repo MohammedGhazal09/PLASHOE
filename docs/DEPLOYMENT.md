@@ -107,6 +107,8 @@ Rollback verification must re-run the same health, readiness, auth, product, car
 
 Use three post-deploy windows:
 
+Operational signal routing, alert ownership, the minimal dashboard checklist, and access responsibilities are documented in [OPERATIONS.md](OPERATIONS.md).
+
 | Window | What to Watch | Expected Result |
 | --- | --- | --- |
 | First 5 minutes | Process startup, `/api/health`, `/api/ready`, startup logs, MongoDB connection logs | Service is live and ready. |
