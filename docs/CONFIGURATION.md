@@ -4,7 +4,7 @@
 PLASHOE is configured through environment variables in two nested apps:
 
 - Backend: `Backend`, loaded with `dotenv` from `Backend/server.js` and `Backend/utils/seedData.js`.
-- Frontend: `Frontend/Ecommerce-main/my-app`, read by Create React App through `REACT_APP_*` variables and centralized in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
+- Frontend: `Frontend/Ecommerce-main/my-app`, read by Vite through `REACT_APP_*` variables and centralized in `Frontend/Ecommerce-main/my-app/src/config/config.js`.
 
 Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Frontend/Ecommerce-main/my-app/.env.example` files are app-specific templates: backend secrets and runtime values belong only in the backend template, and public browser build-time values belong only in the frontend template.
 
@@ -29,7 +29,7 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
-| `REACT_APP_API_URL` | Optional | `http://localhost:5000/api` | Backend API base URL used by frontend API calls. Set this to the deployed staging or production backend `/api` base URL before running the static build. Because Create React App embeds this at build time, rebuild after changing it. <!-- VERIFY: production REACT_APP_API_URL value --> |
+| `REACT_APP_API_URL` | Optional | `http://localhost:5000/api` | Backend API base URL used by frontend API calls. Set this to the deployed staging or production backend `/api` base URL before running the static build. Because Vite embeds this at build time, rebuild after changing it. <!-- VERIFY: production REACT_APP_API_URL value --> |
 | `REACT_APP_NAME` | Optional | `PLASHOE` | Display name exposed through the frontend config object. |
 | `REACT_APP_DESCRIPTION` | Optional | `Sustainable Footwear for a Better Tomorrow` | Display description exposed through the frontend config object. |
 | `REACT_APP_UNSPLASH_BASE_URL` | Optional | `https://images.unsplash.com` | Base URL configured for Unsplash image assets. |
@@ -47,7 +47,6 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 | `REACT_APP_ENABLE_GUEST_CHECKOUT` | Optional | `false` when unset | Enables guest checkout only when the value is exactly `true`. |
 | `REACT_APP_ENABLE_WISHLIST` | Optional | `false` when unset | Enables wishlist functionality only when the value is exactly `true`. |
 | `REACT_APP_ENABLE_REVIEWS` | Optional | `false` when unset | Enables reviews only when the value is exactly `true`. |
-| `PUBLIC_URL` | Optional | Create React App default | Public asset base path used by Create React App and referenced by product image/database fetch paths. |
 
 ## Config File Format
 
@@ -64,13 +63,13 @@ Backend `.env` format:
 MONGO_URI=<mongodb-connection-string>
 JWT_SECRET=<32-plus-character-random-secret>
 JWT_EXPIRE=1h
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
 PORT=5000
 PAYMENTS_ENABLED=false
 STRIPE_SECRET_KEY=<stripe-secret-key-from-dashboard>
 STRIPE_WEBHOOK_SECRET=<stripe-webhook-signing-secret>
-PAYMENT_SUCCESS_URL=http://localhost:3000/checkout/success
-PAYMENT_CANCEL_URL=http://localhost:3000/checkout/cancel
+PAYMENT_SUCCESS_URL=http://localhost:5173/checkout/success
+PAYMENT_CANCEL_URL=http://localhost:5173/checkout/cancel
 ```
 
 Frontend `.env` format:
@@ -79,7 +78,6 @@ Frontend `.env` format:
 REACT_APP_API_URL=http://localhost:5000/api
 REACT_APP_NAME=PLASHOE
 REACT_APP_DESCRIPTION=Sustainable Footwear for a Better Tomorrow
-PUBLIC_URL=/
 REACT_APP_UNSPLASH_BASE_URL=https://images.unsplash.com
 REACT_APP_MAPTILER_API_KEY=<public-maptiler-browser-key>
 REACT_APP_MAP_CENTER_LAT=24.7136
@@ -90,7 +88,7 @@ REACT_APP_ENABLE_WISHLIST=false
 REACT_APP_ENABLE_REVIEWS=true
 ```
 
-Create React App only exposes custom browser variables that start with `REACT_APP_`. Restart the frontend dev server after changing local `.env` values, and rebuild hosted staging or production bundles after changing deployment `REACT_APP_*` values.
+This Vite app is configured to expose custom browser variables that start with `REACT_APP_`. Restart the frontend dev server after changing local `.env` values, and rebuild hosted staging or production bundles after changing deployment `REACT_APP_*` values. Static public assets are resolved through Vite's base URL behavior.
 
 ## Required vs Optional Settings
 

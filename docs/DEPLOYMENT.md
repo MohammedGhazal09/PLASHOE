@@ -14,10 +14,10 @@ Run these checks before cutting a release:
 | Backend install | `cd Backend && npm ci` | Dependencies install from `package-lock.json`. |
 | Backend tests | `cd Backend && npm test` | Full Vitest suite passes. |
 | Frontend install | `cd Frontend/Ecommerce-main/my-app && npm ci` | Dependencies install from `package-lock.json`. |
-| Frontend tests | `cd Frontend/Ecommerce-main/my-app && npm test -- --watchAll=false` | CRA Jest suite passes. |
+| Frontend tests | `cd Frontend/Ecommerce-main/my-app && npm test` | Frontend Vitest suite passes. |
 | Frontend build | `cd Frontend/Ecommerce-main/my-app && npm run build` | Static build is created. |
 | Static contract checker | `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` | No `FAIL` findings. |
-| Audit policy | `node scripts/ci/check-audits.mjs` | Backend clean; only documented frontend CRA/tooling risk accepted. |
+| Audit policy | `node scripts/ci/check-audits.mjs` | Backend and frontend production dependency audits are clean. |
 | GitHub Actions CI | `.github/workflows/ci.yml` run on PR/push | Backend, frontend, static contract, and audit-policy jobs pass after push. |
 
 If any check fails, stop the deployment and fix the failing gate before proceeding.
@@ -51,7 +51,7 @@ Store backend secrets in the host secret manager. Do not put backend secrets in 
 
 ## Frontend Host
 
-Build the frontend as a static Create React App bundle.
+Build the frontend as a static Vite bundle.
 
 | Setting | Value |
 | --- | --- |
@@ -60,7 +60,7 @@ Build the frontend as a static Create React App bundle.
 | Build command | `npm run build` |
 | Publish directory | `Frontend/Ecommerce-main/my-app/build` |
 
-Set public `REACT_APP_*` build-time values before running `npm run build`. Create React App embeds those values into the static bundle, so staging and production must be rebuilt after changing `REACT_APP_API_URL` or any other `REACT_APP_*` value. At minimum, staging and production need `REACT_APP_API_URL` pointing to the matching deployed backend `/api` base URL. MapTiler keys are browser-visible public keys and should be domain-restricted.
+Set public `REACT_APP_*` build-time values before running `npm run build`. Vite embeds those values into the static bundle, so staging and production must be rebuilt after changing `REACT_APP_API_URL` or any other `REACT_APP_*` value. At minimum, staging and production need `REACT_APP_API_URL` pointing to the matching deployed backend `/api` base URL. MapTiler keys are browser-visible public keys and should be domain-restricted.
 
 ## Stripe Setup
 

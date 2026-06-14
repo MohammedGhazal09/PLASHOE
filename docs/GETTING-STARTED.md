@@ -1,7 +1,7 @@
 <!-- generated-by: gsd-doc-writer -->
 # Getting Started
 
-This guide gets PLASHOE running locally with the Express/MongoDB backend in `Backend` and the Create React App storefront in `Frontend/Ecommerce-main/my-app`.
+This guide gets PLASHOE running locally with the Express/MongoDB backend in `Backend` and the Vite React storefront in `Frontend/Ecommerce-main/my-app`.
 
 ## Prerequisites
 
@@ -60,7 +60,7 @@ cp Backend/.env.example Backend/.env
 cp Frontend/Ecommerce-main/my-app/.env.example Frontend/Ecommerce-main/my-app/.env
 ```
 
-Then configure the values described in [CONFIGURATION.md](CONFIGURATION.md). For a local CRA frontend, set the backend CORS origin to `http://localhost:3000`; the backend source default is `http://localhost:5173`, which does not match the CRA dev server.
+Then configure the values described in [CONFIGURATION.md](CONFIGURATION.md). For the local Vite frontend, set the backend CORS origin to `http://localhost:5173`.
 
 ## First Run
 
@@ -80,7 +80,9 @@ cd Frontend/Ecommerce-main/my-app
 npm start
 ```
 
-Create React App starts the storefront at `http://localhost:3000` by default. The frontend API base URL defaults to `http://localhost:5000/api` when `REACT_APP_API_URL` is not set.
+Vite starts the storefront at `http://localhost:5173` by default. The frontend API base URL defaults to `http://localhost:5000/api` when `REACT_APP_API_URL` is not set.
+
+If another local app is already using port `5173`, start Vite with a different port and set `Backend/.env` `FRONTEND_URL` to the same origin before starting the backend. For example, use `http://localhost:5174` for both.
 
 ## Seed Local Data
 
@@ -140,7 +142,7 @@ Expected ready response:
 With the frontend running, open the React app:
 
 ```text
-http://localhost:3000
+http://localhost:5173
 ```
 
 The storefront should load product browsing routes such as `/`, `/men`, `/women`, `/collection`, and `/sale`. If product data is empty or API-backed pages fail, confirm the backend is running, `MONGO_URI` points to a seeded database, and `REACT_APP_API_URL` points to `http://localhost:5000/api`.
@@ -148,8 +150,9 @@ The storefront should load product browsing routes such as `/`, `/men`, `/women`
 ## Common Setup Issues
 
 - Backend starts but product, cart, order, or auth features fail: check that MongoDB is reachable through `MONGO_URI`, then seed local data with `npm run seed` from `Backend`.
-- Browser requests are blocked by CORS: set the backend frontend-origin setting to `http://localhost:3000` when using the CRA dev server.
-- Frontend starts but calls the wrong API: set or correct `REACT_APP_API_URL`, then restart `npm start`; CRA only reads environment variables when the dev server starts.
+- Browser requests are blocked by CORS: set the backend `FRONTEND_URL` to `http://localhost:5173` when using the Vite dev server.
+- Vite switches to another port because `5173` is busy: either free port `5173`, or run Vite on the chosen port and update backend `FRONTEND_URL` to match it.
+- Frontend starts but calls the wrong API: set or correct `REACT_APP_API_URL`, then restart `npm start`; Vite only reads environment variables when the dev server starts.
 - `npm run seed` deletes data: this is expected behavior from `Backend/utils/seedData.js`; use it only with a local or disposable database.
 - Commands fail from the repository root: this project has no root `package.json`; run backend commands from `Backend` and frontend commands from `Frontend/Ecommerce-main/my-app`.
 

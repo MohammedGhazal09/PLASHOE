@@ -1,7 +1,7 @@
 <!-- generated-by: gsd-doc-writer -->
 # Development
 
-PLASHOE is developed as two nested JavaScript apps: an Express/Mongoose backend in `Backend` and a Create React App storefront in `Frontend/Ecommerce-main/my-app`. There is no root package manifest, so install, run, build, and test commands are executed from the relevant app directory.
+PLASHOE is developed as two nested JavaScript apps: an Express/Mongoose backend in `Backend` and a Vite React storefront in `Frontend/Ecommerce-main/my-app`. There is no root package manifest, so install, run, build, and test commands are executed from the relevant app directory.
 
 ## Local Setup
 
@@ -42,7 +42,9 @@ PLASHOE is developed as two nested JavaScript apps: an Express/Mongoose backend 
    npm start
    ```
 
-Recommended local loop: keep the backend on `http://localhost:5000`, point the frontend API base URL at `http://localhost:5000/api`, and run the CRA dev server from `Frontend/Ecommerce-main/my-app`.
+Recommended local loop: keep the backend on `http://localhost:5000`, point the frontend API base URL at `http://localhost:5000/api`, and run the Vite dev server from `Frontend/Ecommerce-main/my-app`.
+
+If Vite's default port `5173` is already in use, choose another port and keep `Backend/.env` `FRONTEND_URL` aligned with that exact frontend origin.
 
 ## Build Commands
 
@@ -66,16 +68,15 @@ Run from `Frontend/Ecommerce-main/my-app`.
 
 | Command | Description |
 | --- | --- |
-| `npm start` | Starts the Create React App development server. |
-| `npm run build` | Builds production static assets with `react-scripts build`. |
-| `npm test` | Runs the CRA/Jest test runner in watch mode. |
-| `npm test -- --watchAll=false` | Runs frontend tests once, which is better for CI-style local verification. |
-| `npm run eject` | Ejects the CRA configuration. Treat as one-way and avoid unless the project intentionally leaves CRA defaults. |
+| `npm start` | Starts the Vite development server. |
+| `npm run build` | Builds production static assets with Vite. |
+| `npm test` | Runs frontend Vitest tests once. |
+| `npm run test:watch` | Runs frontend Vitest tests in watch mode. |
 
 ## Code Style
 
 - Backend source uses ES modules because `Backend/package.json` sets `"type": "module"`. Use `import`/`export`, and include `.js` extensions on relative backend imports.
-- Frontend source uses React function components, JSX files for pages/components, CRA's built-in ESLint configuration, Tailwind utility classes, Material UI theme configuration in `src/App.js`, and plain JavaScript modules.
+- Frontend source uses React function components, JSX files for pages/components, Vite, Tailwind utility classes, Material UI theme configuration in `src/App.js`, and plain JavaScript modules.
 - Tailwind is configured in `Frontend/Ecommerce-main/my-app/tailwind.config.js` with content scanning for `./src/**/*.{html,js,jsx}` and shared `primary`, `dark`, and `light` color tokens.
 - No standalone Prettier, Biome, root ESLint config, or `.editorconfig` file was detected. Keep formatting consistent with nearby files and run the available frontend test/build commands before handing off changes.
 
@@ -183,7 +184,7 @@ For frontend changes:
 
 ```bash
 cd Frontend/Ecommerce-main/my-app
-npm test -- --watchAll=false
+npm test
 npm run build
 ```
 
@@ -229,6 +230,6 @@ No repository PR template or CI workflow was detected. Use this lightweight proc
 
 - Keep backend and frontend changes scoped to the smallest resource, page, component, API module, or store needed.
 - Describe which app paths changed, for example `Backend/routes` or `Frontend/Ecommerce-main/my-app/src/store`.
-- Include the exact commands run, such as `npm run build`, `npm test -- --watchAll=false`, or the backend health check.
+- Include the exact commands run, such as `npm run build`, `npm test`, or the backend health check.
 - Note any database seeding, migrations, or manual data setup used during testing.
 - For auth, cart, checkout, order, and admin-route changes, include manual smoke-test notes because automated coverage is currently minimal.

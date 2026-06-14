@@ -4,7 +4,7 @@
 PLASHOE now has local automated coverage for the stabilized purchase-path, Phase 3 security contracts, and Phase 4 checkout data-integrity contracts:
 
 - Backend API route tests run with Vitest, Supertest, and MongoMemoryReplSet.
-- Frontend behavior tests run through the existing Create React App Jest setup.
+- Frontend behavior tests run through the existing Vitest setup.
 - Phase 5 payment tests use mocked provider seams and locally signed webhook payloads; they do not call live Stripe services.
 - Frontend build, backend/frontend suites, and the static checker are part of the Phase 5 gate.
 - The static core-flow contract checker remains as a root-level safety check.
@@ -16,9 +16,9 @@ PLASHOE now has local automated coverage for the stabilized purchase-path, Phase
 | Backend test runner | Configured with `vitest run` | `Backend/package.json`, `Backend/vitest.config.js` |
 | Backend API/security tests | Auth, cart/coupon, order, contact, checkout idempotency, checkout rollback, stock, cancellation, app health, config validation, security middleware, and request validation tests exist | `Backend/test/*.test.js` |
 | Backend database isolation | Uses `MongoMemoryReplSet` with `wiredTiger` and clears collections after each test | `Backend/test/setup.js` |
-| Frontend test runner | Configured through `react-scripts test` | `Frontend/Ecommerce-main/my-app/package.json` |
+| Frontend test runner | Configured through `vitest run` | `Frontend/Ecommerce-main/my-app/package.json` |
 | Frontend behavior/security tests | App shell, cart store normalization, auth store persistence, public config, ProtectedRoute, Checkout idempotency/conflict behavior, order API headers, and Contact tests exist | `Frontend/Ecommerce-main/my-app/src/**/*.test.*` |
-| Frontend build | Configured through `react-scripts build` | `Frontend/Ecommerce-main/my-app/package.json` |
+| Frontend build | Configured through `vite build` | `Frontend/Ecommerce-main/my-app/package.json` |
 | Production dependency audits | Run manually through `npm audit --omit=dev` in each nested app | `Backend/package-lock.json`, `Frontend/Ecommerce-main/my-app/package-lock.json` |
 | Static contract checker | Retained as a root command | `.planning/spikes/001-core-flow-contract-check/check-contracts.mjs` |
 | CI test execution | Configured through GitHub Actions | `.github/workflows/ci.yml` |
@@ -47,18 +47,18 @@ cd Frontend/Ecommerce-main/my-app
 npm install
 ```
 
-Run the frontend Jest suite once:
+Run the frontend Vitest suite once:
 
 ```bash
 cd Frontend/Ecommerce-main/my-app
-npm test -- --watchAll=false
+npm test
 ```
 
 Run one frontend test file:
 
 ```bash
 cd Frontend/Ecommerce-main/my-app
-npm test -- App.test.js --watchAll=false
+npm test -- App.test.js
 ```
 
 Run Phase 4 focused backend checkout/cart tests:
@@ -79,14 +79,14 @@ Run Phase 4 focused frontend cart/checkout tests:
 
 ```bash
 cd Frontend/Ecommerce-main/my-app
-npm test -- cartStore.test.js Checkout.test.jsx ordersApi.test.js --watchAll=false
+npm test -- cartStore.test.js Checkout.test.jsx ordersApi.test.js
 ```
 
 Run Phase 5 focused frontend payment tests:
 
 ```bash
 cd Frontend/Ecommerce-main/my-app
-npm test -- Checkout.test.jsx CheckoutReturn.test.jsx ordersApi.test.js --watchAll=false
+npm test -- Checkout.test.jsx CheckoutReturn.test.jsx ordersApi.test.js
 ```
 
 Run the frontend production build:
@@ -110,7 +110,7 @@ cd Frontend/Ecommerce-main/my-app
 npm audit --omit=dev
 ```
 
-Run the Phase 08 audit policy gate from the repository root:
+Run the audit policy gate from the repository root:
 
 ```bash
 node scripts/ci/check-audits.mjs
@@ -129,10 +129,10 @@ Latest Phase 4 focused evidence:
 | Command | Result |
 | --- | --- |
 | `cd Backend && npm test -- order.test.js cart.test.js` | Passed: 2 test files, 33 tests |
-| `cd Frontend/Ecommerce-main/my-app && npm test -- cartStore.test.js Checkout.test.jsx ordersApi.test.js --watchAll=false` | Passed: 3 test suites, 15 tests |
+| `cd Frontend/Ecommerce-main/my-app && npm test -- cartStore.test.js Checkout.test.jsx ordersApi.test.js` | Passed: 3 test suites, 15 tests |
 | `cd Backend && npm test` | Passed: 9 test files, 71 tests |
-| `cd Frontend/Ecommerce-main/my-app && npm test -- --watchAll=false` | Passed: 8 test suites, 28 tests |
-| `cd Frontend/Ecommerce-main/my-app && npm run build` | Passed with the existing `OrderDetail.jsx` hook dependency warning plus CRA/Browserslist toolchain notices |
+| `cd Frontend/Ecommerce-main/my-app && npm test` | Passed through the frontend one-shot test runner |
+| `cd Frontend/Ecommerce-main/my-app && npm run build` | Passed through the frontend production build |
 | `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` | Passed with 8 `PASS`, 1 `WARN`, and no `FAIL` findings |
 
 Latest Phase 5 focused evidence:
@@ -140,13 +140,13 @@ Latest Phase 5 focused evidence:
 | Command | Result |
 | --- | --- |
 | `cd Backend && npm test -- order.test.js payment-state.test.js payment-webhook.test.js security-config.test.js` | Passed: 4 test files, 45 tests |
-| `cd Frontend/Ecommerce-main/my-app && npm test -- Checkout.test.jsx CheckoutReturn.test.jsx ordersApi.test.js --watchAll=false` | Passed: 3 test suites, 14 tests |
+| `cd Frontend/Ecommerce-main/my-app && npm test -- Checkout.test.jsx CheckoutReturn.test.jsx ordersApi.test.js` | Passed: 3 test suites, 14 tests |
 | `cd Backend && npm test` | Passed: 11 test files, 92 tests |
-| `cd Frontend/Ecommerce-main/my-app && npm test -- --watchAll=false` | Passed: 9 test suites, 35 tests |
-| `cd Frontend/Ecommerce-main/my-app && npm run build` | Passed with the existing `OrderDetail.jsx` hook dependency warning plus CRA/Browserslist toolchain notices |
+| `cd Frontend/Ecommerce-main/my-app && npm test` | Passed through the frontend one-shot test runner |
+| `cd Frontend/Ecommerce-main/my-app && npm run build` | Passed through the frontend production build |
 | `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs` | Passed with 8 `PASS`, 1 inventory heuristic `WARN`, and no `FAIL` findings |
 
-The frontend test command currently emits React 18 deprecation/act warnings from the older CRA/React Testing Library stack. They do not fail the suite. The frontend build also emits an existing `OrderDetail.jsx` hook dependency warning.
+Phase 10 removed the prior recurring frontend test and build warning noise. Treat new routine frontend test/build warnings as regressions unless a later phase explicitly documents an accepted risk.
 
 ## Backend Test Setup
 
@@ -175,7 +175,7 @@ Backend test files:
 
 ## Frontend Test Setup
 
-The frontend still uses the Jest configuration bundled with Create React App. Tests should stay user-facing and avoid implementation snapshots.
+The frontend uses Vitest with React Testing Library. Tests should stay user-facing and avoid implementation snapshots.
 
 Frontend test files:
 
@@ -201,7 +201,7 @@ Automated payment tests are deterministic:
 
 Optional manual local webhook exploration can use the Stripe CLI to forward events to `/api/webhooks/stripe`, but that is not an automated gate for this project.
 
-Use Jest module mocks for API wrappers, toast calls, and Leaflet. Route-oriented tests should use the real `react-router-dom` test routers. Do not require a live backend or browser map service for these tests.
+Use Vitest module mocks for API wrappers, toast calls, and Leaflet. Route-oriented tests should use the real `react-router-dom` test routers. Do not require a live backend or browser map service for these tests.
 
 ## Static Contract Checker
 
@@ -247,7 +247,7 @@ The CI jobs run the same local gates documented above:
 1. Install backend dependencies in `Backend` with `npm ci`.
 2. Run backend tests with `npm test`.
 3. Install frontend dependencies in `Frontend/Ecommerce-main/my-app` with `npm ci`.
-4. Run frontend tests with `npm test -- --watchAll=false`.
+4. Run frontend tests with `npm test`.
 5. Run the frontend production build with `npm run build`.
 6. Run the retained static checker with `node .planning/spikes/001-core-flow-contract-check/check-contracts.mjs`.
 7. Run the audit policy script with `node scripts/ci/check-audits.mjs`.
@@ -256,12 +256,10 @@ The workflow uses `actions/setup-node` with `node-version: lts/*`, which resolve
 
 ## Audit Policy
 
-`scripts/ci/check-audits.mjs` runs `npm audit --omit=dev --json` in both nested apps and applies the Phase 03 accepted-risk boundary.
+`scripts/ci/check-audits.mjs` runs `npm audit --omit=dev --json` in both nested apps and enforces the current production dependency policy.
 
 Backend production findings are blocking unless a future accepted-risk entry explicitly allows them. The current expected backend production audit status is clean.
 
-Frontend audit output remains visible. The script accepts only the Create React App/react-scripts build, test, and dev-server tooling family already documented in `.planning/phases/03-api-security-and-validation/03-SECURITY-RISK-REGISTER.md`. Acceptance is checked against the frontend lockfile graph, so direct runtime dependencies with the same package names as old CRA findings still fail the gate. New frontend findings outside that accepted tooling family fail the gate or require a risk-register update.
+Frontend production audit findings are also blocking. The former frontend tooling exception was removed in Phase 10 after the migration to Vite and Vitest.
 
-The accepted frontend tooling debt is not fixed by Phase 08. It remains deferred to the frontend tooling migration track; production hosting must deploy the static `npm run build` output and must not expose `react-scripts start` or `webpack-dev-server`.
-
-Keep production payment, inventory, admin fulfillment, browser E2E, Lighthouse, ZAP, hard coverage thresholds, and frontend tooling migration work in their planned later phases.
+Keep production payment, inventory, admin fulfillment, browser E2E, Lighthouse, ZAP, and hard coverage thresholds in their planned later phases.
