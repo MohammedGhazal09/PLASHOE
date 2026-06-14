@@ -35,6 +35,26 @@ const postEvent = (event, signatureOverride) => {
     .send(payload);
 };
 
+const captureStructuredLogs = () => {
+  const records = [];
+  const capture = (line) => {
+    try {
+      records.push(JSON.parse(String(line)));
+    } catch {
+      // Ignore non-JSON console output from unexpected test helpers.
+    }
+  };
+
+  vi.spyOn(console, "log").mockImplementation(capture);
+  vi.spyOn(console, "warn").mockImplementation(capture);
+  vi.spyOn(console, "error").mockImplementation(capture);
+
+  return records;
+};
+
+const findLogRecord = (records, event) =>
+  records.find((record) => record.event === event);
+
 const stripeEvent = (overrides = {}) => ({
   id: overrides.id || `event-${Date.now()}-${Math.random()}`,
   object: "event",
@@ -69,6 +89,7 @@ const createInventoryBackedPaymentOrder = async () => {
 
 afterEach(() => {
   resetPaymentProviderOverride();
+  vi.restoreAllMocks();
 });
 
 describe("Stripe webhook route", () => {
@@ -82,13 +103,27 @@ describe("Stripe webhook route", () => {
       },
     });
 
-    await postEvent(event, "t=1,v1=invalid").expect(400);
+    const records = captureStructuredLogs();
+    const invalidSignature = "t=1,v1=invalid";
+
+    await postEvent(event, invalidSignature).expect(400);
 
     expect(await PaymentEvent.countDocuments()).toBe(0);
+
+    const logRecord = findLogRecord(records, "stripe-webhook-invalid-signature");
+    expect(logRecord).toMatchObject({
+      level: "warn",
+      event: "stripe-webhook-invalid-signature",
+      requestId: expect.any(String),
+      signaturePresent: true,
+    });
+    expect(JSON.stringify(logRecord)).not.toContain(invalidSignature);
+    expect(JSON.stringify(logRecord)).not.toContain("event-invalid-signature");
   });
 
   it("marks payment intent success as paid and fulfillment processing", async () => {
     const { order } = await createInventoryBackedPaymentOrder();
+    const records = captureStructuredLogs();
     const event = stripeEvent({
       id: "event-payment-success",
       type: "payment_intent.succeeded",
@@ -112,6 +147,16 @@ describe("Stripe webhook route", () => {
     expect(updatedOrder.paymentProviderIntentId).toBe("intent-paid");
     expect(updatedOrder.paidAt).toBeInstanceOf(Date);
     expect(await PaymentEvent.countDocuments({ providerEventId: "event-payment-success" })).toBe(1);
+
+    expect(findLogRecord(records, "stripe-webhook-accepted")).toMatchObject({
+      level: "info",
+      event: "stripe-webhook-accepted",
+      requestId: expect.any(String),
+      eventId: "event-payment-success",
+      eventType: "payment_intent.succeeded",
+      status: "processed",
+      duplicate: false,
+    });
   });
 
   it("restores inventory once for duplicate failed payment events", async () => {
@@ -128,6 +173,7 @@ describe("Stripe webhook route", () => {
     });
 
     await postEvent(event).expect(200);
+    const records = captureStructuredLogs();
     await postEvent(event).expect(200);
 
     const updatedOrder = await Order.findById(order._id);
@@ -136,6 +182,15 @@ describe("Stripe webhook route", () => {
     expect(updatedOrder.inventoryDecremented).toBe(false);
     expect((await Product.findById(product._id)).stock).toBe(5);
     expect(await PaymentEvent.countDocuments({ providerEventId: "event-payment-failed" })).toBe(1);
+    expect(findLogRecord(records, "stripe-webhook-duplicate")).toMatchObject({
+      level: "info",
+      event: "stripe-webhook-duplicate",
+      requestId: expect.any(String),
+      eventId: "event-payment-failed",
+      eventType: "payment_intent.payment_failed",
+      status: "processed",
+      duplicate: true,
+    });
   });
 
   it("claims concurrent duplicate failed payment events before restoring inventory", async () => {
@@ -197,12 +252,38 @@ describe("Stripe webhook route", () => {
       },
     });
 
+    const records = captureStructuredLogs();
+
     await postEvent(event).expect(500);
 
     expect(await PaymentEvent.findOne({ providerEventId: "event-unresolved" })).toMatchObject({
       status: "failed",
       error: "Webhook event could not be reconciled to a local order",
     });
+
+    const logRecord = findLogRecord(records, "stripe-webhook-processing-failed");
+    expect(logRecord).toMatchObject({
+      level: "error",
+      event: "stripe-webhook-processing-failed",
+      requestId: expect.any(String),
+      eventId: "event-unresolved",
+      eventType: "payment_intent.succeeded",
+      status: "failed",
+      error: {
+        name: "WebhookReconciliationError",
+        message: "Webhook event could not be reconciled to a local order",
+      },
+    });
+
+    const serializedRecord = JSON.stringify(logRecord);
+    expect(serializedRecord).not.toContain("stack");
+    expect(serializedRecord).not.toContain("Stripe-Signature");
+    expect(serializedRecord).not.toContain(`whsec_${"value"}`);
+    expect(serializedRecord).not.toContain(`sk_${"test"}_value`);
+    expect(serializedRecord).not.toContain(`mongodb${"+srv"}://`);
+    expect(serializedRecord).not.toContain(`Bearer${" "}`);
+    expect(serializedRecord).not.toContain("intent-missing");
+    expect(serializedRecord).not.toContain(JSON.stringify(event));
   });
 
   it("retrieves related payment intents when direct metadata is missing", async () => {
