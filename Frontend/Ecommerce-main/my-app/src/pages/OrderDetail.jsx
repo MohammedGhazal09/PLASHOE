@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faTruck, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
@@ -17,15 +17,7 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/account');
-      return;
-    }
-    loadOrder();
-  }, [id, isAuthenticated]);
-
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ordersApi.getById(id);
@@ -41,7 +33,15 @@ export default function OrderDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/account');
+      return;
+    }
+    loadOrder();
+  }, [isAuthenticated, loadOrder, navigate]);
 
   const handleCancel = async () => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
