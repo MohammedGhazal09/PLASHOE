@@ -375,7 +375,7 @@ Plans:
 
 **Wave 1**
 
-- [ ] 11-01: Structured webhook logging and Phase 11 evidence baseline.
+- [x] 11-01: Structured webhook logging and Phase 11 evidence baseline.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -440,7 +440,7 @@ Plan candidates:
 | 8. CI/CD, Observability, and Deployment Readiness | 3/3 | Complete    | 2026-06-13 |
 | 9. Production Launch Setup and Staging Verification | 3/3 | Blocked on external setup |  |
 | 10. Frontend Tooling Modernization and Warning Cleanup | 3/3 | Complete | 2026-06-14 |
-| 11. Operational Monitoring Alerting and Incident Readiness | 0/3 | Ready to execute | |
+| 11. Operational Monitoring Alerting and Incident Readiness | 1/3 | In Progress|  |
 | 12. Release Gate Production Cutover and Post Launch Review | 0/0 | Not started | |
 
 ## Recommendations
