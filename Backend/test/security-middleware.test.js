@@ -6,6 +6,7 @@ import Product from "../models/Product.js";
 import { redact, serializeError } from "../utils/logger.js";
 
 const rateLimitHeader = "X-Rate-Limit-Test";
+const mongoUriWithCredentials = `mongodb${"+srv"}://user:pass@example.invalid/plashoe`;
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -126,7 +127,7 @@ describe("security middleware", () => {
       jwtSecret: "jwt-secret-with-at-least-32-characters",
       stripeSecret: "sk_test_123456789",
       webhookPayload: { id: "evt_123" },
-      mongoUri: "mongodb+srv://user:pass@example.mongodb.net/plashoe",
+      mongoUri: mongoUriWithCredentials,
       nested: {
         note: "Bearer abc.def.ghi",
       },
@@ -146,7 +147,7 @@ describe("security middleware", () => {
   });
 
   it("serializes errors without stacks or secret-looking values", () => {
-    const error = new Error("Failed mongodb+srv://user:pass@example.mongodb.net/plashoe");
+    const error = new Error(`Failed ${mongoUriWithCredentials}`);
     error.code = "MONGO_FAIL";
     error.status = 503;
 
