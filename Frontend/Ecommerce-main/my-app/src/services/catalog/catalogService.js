@@ -34,7 +34,7 @@ const paginationFrom = (response = {}, products = [], params = {}) => {
       : Math.ceil(total / limit);
 
   return {
-    count: Number.isFinite(Number(response.count)) ? Number(response.count) : products.length,
+    count: products.length,
     total,
     page,
     limit,
@@ -42,7 +42,7 @@ const paginationFrom = (response = {}, products = [], params = {}) => {
   };
 };
 
-const sortFallbackProducts = (products, sort) => {
+const sortCatalogProducts = (products, sort) => {
   const sorted = [...products];
 
   switch (sort) {
@@ -56,6 +56,20 @@ const sortFallbackProducts = (products, sort) => {
       return sorted;
   }
 };
+
+const matchesCatalogParams = (product, catalogParams) => {
+  if (catalogParams.gender && product.gender !== catalogParams.gender) return false;
+  if (catalogParams.category && product.category !== catalogParams.category) return false;
+  if (isSaleQuery(catalogParams.sale) && !product.isOnSale) return false;
+
+  return true;
+};
+
+const applyCatalogFilters = (products, catalogParams) =>
+  sortCatalogProducts(
+    products.filter((product) => matchesCatalogParams(product, catalogParams)),
+    catalogParams.sort
+  );
 
 const readFallbackDatabase = async () => {
   const response = await fetch(joinPublicPath('database/database.json'));
@@ -92,7 +106,7 @@ export const loadFallbackCatalogProducts = async (params = {}) => {
       { source: 'fallback', sourceGroup: sourceGroup || group, index }
     )
   );
-  const sortedProducts = sortFallbackProducts(normalizedProducts, catalogParams.sort);
+  const sortedProducts = sortCatalogProducts(normalizedProducts, catalogParams.sort);
   const start = (catalogParams.page - 1) * catalogParams.limit;
   const pagedProducts = sortedProducts.slice(start, start + catalogParams.limit);
 
@@ -120,11 +134,18 @@ export const loadCatalogProducts = async (params = {}) => {
       throw new Error(response?.message || 'Product catalog request failed');
     }
 
-    const products = normalizeProducts(response.data || [], { source: 'backend' });
+    const backendProducts = normalizeProducts(response.data || [], { source: 'backend' });
+    const products = applyCatalogFilters(backendProducts, catalogParams);
+    const pagination = paginationFrom(response, products, catalogParams);
+
+    if (products.length !== backendProducts.length) {
+      pagination.total = products.length;
+      pagination.pages = Math.ceil(products.length / pagination.limit);
+    }
 
     return {
       products,
-      pagination: paginationFrom(response, products, catalogParams),
+      pagination,
       source: 'backend',
       error: null,
     };

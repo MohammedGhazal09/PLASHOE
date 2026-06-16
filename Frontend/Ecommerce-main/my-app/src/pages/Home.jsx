@@ -152,11 +152,15 @@ export default function Home() {
 
       {/* Men/Women Routes */}
       <div className="flex flex-col md:flex-row min-h-[60vh] md:h-[70vh] w-full">
-        <div
-          className="flex-1 flex flex-col justify-center items-center bg-cover bg-center py-20 md:py-0 relative"
-          style={{ backgroundImage: `url(${menRouteImg})` }}
-        >
-          <div className="absolute inset-0 bg-black/30 hover:bg-black/50 transition-colors" />
+        <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-20 md:py-0 relative">
+          <img
+            src={menRouteImg}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: '100% center', transform: 'scaleX(-1)' }}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-black/10 hover:from-black/65 hover:via-black/35 hover:to-black/20 transition-colors" />
           <h2 className="relative z-10 text-3xl md:text-4xl font-bold text-white mb-4">Men Collection</h2>
           <Link to="/men" className="relative z-10">
             <button className="border-2 border-white text-white py-3 px-10 font-semibold hover:bg-white hover:text-dark transition-colors">
@@ -164,11 +168,15 @@ export default function Home() {
             </button>
           </Link>
         </div>
-        <div
-          className="flex-1 flex flex-col justify-center items-center bg-cover bg-center py-20 md:py-0 relative"
-          style={{ backgroundImage: `url(${womenRouteImg})` }}
-        >
-          <div className="absolute inset-0 bg-black/30 hover:bg-black/50 transition-colors" />
+        <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-20 md:py-0 relative">
+          <img
+            src={womenRouteImg}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: '0% center', transform: 'scaleX(-1)' }}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-black/55 via-black/25 to-black/10 hover:from-black/65 hover:via-black/35 hover:to-black/20 transition-colors" />
           <h2 className="relative z-10 text-3xl md:text-4xl font-bold text-white mb-4">Women Collection</h2>
           <Link to="/women" className="relative z-10">
             <button className="border-2 border-white text-white py-3 px-10 font-semibold hover:bg-white hover:text-dark transition-colors">

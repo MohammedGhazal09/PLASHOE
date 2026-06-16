@@ -37,7 +37,6 @@ export default function ProductGrid({
   const sortBy = activeQuery.sort || 'default';
 
   const displayedProducts = useMemo(() => {
-    if (isControlled) return products;
     let result = [...products];
 
     if (selectedCategory !== 'all') {
@@ -45,7 +44,7 @@ export default function ProductGrid({
     }
 
     return sortProducts(result, sortBy);
-  }, [isControlled, products, selectedCategory, sortBy]);
+  }, [products, selectedCategory, sortBy]);
 
   const updateQuery = (updates) => {
     const nextQuery = {
@@ -70,7 +69,10 @@ export default function ProductGrid({
 
   const currentPage = pagination.page || activeQuery.page || 1;
   const totalPages = pagination.pages || 0;
-  const totalProducts = pagination.total ?? products.length;
+  const clientFilteredProducts = displayedProducts.length !== products.length;
+  const totalProducts = clientFilteredProducts
+    ? displayedProducts.length
+    : pagination.total ?? products.length;
   const canGoPrevious = currentPage > 1;
   const canGoNext = totalPages > 0 && currentPage < totalPages;
 

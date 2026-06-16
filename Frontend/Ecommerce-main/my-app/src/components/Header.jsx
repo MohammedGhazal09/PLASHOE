@@ -31,13 +31,6 @@ export default function Header() {
 
   return (
     <header className="bg-white sticky top-0 z-50 shadow-sm">
-      {/* Shipping Banner */}
-      <div className="w-full bg-light border-b border-light-dark">
-        <p className="text-gray-500 text-center text-xs py-2 px-4">
-          Free Express Shipping on all orders with all duties included
-        </p>
-      </div>
-
       {/* Main Header */}
       <div className="flex items-center justify-between px-4 md:px-6 py-4">
         {/* Mobile Menu Button */}

@@ -19,8 +19,8 @@ export default function Women() {
     <div className="min-h-screen">
       {/* Banner */}
       <div
-        className="h-[40vh] md:h-[50vh] relative bg-cover bg-center"
-        style={{ backgroundImage: `url(${womenCollectionHero})` }}
+        className="h-[40vh] md:h-[50vh] relative bg-cover bg-no-repeat"
+        style={{ backgroundImage: `url(${womenCollectionHero})`, backgroundPosition: 'left center' }}
       >
         <div className="absolute inset-0 bg-white/10" />
         <div className="relative h-full flex items-center justify-end px-6 md:px-[12%]">

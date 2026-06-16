@@ -81,6 +81,70 @@ test('loads backend products through productsApi.getAll and normalizes the envel
   });
 });
 
+test('applies catalog filters and sort to backend data defensively', async () => {
+  productsApi.getAll.mockResolvedValue({
+    success: true,
+    count: 4,
+    total: 4,
+    page: 1,
+    limit: 20,
+    pages: 1,
+    data: [
+      {
+        _id: 'high-runner',
+        name: 'High Male Runner',
+        gender: 'male',
+        category: 'Running',
+        image: '/images/high-runner.jpg',
+        price: { original: 180, current: 160 },
+      },
+      {
+        _id: 'training-shoe',
+        name: 'Male Trainer',
+        gender: 'male',
+        category: 'Training',
+        image: '/images/trainer.jpg',
+        price: { original: 90, current: 90 },
+      },
+      {
+        _id: 'female-runner',
+        name: 'Female Runner',
+        gender: 'female',
+        category: 'Running',
+        image: '/images/female-runner.jpg',
+        price: { original: 130, current: 90 },
+      },
+      {
+        _id: 'low-runner',
+        name: 'Low Male Runner',
+        gender: 'male',
+        category: 'Running',
+        image: '/images/low-runner.jpg',
+        price: { original: 120, current: 80 },
+      },
+    ],
+  });
+
+  const result = await loadCatalogProducts({
+    gender: 'male',
+    category: 'Running',
+    sort: 'price-asc',
+  });
+
+  expect(productsApi.getAll).toHaveBeenCalledWith({
+    gender: 'male',
+    category: 'Running',
+    sort: 'price-asc',
+    page: 1,
+    limit: 20,
+  });
+  expect(result.products.map((product) => product.name)).toEqual([
+    'Low Male Runner',
+    'High Male Runner',
+  ]);
+  expect(result.pagination).toMatchObject({ count: 2, total: 2, page: 1, limit: 20, pages: 1 });
+});
+
 test('treats valid empty backend responses as authoritative', async () => {
   productsApi.getAll.mockResolvedValue({
     success: true,

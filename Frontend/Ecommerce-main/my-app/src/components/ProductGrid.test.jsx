@@ -74,6 +74,34 @@ test('emits controlled query changes with page reset', () => {
   });
 });
 
+test('applies active controlled filters and sort to currently rendered products', () => {
+  render(
+    <ProductGrid
+      products={[
+        ...products,
+        {
+          id: 'shoe-3',
+          name: 'Budget Runner',
+          category: 'Running',
+          rating: 2,
+          price: { current: 50, original: 50 },
+        },
+      ]}
+      query={{ category: 'Running', sort: 'price-asc', page: 1, limit: 20 }}
+      pagination={{ page: 1, limit: 20, total: 3, count: 3, pages: 1 }}
+      onQueryChange={vi.fn()}
+      onPageChange={vi.fn()}
+    />
+  );
+
+  expect(screen.queryByText('Training Shoe')).not.toBeInTheDocument();
+  expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+    'Budget Runner',
+    'Running Shoe',
+  ]);
+  expect(screen.getByText('Showing 2 of 2 products')).toBeInTheDocument();
+});
+
 test('emits previous and next page changes from pagination metadata', () => {
   const handlePageChange = vi.fn();
 
