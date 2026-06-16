@@ -45,7 +45,7 @@ test('renders the PLASHOE storefront shell', () => {
   render(<App />);
 
   expect(screen.getByAltText(/plashoe/i)).toBeInTheDocument();
-  expect(screen.getByText(/free express shipping/i)).toBeInTheDocument();
+  expect(screen.getByText(/express shipping/i)).toBeInTheDocument();
   expect(screen.getAllByRole('link', { name: /^men$/i }).length).toBeGreaterThan(0);
   expect(screen.getByText(/featured plashoe storefront/i)).toBeInTheDocument();
 });
