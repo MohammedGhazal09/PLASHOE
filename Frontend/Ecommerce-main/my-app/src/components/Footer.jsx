@@ -4,6 +4,7 @@ import { faArrowsRotate, faLock, faTruck } from '@fortawesome/free-solid-svg-ico
 import { faCopyright } from '@fortawesome/free-regular-svg-icons';
 import { faInstagram, faPinterestP, faFacebook, faXTwitter } from '@fortawesome/free-brands-svg-icons';
 import PaymentMethods from '../assets/images/PaymentMethods.png';
+import footerCtaBg from '../assets/images/footer-cta-bg.jpg';
 import { config } from '../config/config';
 
 export default function Footer() {
@@ -32,24 +33,30 @@ export default function Footer() {
   return (
     <footer>
       {/* CTA Banner */}
-      <div className="bg-primary py-16 px-6 text-center">
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4">
-          Better for People & the Planet
-        </h2>
-        <p className="text-white/80 max-w-2xl mx-auto mb-8">
-          Ut eget at et aliquam sit quis nisl, pharetra et ac pharetra est dictum in vulputate
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link to="/men">
-            <button className="w-full sm:w-auto bg-white text-dark px-10 py-3 font-semibold hover:bg-dark hover:text-white transition-colors">
-              SHOP MEN
-            </button>
-          </Link>
-          <Link to="/women">
-            <button className="w-full sm:w-auto bg-white text-dark px-10 py-3 font-semibold hover:bg-dark hover:text-white transition-colors">
-              SHOP WOMEN
-            </button>
-          </Link>
+      <div
+        className="relative overflow-hidden bg-primary bg-cover bg-center py-16 px-6 text-center"
+        style={{ backgroundImage: `url(${footerCtaBg})` }}
+      >
+        <div className="absolute inset-0 bg-[#262b2c]/50" />
+        <div className="relative z-10">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4">
+            Better for People & the Planet
+          </h2>
+          <p className="text-white/80 max-w-2xl mx-auto mb-8">
+            Ut eget at et aliquam sit quis nisl, pharetra et ac pharetra est dictum in vulputate
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link to="/men">
+              <button className="w-full sm:w-auto bg-white text-dark px-10 py-3 font-semibold hover:bg-dark hover:text-white transition-colors">
+                SHOP MEN
+              </button>
+            </Link>
+            <Link to="/women">
+              <button className="w-full sm:w-auto bg-white text-dark px-10 py-3 font-semibold hover:bg-dark hover:text-white transition-colors">
+                SHOP WOMEN
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
 
