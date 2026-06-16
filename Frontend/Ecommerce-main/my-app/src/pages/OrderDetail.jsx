@@ -7,6 +7,7 @@ import { ordersApi } from '../api/ordersApi';
 import { useAuthStore } from '../store/authStore';
 import TrackingTimeline from '../components/TrackingTimeline';
 import { getPaymentStatusLabel, isPaymentCancellationLocked } from '../utils/paymentStatus';
+import { joinPublicPath } from '../utils/publicPath';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -166,7 +167,7 @@ export default function OrderDetail() {
               {order.items.map((item, idx) => (
                 <div key={idx} className="flex gap-4 pb-4 border-b last:border-0 last:pb-0">
                   <img
-                    src={item.productImage || item.image}
+                    src={joinPublicPath(item.productImage || item.image)}
                     alt={item.productName || item.name}
                     className="w-20 h-20 object-cover rounded"
                   />

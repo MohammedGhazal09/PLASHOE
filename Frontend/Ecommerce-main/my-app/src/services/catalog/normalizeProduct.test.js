@@ -51,7 +51,7 @@ test('normalizes static fallback products with deterministic local ids', () => {
   expect(product).toMatchObject({
     id: 'local-male-0',
     gender: 'male',
-    image: '/database/Male/0.jpg',
+    image: '/database/Male/0.webp',
     price: { original: 69.9, current: 49.9 },
     isOnSale: true,
     source: 'fallback',

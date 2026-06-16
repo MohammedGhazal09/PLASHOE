@@ -12,6 +12,21 @@ test('joins root public paths without duplicate slashes', () => {
   expect(joinPublicPath('database/database.json')).toBe('/database/database.json');
 });
 
+test('normalizes legacy product image folder casing for hosted static assets', () => {
+  vi.stubEnv('BASE_URL', '/');
+
+  expect(joinPublicPath('/database/male/0.jpg')).toBe('/database/Male/0.webp');
+  expect(joinPublicPath('/database/female/0.jpg')).toBe('/database/Female/0.webp');
+});
+
+test('does not rewrite non-product public jpg paths to webp', () => {
+  vi.stubEnv('BASE_URL', '/');
+
+  expect(joinPublicPath('/database/salesImgs/SalesImg1.jpg')).toBe(
+    '/database/salesImgs/SalesImg1.jpg'
+  );
+});
+
 test('joins non-root public paths against Vite base URL', () => {
   vi.stubEnv('BASE_URL', '/storefront/');
 

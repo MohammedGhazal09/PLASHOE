@@ -15,6 +15,7 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
 | `MONGO_URI` | Required | None | MongoDB connection string used by `Backend/config/db.js` and `Backend/utils/seedData.js`. `Backend/server.js` validates this before connecting to MongoDB or opening the listener. |
+| `MONGO_SERVER_SELECTION_TIMEOUT_MS` | Optional | `5000` | MongoDB server selection timeout in milliseconds used by `Backend/config/db.js`. Keep it short for local development so the backend can still serve `/api/health` when MongoDB is unavailable. |
 | `JWT_SECRET` | Required | None | Secret used to sign login/register tokens in `Backend/controllers/authController.js` and verify bearer tokens in `Backend/middleware/auth.js`. Startup validation requires at least 32 characters. |
 | `JWT_EXPIRE` | Optional | `1h` | Token lifetime passed to `jsonwebtoken.sign`. Values must match a `jsonwebtoken` duration such as `30m`, `1h`, or `2h`. |
 | `FRONTEND_URL` | Required | None | CORS origin allowed by the Express server. Startup validation requires a valid `http` or `https` URL. <!-- VERIFY: production FRONTEND_URL value --> |
@@ -61,6 +62,7 @@ Backend `.env` format:
 
 ```bash
 MONGO_URI=<mongodb-connection-string>
+MONGO_SERVER_SELECTION_TIMEOUT_MS=5000
 JWT_SECRET=<32-plus-character-random-secret>
 JWT_EXPIRE=1h
 FRONTEND_URL=http://localhost:5173
@@ -109,6 +111,7 @@ This Vite app is configured to expose custom browser variables that start with `
 | Setting | Default | Defined in |
 | --- | --- | --- |
 | `PORT` | `5000` | `Backend/config/env.js` |
+| `MONGO_SERVER_SELECTION_TIMEOUT_MS` | `5000` | `Backend/config/db.js` |
 | `FRONTEND_URL` | Required for startup | `Backend/config/env.js` |
 | `JWT_EXPIRE` | `1h` | `Backend/config/security.js` |
 | `REACT_APP_API_URL` | `http://localhost:5000/api` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |

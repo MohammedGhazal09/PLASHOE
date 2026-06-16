@@ -1,5 +1,7 @@
 env
 .env
+
+.vercel/
 .env.local
 .env.development.local
 node_modules/
@@ -9,3 +11,4 @@ build/
 .env.production.local
 
 .env
+.vercel

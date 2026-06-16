@@ -35,8 +35,10 @@ export const startServer = async () => {
   });
 };
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "test" && process.env.VERCEL !== "1") {
   startServer().catch(() => {
     process.exitCode = 1;
   });
 }
+
+export default app;

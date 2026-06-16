@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import { useCatalogProducts } from '../hooks/useCatalogProducts';
+import menCollectionHero from '../assets/images/men-collection-hero.webp';
 
 export default function Men() {
   const [query, setQuery] = useState({ gender: 'male', page: 1, limit: 20 });
@@ -19,13 +20,13 @@ export default function Men() {
       {/* Banner */}
       <div
         className="h-[40vh] md:h-[50vh] relative bg-cover bg-center"
-        style={{ backgroundImage: "url('/database/Male/0.jpg')" }}
+        style={{ backgroundImage: `url(${menCollectionHero})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
-        <div className="relative h-full flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">Men's Collection</h1>
-            <p className="text-white/80 text-lg">Discover comfort meets style</p>
+        <div className="absolute inset-0 bg-white/10" />
+        <div className="relative h-full flex items-center justify-start px-6 md:px-[12%]">
+          <div className="text-left">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-dark mb-4">Men's Collection</h1>
+            <p className="text-dark/70 text-base md:text-lg">Discover comfort meets style</p>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
 
 ## System Overview
 
-PLASHOE is a split ecommerce application made of a Create React App frontend in `Frontend/Ecommerce-main/my-app` and an Express/Mongoose backend in `Backend`. The frontend renders product browsing, cart, account, checkout, contact, and order-tracking screens; it sends JSON API requests through resource-specific Axios clients. The backend exposes `/api/*` resource routers, applies JWT authentication and admin authorization where needed, coordinates ecommerce workflows in controllers, and persists users, products, carts, orders, coupons, and contact messages in MongoDB through Mongoose models.
+PLASHOE is a split ecommerce application made of a Vite React frontend in `Frontend/Ecommerce-main/my-app` and an Express/Mongoose backend in `Backend`. The frontend renders product browsing, cart, account, checkout, contact, and order-tracking screens; it sends JSON API requests through resource-specific Axios clients. The backend exposes `/api/*` resource routers, applies JWT authentication and admin authorization where needed, coordinates ecommerce workflows in controllers, and persists users, products, carts, orders, coupons, and contact messages in MongoDB through Mongoose models.
 
 ## Component Diagram
 
@@ -159,7 +159,7 @@ PLASHOE/
 └── Frontend/
     └── Ecommerce-main/
         └── my-app/
-            ├── public/       # CRA HTML shell and public static assets.
+            ├── public/       # Vite public static assets.
             ├── src/
             │   ├── api/      # Backend API clients and shared Axios instance.
             │   ├── assets/   # Imported media used by React code.
@@ -167,7 +167,7 @@ PLASHOE/
             │   ├── config/   # Frontend configuration facade for REACT_APP_* values.
             │   ├── pages/    # Route-level screens rendered by React Router.
             │   └── store/    # Shared auth and cart state.
-            ├── package.json  # Frontend package metadata and CRA scripts.
+            ├── package.json  # Frontend package metadata and Vite scripts.
             └── tailwind.config.js # Tailwind content and theme configuration.
 ```
 

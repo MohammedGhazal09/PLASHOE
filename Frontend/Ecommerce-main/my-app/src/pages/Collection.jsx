@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import { useCatalogProducts } from '../hooks/useCatalogProducts';
+import collectionHero from '../assets/images/collection-hero.webp';
 
 export default function Collection() {
   const [query, setQuery] = useState({ page: 1, limit: 20 });
@@ -17,8 +18,21 @@ export default function Collection() {
   return (
     <div className="min-h-screen">
       {/* Banner */}
-      <div className="h-[30vh] flex items-center justify-center bg-[#f1f1ef]">
-        <h1 className="text-5xl font-bold">Full Collection</h1>
+      <div
+        className="relative h-[40vh] min-h-[260px] md:h-[50vh] bg-cover bg-center"
+        style={{ backgroundImage: `url(${collectionHero})` }}
+      >
+        <div className="absolute inset-0 bg-white/10" />
+        <div className="relative flex h-full items-start justify-center px-6 pt-20 text-center sm:pt-24 md:pt-28">
+          <div>
+            <h1 className="mb-4 text-3xl font-bold text-dark sm:text-4xl md:text-6xl">
+              Full Collection
+            </h1>
+            <p className="text-base text-dark/70 md:text-lg">
+              Every sustainable step in one place
+            </p>
+          </div>
+        </div>
       </div>
 
       <ProductGrid

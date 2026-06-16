@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import { useCatalogProducts } from '../hooks/useCatalogProducts';
+import womenCollectionHero from '../assets/images/women-collection-hero.webp';
 
 export default function Women() {
   const [query, setQuery] = useState({ gender: 'female', page: 1, limit: 20 });
@@ -19,13 +20,13 @@ export default function Women() {
       {/* Banner */}
       <div
         className="h-[40vh] md:h-[50vh] relative bg-cover bg-center"
-        style={{ backgroundImage: "url('/database/Female/0.jpg')" }}
+        style={{ backgroundImage: `url(${womenCollectionHero})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
-        <div className="relative h-full flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">Women's Collection</h1>
-            <p className="text-white/80 text-lg">Elegance in every step</p>
+        <div className="absolute inset-0 bg-white/10" />
+        <div className="relative h-full flex items-center justify-end px-6 md:px-[12%]">
+          <div className="text-right">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-dark mb-4">Women's Collection</h1>
+            <p className="text-dark/70 text-base md:text-lg">Elegance in every step</p>
           </div>
         </div>
       </div>

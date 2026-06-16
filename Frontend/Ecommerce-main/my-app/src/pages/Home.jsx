@@ -17,13 +17,13 @@ import asSeen3 from '../assets/images/asSeen3.png';
 import asSeen4 from '../assets/images/asSeen4.png';
 import asSeen5 from '../assets/images/asSeen5.png';
 import aboutUsImg from '../assets/images/aboutUsImg.jpg';
-import shoes from '../assets/images/shoes.png';
+import shoes from '../assets/images/home-feature-shoes.webp';
 import RecycledImg from '../assets/images/RecycledImg.png';
 import VeganImg from '../assets/images/VeganImg.png';
 import handMadeImg from '../assets/images/handMadeImg.png';
-import heroImg from '../assets/images/homePage.jpg';
-import menRouteImg from '../assets/images/menRoute.jpg';
-import womenRouteImg from '../assets/images/womenRoute.jpg';
+import heroImg from '../assets/images/homePage.webp';
+import menRouteImg from '../assets/images/men-collection-hero.webp';
+import womenRouteImg from '../assets/images/women-collection-hero.webp';
 
 // External male customer testimonial images - use config
 const MaleCustomer1 = `${config.external.unsplashBase}/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face`;

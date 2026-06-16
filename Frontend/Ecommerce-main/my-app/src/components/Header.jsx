@@ -5,7 +5,7 @@ import { faBagShopping, faUser, faBars, faXmark } from '@fortawesome/free-solid-
 import Drawer from '@mui/material/Drawer';
 import Badge from '@mui/material/Badge';
 import { useCartStore, selectItemCount } from '../store/cartStore';
-import siteLogo from '../assets/images/site-logo.png';
+import siteLogo from '../assets/images/site-logo.webp';
 
 const navLinks = [
   { to: '/men', label: 'MEN' },
@@ -51,7 +51,7 @@ export default function Header() {
 
         {/* Logo */}
         <Link to="/" className="flex-shrink-0">
-          <img src={siteLogo} alt="PLASHOE" className="h-8 md:h-10" />
+          <img src={siteLogo} alt="PLASHOE" className="w-40 md:w-56 h-auto" />
         </Link>
 
         {/* Desktop Navigation */}
@@ -130,7 +130,7 @@ export default function Header() {
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b">
-            <img src={siteLogo} alt="PLASHOE" className="h-8" />
+            <img src={siteLogo} alt="PLASHOE" className="w-40 h-auto" />
             <button
               onClick={() => setDrawerOpen(false)}
               className="p-2 text-gray-600 hover:text-dark transition-colors"

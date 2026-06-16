@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import lookbookHero from '../assets/images/lookbook-hero.webp';
 
 export default function LookBook() {
   const looks = [
@@ -6,42 +7,42 @@ export default function LookBook() {
       id: 1,
       title: 'Street Style',
       description: 'Urban vibes with comfortable sneakers',
-      image: '/database/Male/0.jpg',
+      image: '/database/Male/0.webp',
       link: '/men',
     },
     {
       id: 2,
       title: 'Casual Elegance',
       description: 'Everyday style meets sophistication',
-      image: '/database/Female/0.jpg',
+      image: '/database/Female/0.webp',
       link: '/women',
     },
     {
       id: 3,
       title: 'Summer Vibes',
       description: 'Light and breathable designs',
-      image: '/database/Male/1.jpg',
+      image: '/database/Male/1.webp',
       link: '/collection',
     },
     {
       id: 4,
       title: 'Winter Collection',
       description: 'Warm and stylish footwear',
-      image: '/database/Female/1.jpg',
+      image: '/database/Female/1.webp',
       link: '/collection',
     },
     {
       id: 5,
       title: 'Athletic Performance',
       description: 'Designed for movement',
-      image: '/database/Male/2.jpg',
+      image: '/database/Male/2.webp',
       link: '/men',
     },
     {
       id: 6,
       title: 'Evening Out',
       description: 'Make a statement',
-      image: '/database/Female/2.jpg',
+      image: '/database/Female/2.webp',
       link: '/women',
     },
   ];
@@ -49,10 +50,20 @@ export default function LookBook() {
   return (
     <div className="min-h-screen">
       {/* Banner */}
-      <div className="h-[40vh] flex items-center justify-center bg-[#f1f1ef]">
-        <div className="text-center">
-          <h1 className="text-5xl font-bold mb-4">Look Book</h1>
-          <p className="text-gray-500 text-lg">Get inspired by our latest styles</p>
+      <div
+        className="relative h-[40vh] min-h-[260px] md:h-[50vh] bg-cover bg-center"
+        style={{ backgroundImage: `url(${lookbookHero})` }}
+      >
+        <div className="absolute inset-0 bg-white/15" />
+        <div className="relative flex h-full items-center justify-center px-6 text-center">
+          <div>
+            <h1 className="mb-4 text-3xl font-bold text-dark sm:text-4xl md:text-6xl">
+              Look Book
+            </h1>
+            <p className="text-base text-dark/70 md:text-lg">
+              Get inspired by our latest styles
+            </p>
+          </div>
         </div>
       </div>
 
@@ -109,7 +120,7 @@ export default function LookBook() {
           </div>
           <div className="flex-1">
             <img
-              src="/database/Male/3.jpg"
+              src="/database/Male/3.webp"
               alt="Featured look"
               className="w-full max-w-md mx-auto"
             />
@@ -125,7 +136,7 @@ export default function LookBook() {
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
             <div key={i} className="aspect-square bg-gray-200 overflow-hidden">
               <img
-                src={`/database/${i % 2 === 0 ? 'Male' : 'Female'}/${i % 5}.jpg`}
+                src={`/database/${i % 2 === 0 ? 'Male' : 'Female'}/${i % 5}.webp`}
                 alt={`Instagram ${i + 1}`}
                 className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
               />

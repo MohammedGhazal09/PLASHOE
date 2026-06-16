@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useCartStore, selectSubtotal, selectTotal } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
 import { ordersApi } from '../api/ordersApi';
+import { joinPublicPath } from '../utils/publicPath';
 
 const createIdempotencyKey = () => {
   if (window.crypto?.randomUUID) {
@@ -299,7 +300,7 @@ export default function Checkout() {
               {items.map((item) => (
                 <div key={`${item.id}-${item.size}`} className="flex gap-4">
                   <img
-                    src={item.image}
+                    src={joinPublicPath(item.image)}
                     alt={item.name}
                     className="w-16 h-16 object-cover rounded"
                   />

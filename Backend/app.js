@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import connectDB from "./config/db.js";
+import { validateRuntimeEnv } from "./config/env.js";
 import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
@@ -26,6 +28,28 @@ dotenv.config(
 );
 
 const app = express();
+let runtimeInitializationPromise;
+
+const initializeRuntime = async () => {
+  validateRuntimeEnv(process.env);
+  await connectDB();
+};
+
+const ensureRuntimeInitialized = async (req, res, next) => {
+  if (process.env.NODE_ENV === "test") {
+    next();
+    return;
+  }
+
+  try {
+    runtimeInitializationPromise ||= initializeRuntime();
+    await runtimeInitializationPromise;
+    next();
+  } catch (error) {
+    runtimeInitializationPromise = undefined;
+    next(error);
+  }
+};
 
 const corsOptions = {
   origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -35,6 +59,7 @@ const corsOptions = {
 app.use(requestContext);
 app.use(securityHeaders);
 app.use(cors(corsOptions));
+app.use("/api", ensureRuntimeInitialized);
 app.use("/api/webhooks", express.raw({ type: "application/json" }), webhookRoutes);
 app.use("/api", apiLimiter);
 

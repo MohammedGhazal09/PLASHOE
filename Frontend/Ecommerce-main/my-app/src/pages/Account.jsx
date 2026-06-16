@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { ordersApi } from '../api/ordersApi';
 import { getPaymentStatusLabel } from '../utils/paymentStatus';
+import { joinPublicPath } from '../utils/publicPath';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -322,7 +323,7 @@ export default function Account() {
                         {order.items.slice(0, 4).map((item, idx) => (
                           <img
                             key={idx}
-                            src={item.image || item.productImage}
+                            src={joinPublicPath(item.image || item.productImage)}
                             alt={item.name || item.productName}
                             className="w-16 h-16 object-cover rounded"
                           />

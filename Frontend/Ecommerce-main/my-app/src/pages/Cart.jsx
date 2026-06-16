@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faMinus, faPlus, faShoppingBag } from '@fortawesome/free-solid-svg-icons';
 import { useCartStore, selectSubtotal, selectTotal } from '../store/cartStore';
+import { joinPublicPath } from '../utils/publicPath';
 
 export default function Cart() {
   const { items, updateItemQuantity, removeItem, clearCart, discount } =
@@ -52,7 +53,7 @@ export default function Cart() {
               <div className="md:col-span-5 flex gap-4">
                 <div className="w-24 h-24 flex-shrink-0 bg-light rounded overflow-hidden">
                   <img
-                    src={item.image}
+                    src={joinPublicPath(item.image)}
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />

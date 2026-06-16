@@ -1,9 +1,22 @@
 import mongoose from 'mongoose';
 import { logError, logInfo, logWarn, serializeError } from '../utils/logger.js';
 
+const DEFAULT_SERVER_SELECTION_TIMEOUT_MS = 5000;
+
+const getServerSelectionTimeout = () => {
+  const rawValue = process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS;
+  const parsedValue = Number.parseInt(rawValue, 10);
+
+  return Number.isInteger(parsedValue) && parsedValue > 0
+    ? parsedValue
+    : DEFAULT_SERVER_SELECTION_TIMEOUT_MS;
+};
+
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: getServerSelectionTimeout(),
+    });
     logInfo('mongodb-connected', {
       readyState: conn.connection.readyState,
     });

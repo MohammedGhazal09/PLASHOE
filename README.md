@@ -1,7 +1,7 @@
 <!-- generated-by: gsd-doc-writer -->
 # PLASHOE
 
-PLASHOE is a split ecommerce application for sustainable footwear, with an Express/MongoDB backend API and a Create React App frontend storefront.
+PLASHOE is a split ecommerce application for sustainable footwear, with an Express/MongoDB backend API and a Vite React frontend storefront.
 
 ## Installation
 
@@ -24,9 +24,9 @@ npm install
 
    Required: `MONGO_URI`, `JWT_SECRET`
 
-   Optional: `JWT_EXPIRE`, `FRONTEND_URL`, `PORT`
+   Optional: `JWT_EXPIRE`, `FRONTEND_URL`, `PORT`, `MONGO_SERVER_SELECTION_TIMEOUT_MS`
 
-   For the local CRA frontend, set `FRONTEND_URL` to `http://localhost:3000`. The backend listens on `PORT` or `5000` by default.
+   For the local Vite frontend, set `FRONTEND_URL` to `http://localhost:5173`. The backend listens on `PORT` or `5000` by default.
 
 2. Start the backend API:
 
@@ -62,7 +62,7 @@ npm run dev    # Start server.js with Node watch mode
 npm run seed   # Seed database data from utils/seedData.js
 ```
 
-The backend has no automated `npm test` script configured. To smoke test a running backend:
+Backend automated tests use Vitest. Run them from `Backend` with `npm test` or `npm run test:watch`. To smoke test a running backend:
 
 ```bash
 curl http://localhost:5000/api/health
@@ -82,10 +82,10 @@ Expected response:
 Run from `Frontend/Ecommerce-main/my-app`.
 
 ```bash
-npm start                    # Start the CRA dev server
+npm start                    # Start the Vite dev server
 npm run build                # Build production static assets
-npm test                     # Run CRA/Jest tests in watch mode
-npm test -- --watchAll=false # Run frontend tests once
+npm test                     # Run frontend Vitest tests once
+npm run test:watch           # Run frontend Vitest tests in watch mode
 ```
 
 ## Usage Examples
@@ -125,7 +125,7 @@ PLASHOE/
 ├── Backend/                           # Express API, routes, controllers, Mongoose models, auth middleware
 └── Frontend/
     └── Ecommerce-main/
-        └── my-app/                    # Create React App storefront, pages, components, API clients, Zustand stores
+        └── my-app/                    # Vite React storefront, pages, components, API clients, Zustand stores
 ```
 
 Key backend files:
@@ -157,11 +157,11 @@ All backend API routes are mounted under `/api`.
 
 ## Testing
 
-Frontend tests use Jest through `react-scripts` and React Testing Library. The detected test file is `Frontend/Ecommerce-main/my-app/src/App.test.js`, with setup in `Frontend/Ecommerce-main/my-app/src/setupTests.js`.
+Frontend tests use Vitest and React Testing Library. Test setup lives in `Frontend/Ecommerce-main/my-app/src/setupTests.js`.
 
 ```bash
 cd Frontend/Ecommerce-main/my-app
-npm test -- --watchAll=false
+npm test
 ```
 
 Backend automated tests are not configured in `Backend/package.json`. Use the health endpoint smoke test after starting the server.

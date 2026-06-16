@@ -4,6 +4,7 @@ import { faMapMarkerAlt, faPhone, faEnvelope, faClock } from '@fortawesome/free-
 import toast from 'react-hot-toast';
 import { contactApi } from '../api/contactApi';
 import { config } from '../config/config';
+import contactHero from '../assets/images/contact-hero.webp';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -94,8 +95,21 @@ export default function Contact() {
   return (
     <div className="min-h-screen">
       {/* Banner */}
-      <div className="h-[30vh] flex items-center justify-center bg-[#262b2c]">
-        <h1 className="text-5xl font-bold text-white">Contact Us</h1>
+      <div
+        className="relative h-[40vh] min-h-[260px] md:h-[50vh] bg-cover bg-center"
+        style={{ backgroundImage: `url(${contactHero})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/45 to-transparent" />
+        <div className="relative flex h-full items-center justify-start px-6 md:px-[12%]">
+          <div className="max-w-xl">
+            <h1 className="mb-4 text-3xl font-bold text-dark sm:text-4xl md:text-6xl">
+              Contact Us
+            </h1>
+            <p className="text-base text-dark/70 md:text-lg">
+              Questions, orders, and support
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="py-16 px-[5%] lg:px-[15%]">

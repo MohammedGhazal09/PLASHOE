@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 // Import images
+import ourStoryHero from '../assets/images/our-story-hero.webp';
 import ourStoryShoes from '../assets/images/ourStoryShoes.jpg';
 import RecycledImg from '../assets/images/RecycledImg.png';
 import VeganImg from '../assets/images/VeganImg.png';
@@ -9,18 +10,21 @@ import handMadeImg from '../assets/images/handMadeImg.png';
 export default function OurStory() {
   return (
     <div className="min-h-screen">
-      {/* Hero - Gradient based design without low quality image */}
-      <div className="h-[60vh] flex items-center justify-center relative bg-gradient-to-br from-[#6e7051] via-[#5a5c42] to-[#262b2c]">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-        <div className="relative text-center text-white z-10 px-4">
-          <h1 className="text-6xl font-bold mb-4">Our Story</h1>
-          <p className="text-xl max-w-2xl mx-auto opacity-90">
-            Crafting sustainable footwear for a better tomorrow
-          </p>
+      {/* Hero */}
+      <div
+        className="relative h-[50vh] min-h-[280px] md:h-[60vh] bg-cover bg-center"
+        style={{ backgroundImage: `url(${ourStoryHero})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/50 to-transparent" />
+        <div className="relative flex h-full items-center justify-start px-6 md:px-[12%]">
+          <div className="max-w-2xl text-left">
+            <h1 className="mb-4 text-3xl font-bold text-dark sm:text-4xl md:text-6xl">
+              Our Story
+            </h1>
+            <p className="text-base text-dark/70 md:text-xl">
+              Crafting sustainable footwear for a better tomorrow
+            </p>
+          </div>
         </div>
       </div>
 
