@@ -14,3 +14,61 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.auth-submit-button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #5a5c42;
+  background-color: #6e7051;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0;
+  box-shadow: 0 10px 24px rgba(38, 43, 44, 0.14);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.auth-submit-button:hover:not(:disabled) {
+  border-color: #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(38, 43, 44, 0.2);
+}
+
+.auth-submit-button:focus-visible,
+.auth-switch-button:focus-visible {
+  outline: 3px solid rgba(110, 112, 81, 0.35);
+  outline-offset: 3px;
+}
+
+.auth-submit-button:disabled {
+  cursor: wait;
+  border-color: #8c8e73;
+  background-color: #8c8e73;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.auth-switch-button {
+  appearance: none;
+  border: 0;
+  border-bottom: 2px solid #6e7051;
+  background: transparent;
+  color: #4f513c;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0.125rem 0.125rem 0.25rem;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.auth-switch-button:hover {
+  border-color: #262b2c;
+  color: #262b2c;
+}

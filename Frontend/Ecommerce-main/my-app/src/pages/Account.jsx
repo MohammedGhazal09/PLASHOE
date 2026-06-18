@@ -151,7 +151,7 @@ export default function Account() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#6e7051] text-white py-3 font-semibold hover:bg-[#262b2c] transition-colors disabled:opacity-50"
+              className="auth-submit-button"
             >
               {loading ? 'PLEASE WAIT...' : isLogin ? 'SIGN IN' : 'CREATE ACCOUNT'}
             </button>
@@ -160,8 +160,9 @@ export default function Account() {
           <p className="text-center mt-6 text-gray-500">
             {isLogin ? "Don't have an account? " : 'Already have an account? '}
             <button
+              type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-[#6e7051] font-semibold hover:underline"
+              className="auth-switch-button"
             >
               {isLogin ? 'Sign Up' : 'Sign In'}
             </button>
