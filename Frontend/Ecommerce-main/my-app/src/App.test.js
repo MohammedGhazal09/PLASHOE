@@ -1,6 +1,7 @@
-import { vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
+import { warmUpApiServer } from './services/serverWarmup';
 
 vi.mock('./api/authApi', () => ({
   authApi: {
@@ -25,6 +26,10 @@ vi.mock('./api/cartApi', () => ({
   },
 }));
 
+vi.mock('./services/serverWarmup', () => ({
+  warmUpApiServer: vi.fn(),
+}));
+
 vi.mock('./pages', () => ({
   Home: () => <section>Featured PLASHOE storefront</section>,
   Men: () => <section>Men page</section>,
@@ -41,6 +46,10 @@ vi.mock('./pages', () => ({
   OrderDetail: () => <section>Order detail page</section>,
 }));
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 test('renders the PLASHOE storefront shell', () => {
   render(<App />);
 
@@ -48,4 +57,12 @@ test('renders the PLASHOE storefront shell', () => {
   expect(screen.getByText(/express shipping/i)).toBeInTheDocument();
   expect(screen.getAllByRole('link', { name: /^men$/i }).length).toBeGreaterThan(0);
   expect(screen.getByText(/featured plashoe storefront/i)).toBeInTheDocument();
+});
+
+test('starts the API warm-up when the app mounts', async () => {
+  render(<App />);
+
+  await waitFor(() => {
+    expect(warmUpApiServer).toHaveBeenCalledTimes(1);
+  });
 });

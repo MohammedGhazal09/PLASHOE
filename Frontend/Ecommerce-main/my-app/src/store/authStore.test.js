@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { act } from '@testing-library/react';
 import axiosInstance from '../api/axios';
 import { authApi } from '../api/authApi';
+import { serverWakeMonitor } from '../services/serverWakeMonitor';
 import { useAuthStore } from './authStore';
 
 vi.mock('../api/authApi', () => ({
@@ -19,6 +20,7 @@ const resetAuthStore = () => {
   localStorage.clear();
   sessionStorage.clear();
   vi.clearAllMocks();
+  serverWakeMonitor.resetForTests();
   useAuthStore.setState({
     user: null,
     token: null,
@@ -93,6 +95,13 @@ test('axios request interceptor attaches bearer token from the auth store', () =
   const request = axiosInstance.interceptors.request.handlers[0].fulfilled({ headers: {} });
 
   expect(request.headers.Authorization).toBe('Bearer session-token');
+  expect(request.metadata.serverWakeTracked).toBe(true);
+  expect(serverWakeMonitor.getSnapshot().pending).toBe(true);
+
+  const response = axiosInstance.interceptors.response.handlers[0].fulfilled({ config: request });
+
+  expect(response.config).toBe(request);
+  expect(serverWakeMonitor.getSnapshot().pending).toBe(false);
 });
 
 test('axios response interceptor logs out on 401 responses', async () => {
@@ -102,12 +111,23 @@ test('axios response interceptor logs out on 401 responses', async () => {
     isAuthenticated: true,
   });
 
-  const error = { response: { status: 401 } };
+  const request = axiosInstance.interceptors.request.handlers[0].fulfilled({ headers: {} });
+  const error = { config: request, response: { status: 401 } };
 
   await expect(axiosInstance.interceptors.response.handlers[0].rejected(error)).rejects.toBe(error);
+  expect(serverWakeMonitor.getSnapshot().pending).toBe(false);
   expect(useAuthStore.getState()).toMatchObject({
     user: null,
     token: null,
     isAuthenticated: false,
   });
+});
+
+test('axios response interceptor clears tracking on non-auth request failures', async () => {
+  const request = axiosInstance.interceptors.request.handlers[0].fulfilled({ headers: {} });
+  const error = { config: request, response: { status: 500 } };
+
+  await expect(axiosInstance.interceptors.response.handlers[0].rejected(error)).rejects.toBe(error);
+
+  expect(serverWakeMonitor.getSnapshot().pending).toBe(false);
 });

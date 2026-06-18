@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import { warmUpApiServer } from './services/serverWarmup';
 import {
   Home,
   Men,
@@ -51,6 +53,10 @@ const theme = createTheme({
 });
 
 function App() {
+  useEffect(() => {
+    void warmUpApiServer();
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
