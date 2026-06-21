@@ -6,7 +6,12 @@ import Cart from "../models/Cart.js";
 import Coupon from "../models/Coupon.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
-import { createCheckoutFromCart } from "../services/checkoutService.js";
+import { CHECKOUT_HOLDS } from "../config/security.js";
+import {
+  createCheckoutFromCart,
+  releaseExpiredCheckoutHolds,
+} from "../services/checkoutService.js";
+import { transitionOrderPaymentState } from "../services/paymentState.js";
 import {
   resetPaymentProviderOverride,
   setPaymentProviderOverride,
@@ -17,6 +22,7 @@ import {
   createCoupon,
   createOrder,
   createProduct,
+  createProviderBackedOrder,
   createUser,
   validShippingAddress,
 } from "./helpers/factories.js";
@@ -511,6 +517,7 @@ describe("order routes", () => {
       message: "Order cancelled",
     });
     expect(first.body.data.status).toBe("cancelled");
+    expect(first.body.data.paymentStatus).toBe("payment_canceled");
     expect(first.body.data.inventoryDecremented).toBe(false);
     expect((await Product.findById(product._id)).stock).toBe(5);
 
@@ -520,6 +527,200 @@ describe("order routes", () => {
       .expect(200);
 
     expect((await Product.findById(product._id)).stock).toBe(5);
+  });
+
+  it("reorders available order items into the current user cart with current prices", async () => {
+    const user = await createUser();
+    const availableProduct = await createProduct({
+      name: "Buy Again Runner",
+      price: { original: 150, current: 130 },
+      stock: 5,
+      sizes: [41, 42],
+    });
+    const soldOutProduct = await createProduct({
+      name: "Sold Out Old Order",
+      stock: 0,
+      sizes: [42],
+    });
+    const order = await createOrder(user, {
+      items: [
+        {
+          product: availableProduct._id,
+          name: availableProduct.name,
+          image: availableProduct.image,
+          quantity: 2,
+          size: 42,
+          price: 99,
+        },
+        {
+          product: soldOutProduct._id,
+          name: soldOutProduct.name,
+          image: soldOutProduct.image,
+          quantity: 1,
+          size: 42,
+          price: 80,
+        },
+      ],
+      subtotal: 278,
+      total: 278,
+    });
+
+    const response = await request(app)
+      .post(`/api/orders/${order._id}/reorder`)
+      .set(authHeader(user))
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      success: true,
+      message: "Order items moved to cart",
+      data: {
+        added: 2,
+        skipped: [
+          {
+            code: "INSUFFICIENT_STOCK",
+            resource: "product",
+            productId: soldOutProduct._id.toString(),
+            requested: 1,
+            available: 0,
+          },
+        ],
+      },
+    });
+    expect(response.body.data.cart.items).toHaveLength(1);
+    expect(response.body.data.cart.items[0]).toMatchObject({
+      quantity: 2,
+      size: 42,
+      priceAtAdd: 130,
+    });
+  });
+
+  it("rejects reorder when no order items are currently available", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 0 });
+    const order = await createOrder(user, {
+      items: [
+        {
+          product: product._id,
+          name: product.name,
+          image: product.image,
+          quantity: 1,
+          size: 42,
+          price: 100,
+        },
+      ],
+    });
+
+    const response = await request(app)
+      .post(`/api/orders/${order._id}/reorder`)
+      .set(authHeader(user))
+      .expect(409);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "No order items are currently available to reorder",
+      errors: [
+        {
+          code: "INSUFFICIENT_STOCK",
+          resource: "product",
+          productId: product._id.toString(),
+          requested: 1,
+          available: 0,
+        },
+      ],
+    });
+    expect(await Cart.countDocuments({ user: user._id })).toBe(0);
+  });
+
+  it("releases expired unpaid checkout holds without webhook or customer cancel", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 5 });
+    const coupon = await createCoupon({ code: "EXPIREHOLD", discountPercentage: 10 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }], {
+      couponCode: coupon.code,
+      discount: coupon.discountPercentage,
+    });
+
+    const checkout = await postCheckout(user, nextIdempotencyKey()).expect(201);
+    const orderId = responseOrder(checkout)._id;
+
+    expect((await Product.findById(product._id)).stock).toBe(3);
+    expect((await Coupon.findById(coupon._id)).usedCount).toBe(1);
+
+    await Order.updateOne(
+      { _id: orderId },
+      { $set: { checkoutHoldExpiresAt: new Date(Date.now() - 60_000) } }
+    );
+
+    await expect(releaseExpiredCheckoutHolds()).resolves.toBe(1);
+
+    const expiredOrder = await Order.findById(orderId);
+    expect(expiredOrder).toMatchObject({
+      status: "cancelled",
+      paymentStatus: "payment_canceled",
+      inventoryDecremented: false,
+      paymentFailureReason: "checkout hold expired",
+    });
+    expect(expiredOrder.checkoutHoldExpiresAt).toBeNull();
+    expect((await Product.findById(product._id)).stock).toBe(5);
+    expect((await Coupon.findById(coupon._id)).usedCount).toBe(0);
+  });
+
+  it("keeps a customer-cancelled checkout cancelled when payment capture arrives late", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 5 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }]);
+    const checkout = await postCheckout(user, nextIdempotencyKey()).expect(201);
+    const orderId = responseOrder(checkout)._id;
+
+    await request(app)
+      .put(`/api/orders/${orderId}/cancel`)
+      .set(authHeader(user))
+      .expect(200);
+
+    const latePaid = await transitionOrderPaymentState({
+      orderId,
+      targetStatus: "paid",
+      providerIntentId: "intent-late-after-cancel",
+    });
+
+    expect(latePaid.paymentStatus).toBe("payment_canceled");
+    expect(latePaid.status).toBe("cancelled");
+    expect(latePaid.paidAt).toBeNull();
+    expect(latePaid.inventoryDecremented).toBe(false);
+    expect((await Product.findById(product._id)).stock).toBe(5);
+  });
+
+  it("limits active unpaid checkout holds per user", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 10 });
+
+    await Promise.all(
+      Array.from({ length: CHECKOUT_HOLDS.maxActivePerUser }, (_, index) =>
+        createProviderBackedOrder(user, {
+          paymentStatus: "payment_pending",
+          status: "pending",
+          inventoryDecremented: true,
+          checkoutHoldExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          idempotencyKey: `active-hold-${index}`,
+        })
+      )
+    );
+    await createCartForUser(user, [{ product, quantity: 1, size: 42 }]);
+
+    const response = await postCheckout(user, nextIdempotencyKey()).expect(409);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Too many unpaid checkout holds. Complete or cancel an existing checkout first.",
+      errors: [
+        {
+          code: "CHECKOUT_HOLD_LIMIT_REACHED",
+          resource: "checkout",
+          available: CHECKOUT_HOLDS.maxActivePerUser,
+        },
+      ],
+    });
+    expect((await Product.findById(product._id)).stock).toBe(10);
   });
 
   it("cancels a legacy processing order without restoring stock", async () => {

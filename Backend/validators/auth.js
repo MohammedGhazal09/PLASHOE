@@ -19,7 +19,6 @@ export const loginSchema = strictObject({
 
 export const profileSchema = strictObject({
   name: optionalTrimmedString(100),
-  email: emailSchema.optional(),
   phone: optionalTrimmedString(40),
 }).refine((value) => Object.values(value).some((entry) => entry !== undefined), {
   message: 'At least one profile field is required',

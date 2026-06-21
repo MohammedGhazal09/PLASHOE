@@ -134,6 +134,10 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  checkoutHoldExpiresAt: {
+    type: Date,
+    default: null
+  },
   paidAt: {
     type: Date,
     default: null
@@ -211,6 +215,7 @@ orderSchema.index(
   }
 );
 orderSchema.index({ status: 1, paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ paymentStatus: 1, checkoutHoldExpiresAt: 1 });
 orderSchema.index({ user: 1, createdAt: -1 });
 
 const generateOrderNumber = () => {

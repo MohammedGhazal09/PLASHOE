@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import CartSidebar from './CartSidebar';
@@ -6,6 +6,9 @@ import { Toaster } from 'react-hot-toast';
 import ServerWakeNotice from './ServerWakeNotice';
 
 export default function Layout() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
+
   return (
     <div className="App">
       <Toaster position="top-right" />
@@ -15,7 +18,7 @@ export default function Layout() {
       <main>
         <Outlet />
       </main>
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </div>
   );
 }

@@ -18,6 +18,10 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 | `MONGO_SERVER_SELECTION_TIMEOUT_MS` | Optional | `5000` | MongoDB server selection timeout in milliseconds used by `Backend/config/db.js`. Keep it short for local development so the backend can still serve `/api/health` when MongoDB is unavailable. |
 | `JWT_SECRET` | Required | None | Secret used to sign login/register tokens in `Backend/controllers/authController.js` and verify bearer tokens in `Backend/middleware/auth.js`. Startup validation requires at least 32 characters. |
 | `JWT_EXPIRE` | Optional | `1h` | Token lifetime passed to `jsonwebtoken.sign`. Values must match a `jsonwebtoken` duration such as `30m`, `1h`, or `2h`. |
+| `SEED_ADMIN_EMAIL` | Required for `npm run seed` | None | Admin email used only by `Backend/utils/seedData.js` when seeding local/disposable data. |
+| `SEED_ADMIN_PASSWORD` | Required for `npm run seed` | None | Admin password used only by `Backend/utils/seedData.js`. Must be at least 12 characters. |
+| `SEED_ADMIN_NAME` | Optional for `npm run seed` | `Admin` | Display name for the seeded admin user. |
+| `ALLOW_NON_LOCAL_SEED` | Optional for `npm run seed` | unset | Set exactly to `true` only when intentionally seeding disposable non-local data. Otherwise the seed script refuses non-local MongoDB URIs. |
 | `FRONTEND_URL` | Required | None | CORS origin allowed by the Express server. Startup validation requires a valid `http` or `https` URL. <!-- VERIFY: production FRONTEND_URL value --> |
 | `PORT` | Optional | `5000` | Port used by `app.listen` in `Backend/server.js`. Startup validation requires a positive integer from `1` to `65535` when set. |
 | `PAYMENTS_ENABLED` | Optional | Enabled outside tests; disabled by default in tests | Enables Stripe-backed checkout unless set exactly to `false`. When enabled, the Stripe and payment return URL variables below are required. |
@@ -46,8 +50,8 @@ Do not commit real `.env` files. The checked-in `Backend/.env.example` and `Fron
 | `REACT_APP_COMPANY_PHONE` | Optional | `+1 (555) 123-4567` | Company contact phone shown by the frontend. <!-- VERIFY: public company phone is valid --> |
 | `REACT_APP_COMPANY_ADDRESS` | Optional | `123 Eco Street, Green City, CA 90210` | Company contact address shown by the frontend. <!-- VERIFY: public company address is valid --> |
 | `REACT_APP_ENABLE_GUEST_CHECKOUT` | Optional | `false` when unset | Enables guest checkout only when the value is exactly `true`. |
-| `REACT_APP_ENABLE_WISHLIST` | Optional | `false` when unset | Enables wishlist functionality only when the value is exactly `true`. |
-| `REACT_APP_ENABLE_REVIEWS` | Optional | `false` when unset | Enables reviews only when the value is exactly `true`. |
+| `REACT_APP_ENABLE_WISHLIST` | Optional | `true` when unset | Enables wishlist functionality unless the value is exactly `false`. |
+| `REACT_APP_ENABLE_REVIEWS` | Optional | `true` when unset | Enables product reviews unless the value is exactly `false`. |
 
 ## Config File Format
 
@@ -86,7 +90,7 @@ REACT_APP_MAP_CENTER_LAT=24.7136
 REACT_APP_MAP_CENTER_LNG=46.6753
 REACT_APP_MAP_ZOOM=14
 REACT_APP_ENABLE_GUEST_CHECKOUT=true
-REACT_APP_ENABLE_WISHLIST=false
+REACT_APP_ENABLE_WISHLIST=true
 REACT_APP_ENABLE_REVIEWS=true
 ```
 
@@ -104,7 +108,8 @@ This Vite app is configured to expose custom browser variables that start with `
 - Frontend display, external URL, map, and feature-flag variables have fallback behavior in `Frontend/Ecommerce-main/my-app/src/config/config.js`. Checked-in social/contact/company defaults are examples for local and staging verification unless the business owner explicitly approves them as final public values.
 - Auth persistence uses browser `sessionStorage` through the `auth-storage` Zustand key. Bearer tokens remain XSS-sensitive while the tab/session is alive; the current compensating controls are the shorter JWT lifetime, logout-on-401 behavior, and no localStorage persistence.
 - `REACT_APP_MAPTILER_API_KEY` is browser-visible and must be treated as a public, domain-restricted key, not a server secret.
-- Boolean feature flags are enabled only by the exact string `true`; missing values are treated as disabled.
+- Boolean feature flags are generally enabled only by the exact string `true`; missing values are treated as disabled.
+- `REACT_APP_ENABLE_WISHLIST` and `REACT_APP_ENABLE_REVIEWS` are rollout exceptions: both are enabled when unset and disabled only when the value is exactly `false`.
 
 ## Defaults
 
@@ -130,8 +135,8 @@ This Vite app is configured to expose custom browser variables that start with `
 | `REACT_APP_COMPANY_PHONE` | `+1 (555) 123-4567` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 | `REACT_APP_COMPANY_ADDRESS` | `123 Eco Street, Green City, CA 90210` | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 | `REACT_APP_ENABLE_GUEST_CHECKOUT` | `false` when unset | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
-| `REACT_APP_ENABLE_WISHLIST` | `false` when unset | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
-| `REACT_APP_ENABLE_REVIEWS` | `false` when unset | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
+| `REACT_APP_ENABLE_WISHLIST` | `true` when unset | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
+| `REACT_APP_ENABLE_REVIEWS` | `true` when unset | `Frontend/Ecommerce-main/my-app/src/config/config.js` |
 
 ## Per-Environment Overrides
 

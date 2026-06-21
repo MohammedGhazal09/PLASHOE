@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import { useCatalogProducts } from '../hooks/useCatalogProducts';
+import { useCatalogUrlQuery } from '../hooks/useCatalogUrlQuery';
 import womenCollectionHero from '../assets/images/women-collection-hero.webp';
 
 export default function Women() {
-  const [query, setQuery] = useState({ gender: 'female', page: 1, limit: 20 });
-  const { products, pagination, loading, source } = useCatalogProducts(query);
+  const forcedFilters = { gender: 'female' };
+  const { query, setQuery, setPage } = useCatalogUrlQuery({ forcedParams: forcedFilters });
+  const { products, pagination, loading, error, source } = useCatalogProducts(query);
 
   if (loading && products.length === 0) {
     return (
@@ -36,11 +37,12 @@ export default function Women() {
         showFilters={true}
         query={query}
         pagination={pagination}
+        loading={loading}
+        error={error}
         source={source}
-        onQueryChange={(nextQuery) =>
-          setQuery({ ...nextQuery, gender: 'female', page: nextQuery.page || 1 })
-        }
-        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+        lockedFilters={forcedFilters}
+        onQueryChange={setQuery}
+        onPageChange={setPage}
       />
     </div>
   );

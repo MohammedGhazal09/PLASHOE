@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useCartStore, selectSubtotal, selectTotal } from '../store/cartStore';
+import { hasLocalCartItems, useCartStore, selectSubtotal, selectTotal } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
 import { ordersApi } from '../api/ordersApi';
 import { joinPublicPath } from '../utils/publicPath';
@@ -20,39 +20,83 @@ const createIdempotencyKey = () => {
   return `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
 
+const splitName = (name = '') => {
+  const [firstName = '', ...rest] = name.trim().split(/\s+/).filter(Boolean);
+  return { firstName, lastName: rest.join(' ') };
+};
+
+const getPreferredAddress = (addresses = []) =>
+  addresses.find((address) => address.isDefault) || addresses[0] || null;
+
+const buildFormDataFromUser = (user) => {
+  const preferredAddress = getPreferredAddress(user?.addresses || []);
+  const name = splitName(user?.name || '');
+
+  return {
+    firstName: preferredAddress?.firstName || name.firstName || '',
+    lastName: preferredAddress?.lastName || name.lastName || '',
+    email: user?.email || '',
+    phone: preferredAddress?.phone || user?.phone || '',
+    address: preferredAddress?.street || '',
+    city: preferredAddress?.city || '',
+    state: preferredAddress?.state || '',
+    zipCode: preferredAddress?.zipCode || '',
+    country: preferredAddress?.country || 'United States',
+  };
+};
+
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items, discount, couponCode, applyCoupon, syncCart } = useCartStore();
+  const { items, discount, couponCode, applyCoupon, mergeLocalCart } = useCartStore();
   const subtotal = useCartStore(selectSubtotal);
   const total = useCartStore(selectTotal);
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, addAddress } = useAuthStore();
 
   const [couponInput, setCouponInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(true);
+  const [cartReviewMessage, setCartReviewMessage] = useState('');
+  const [saveAddress, setSaveAddress] = useState(false);
   const checkoutAttemptKeyRef = useRef(null);
-  const [formData, setFormData] = useState({
-    firstName: user?.name?.split(' ')[0] || '',
-    lastName: user?.name?.split(' ')[1] || '',
-    email: user?.email || '',
-    phone: '',
-    address: user?.addresses?.[0]?.street || '',
-    city: user?.addresses?.[0]?.city || '',
-    state: user?.addresses?.[0]?.state || '',
-    zipCode: user?.addresses?.[0]?.zipCode || '',
-    country: user?.addresses?.[0]?.country || 'United States',
-  });
+  const [formData, setFormData] = useState(() => buildFormDataFromUser(user));
 
-  // Sync cart with backend on mount
   useEffect(() => {
+    const nextFormData = buildFormDataFromUser(user);
+
+    setFormData((current) => ({
+      firstName: current.firstName || nextFormData.firstName,
+      lastName: current.lastName || nextFormData.lastName,
+      email: current.email || nextFormData.email,
+      phone: current.phone || nextFormData.phone,
+      address: current.address || nextFormData.address,
+      city: current.city || nextFormData.city,
+      state: current.state || nextFormData.state,
+      zipCode: current.zipCode || nextFormData.zipCode,
+      country: current.country || nextFormData.country,
+    }));
+  }, [user]);
+
+  // Sync or merge cart with backend on mount
+  useEffect(() => {
+    let cancelled = false;
+
     const doSync = async () => {
       if (isAuthenticated) {
-        await syncCart();
+        const result = await mergeLocalCart();
+        if (!cancelled) {
+          setCartReviewMessage(result.success ? '' : result.message || 'Review your cart before checkout.');
+        }
       }
-      setSyncing(false);
+      if (!cancelled) {
+        setSyncing(false);
+      }
     };
     doSync();
-  }, [isAuthenticated, syncCart]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, mergeLocalCart]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -83,6 +127,11 @@ export default function Checkout() {
       return;
     }
 
+    if (hasLocalCartItems(items)) {
+      toast.error('Review your cart before starting payment');
+      return;
+    }
+
     // Validate form
     const required = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
     for (const field of required) {
@@ -95,24 +144,31 @@ export default function Checkout() {
     setLoading(true);
 
     try {
-      // Sync cart with backend first to ensure consistency
-      await syncCart();
+      // Sync or merge cart with backend first to ensure consistency
+      const mergeResult = await mergeLocalCart();
+      if (!mergeResult.success) {
+        setCartReviewMessage(mergeResult.message || 'Review your cart before checkout.');
+        toast.error('Review your cart before starting payment');
+        return;
+      }
       if (!checkoutAttemptKeyRef.current) {
         checkoutAttemptKeyRef.current = createIdempotencyKey();
       }
 
+      const shippingAddress = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        street: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        phone: formData.phone,
+      };
+
       // Prepare order data - backend uses server-side cart, we just send shipping info
       const orderData = {
-        shippingAddress: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          street: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-          country: formData.country,
-          phone: formData.phone,
-        },
+        shippingAddress,
         notes: undefined,
       };
 
@@ -120,6 +176,12 @@ export default function Checkout() {
       const response = await ordersApi.create(orderData, checkoutAttemptKeyRef.current);
       const checkoutUrl = response?.data?.payment?.checkoutUrl;
       if (response.success && checkoutUrl) {
+        if (saveAddress) {
+          const saveResult = await addAddress({ ...shippingAddress, isDefault: true });
+          if (!saveResult.success) {
+            toast.error(saveResult.message || 'Address could not be saved');
+          }
+        }
         checkoutAttemptKeyRef.current = null;
         window.location.assign(checkoutUrl);
       } else {
@@ -130,7 +192,7 @@ export default function Checkout() {
       const errorMessage = error.response?.data?.message || 'Something went wrong. Please try again.';
       if (error.response?.status === 409) {
         checkoutAttemptKeyRef.current = null;
-        await syncCart();
+        await mergeLocalCart();
       }
       toast.error(errorMessage);
     } finally {
@@ -162,10 +224,17 @@ export default function Checkout() {
   }
 
   const discountAmount = subtotal * discount / 100;
+  const hasUnresolvedLocalItems = isAuthenticated && hasLocalCartItems(items);
 
   return (
     <div className="min-h-screen py-10 px-[5%] lg:px-[10%]">
       <h1 className="text-3xl font-semibold mb-10">Checkout</h1>
+
+      {hasUnresolvedLocalItems && (
+        <div role="alert" className="mb-6 border border-[#b42318] bg-red-50 p-4 text-sm text-[#b42318]">
+          {cartReviewMessage || 'Some cart items need review before payment. Return to cart, update items, and try again.'}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex gap-10 flex-col lg:flex-row">
         {/* Shipping Form */}
@@ -276,6 +345,15 @@ export default function Checkout() {
                 <option>France</option>
               </select>
             </div>
+            <label className="md:col-span-2 flex items-center gap-3 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={saveAddress}
+                onChange={(event) => setSaveAddress(event.target.checked)}
+                className="h-4 w-4"
+              />
+              Save this address for next time
+            </label>
           </div>
 
           {/* Payment Info */}
@@ -362,10 +440,14 @@ export default function Checkout() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#6e7051] text-white py-4 font-semibold mt-6 hover:bg-[#262b2c] transition-colors disabled:opacity-50"
+              disabled={loading || hasUnresolvedLocalItems}
+              className={`w-full py-4 font-semibold mt-6 transition-colors ${
+                loading || hasUnresolvedLocalItems
+                  ? 'bg-gray-800 text-white cursor-not-allowed'
+                  : 'bg-[#6e7051] text-white hover:bg-[#262b2c]'
+              }`}
             >
-              {loading ? 'PROCESSING...' : 'CONTINUE TO PAYMENT'}
+              {hasUnresolvedLocalItems ? 'REVIEW CART BEFORE PAYMENT' : loading ? 'PROCESSING...' : 'CONTINUE TO PAYMENT'}
             </button>
           </div>
         </div>

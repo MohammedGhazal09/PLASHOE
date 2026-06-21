@@ -41,7 +41,7 @@ npm install
 
    Optional: `REACT_APP_NAME`, `REACT_APP_DESCRIPTION`, `REACT_APP_UNSPLASH_BASE_URL`, `REACT_APP_MAP_CENTER_LAT`, `REACT_APP_MAP_CENTER_LNG`, `REACT_APP_MAP_ZOOM`, `REACT_APP_FACEBOOK_URL`, `REACT_APP_INSTAGRAM_URL`, `REACT_APP_TWITTER_URL`, `REACT_APP_PINTEREST_URL`, `REACT_APP_COMPANY_EMAIL`, `REACT_APP_COMPANY_PHONE`, `REACT_APP_COMPANY_ADDRESS`, `REACT_APP_ENABLE_GUEST_CHECKOUT`, `REACT_APP_ENABLE_WISHLIST`, `REACT_APP_ENABLE_REVIEWS`
 
-   If unset, `REACT_APP_API_URL` defaults to `http://localhost:5000/api`.
+   If unset, `REACT_APP_API_URL` defaults to `http://localhost:5000/api`. Wishlist and reviews are enabled by default and can be disabled with `REACT_APP_ENABLE_WISHLIST=false` or `REACT_APP_ENABLE_REVIEWS=false`.
 
 4. Start the frontend:
 
@@ -59,8 +59,10 @@ Run from `Backend`.
 ```bash
 npm start      # Start server.js
 npm run dev    # Start server.js with Node watch mode
-npm run seed   # Seed database data from utils/seedData.js
+npm run seed   # Seed local database data from utils/seedData.js
 ```
+
+`npm run seed` clears products, reviews, coupons, and users. It requires `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` and refuses non-local MongoDB URIs unless `ALLOW_NON_LOCAL_SEED=true` is set for disposable data.
 
 Backend automated tests use Vitest. Run them from `Backend` with `npm test` or `npm run test:watch`. To smoke test a running backend:
 
@@ -101,10 +103,10 @@ Returns the backend health JSON when the Express server is running.
 ### Fetch Products
 
 ```bash
-curl http://localhost:5000/api/products
+curl "http://localhost:5000/api/products?q=trail&category=Running&size=41&minPrice=80&maxPrice=140&minRating=4&sort=price-asc&page=1&limit=20"
 ```
 
-Returns product data from MongoDB through `Backend/routes/productRoutes.js` and `Backend/controllers/productController.js`.
+Returns bounded product data from MongoDB through `Backend/routes/productRoutes.js` and `Backend/controllers/productController.js`. Product list routes support text search plus category, gender, sale, size, price, rating, sort, and pagination filters. Product detail records can also include source-backed materials, care, sustainability, manufacturing, and durability content for `/products/:id`.
 
 ### Run the Storefront Against the Local API
 
@@ -116,7 +118,7 @@ cd ../Frontend/Ecommerce-main/my-app
 npm start
 ```
 
-Open the frontend dev server and use the public routes for `/`, `/men`, `/women`, `/collection`, `/sale`, `/cart`, `/account`, `/contact`, `/lookbook`, and `/ourstory`. Checkout and order detail routes are protected by the frontend auth guard and backend JWT middleware.
+Open the frontend dev server and use the public routes for `/`, `/men`, `/women`, `/collection`, `/sale`, `/products/:id`, `/cart`, `/account`, `/contact`, `/lookbook`, and `/ourstory`. Checkout and order detail routes are protected by the frontend auth guard and backend JWT middleware. Checkout is account-required; guest cart items are merged into the authenticated cart after sign-in when they reference backend products. The lookbook can render active shoppable scenes from the API, with tagged products and outfit bundle items using the same cart store rules as product detail. Delivered order detail pages can submit return/exchange requests when the order is inside the configured return window, and order detail can rebuild available prior items into the cart through the buy-again flow.
 
 ## Project Structure
 
@@ -130,10 +132,10 @@ PLASHOE/
 
 Key backend files:
 
-- `Backend/server.js` mounts `/api/auth`, `/api/products`, `/api/cart`, `/api/orders`, `/api/coupons`, `/api/contact`, and `/api/health`.
+- `Backend/app.js` mounts `/api/auth`, `/api/products`, `/api/recommendations`, `/api/lookbook`, `/api/admin/lookbook`, `/api/cart`, `/api/orders`, `/api/returns`, `/api/back-in-stock`, `/api/admin/returns`, `/api/coupons`, `/api/contact`, and `/api/health`.
 - `Backend/config/db.js` connects Mongoose using `MONGO_URI`.
 - `Backend/middleware/auth.js` verifies bearer JWTs and gates admin-only routes.
-- `Backend/utils/seedData.js` seeds product, coupon, and user data.
+- `Backend/utils/seedData.js` seeds product, coupon, and user data with environment-provided admin credentials.
 
 Key frontend files:
 
@@ -149,9 +151,13 @@ All backend API routes are mounted under `/api`.
 | Area | Routes | Auth |
 | --- | --- | --- |
 | Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `PUT /auth/profile`, `POST /auth/addresses`, `DELETE /auth/addresses/:id` | Profile and address routes require a bearer token |
-| Products | `GET /products`, `GET /products/men`, `GET /products/women`, `GET /products/sale`, `GET /products/bestsellers`, `GET /products/categories`, `GET /products/:id` | Public reads; create/update/delete require admin |
-| Cart | `GET /cart`, `POST /cart/items`, `PUT /cart/items/:itemId`, `DELETE /cart/items/:itemId`, `DELETE /cart`, `POST /cart/coupon`, `DELETE /cart/coupon` | Bearer token |
-| Orders | `POST /orders`, `GET /orders`, `GET /orders/:id`, `PUT /orders/:id/cancel` | Bearer token |
+| Products | `GET /products`, `GET /products/men`, `GET /products/women`, `GET /products/sale`, `GET /products/bestsellers`, `GET /products/categories`, `GET /products/:id`, `GET /products/:id/related`, `GET /recommendations` | Public reads with bounded discovery filters, source-backed detail fields, and explainable recommendations; create/update/delete require admin |
+| Lookbook | `GET /lookbook`, `GET /admin/lookbook`, `POST /admin/lookbook`, `PUT /admin/lookbook/:id`, `DELETE /admin/lookbook/:id` | Public active scene reads; management requires admin |
+| Reviews | `GET /products/:id/reviews`, `POST /products/:id/reviews` | Listing is public; create requires bearer token and verified purchase |
+| Cart | `GET /cart`, `POST /cart/merge`, `POST /cart/items`, `PUT /cart/items/:itemId`, `DELETE /cart/items/:itemId`, `DELETE /cart`, `POST /cart/coupon`, `DELETE /cart/coupon` | Bearer token |
+| Orders | `POST /orders`, `GET /orders`, `GET /orders/:id`, `POST /orders/:id/reorder`, `PUT /orders/:id/cancel` | Bearer token |
+| Returns | `POST /returns`, `GET /returns`, `GET /returns/:id`, `GET /admin/returns`, `GET /admin/returns/:id`, `PATCH /admin/returns/:id/status` | Customer routes require bearer token; admin routes require admin |
+| Retention | `POST /back-in-stock` | Public opt-in intent capture; no provider delivery is configured in this repo |
 | Coupons | `POST /coupons/validate`, `GET /coupons`, `POST /coupons`, `DELETE /coupons/:id` | Validate is public; management requires admin |
 | Contact | `POST /contact`, `GET /contact`, `PUT /contact/:id/read`, `DELETE /contact/:id` | Submit is public; management requires admin |
 
@@ -164,7 +170,12 @@ cd Frontend/Ecommerce-main/my-app
 npm test
 ```
 
-Backend automated tests are not configured in `Backend/package.json`. Use the health endpoint smoke test after starting the server.
+Backend automated tests use Vitest and Supertest:
+
+```bash
+cd Backend
+npm test
+```
 
 ## License
 

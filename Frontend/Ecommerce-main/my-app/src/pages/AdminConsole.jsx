@@ -1,0 +1,72 @@
+import { useMemo, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowsRotate, faBoxOpen, faClipboardList, faEnvelope, faImages, faTags } from '@fortawesome/free-solid-svg-icons';
+import AdminOrders from './admin/AdminOrders';
+import AdminReturns from './admin/AdminReturns';
+import AdminProducts from './admin/AdminProducts';
+import AdminLookbook from './admin/AdminLookbook';
+import AdminCoupons from './admin/AdminCoupons';
+import AdminMessages from './admin/AdminMessages';
+
+const sections = [
+  { id: 'orders', label: 'Orders', icon: faClipboardList, Component: AdminOrders },
+  { id: 'returns', label: 'Returns', icon: faArrowsRotate, Component: AdminReturns },
+  { id: 'products', label: 'Products', icon: faBoxOpen, Component: AdminProducts },
+  { id: 'lookbook', label: 'Lookbook', icon: faImages, Component: AdminLookbook },
+  { id: 'coupons', label: 'Coupons', icon: faTags, Component: AdminCoupons },
+  { id: 'messages', label: 'Messages', icon: faEnvelope, Component: AdminMessages },
+];
+
+export default function AdminConsole() {
+  const [activeSection, setActiveSection] = useState('orders');
+  const active = useMemo(
+    () => sections.find((section) => section.id === activeSection) || sections[0],
+    [activeSection]
+  );
+  const ActiveComponent = active.Component;
+
+  return (
+    <main className="min-h-screen bg-light">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:flex-row lg:px-8">
+        <aside className="lg:w-64 lg:flex-shrink-0">
+          <div className="border border-gray-200 bg-white">
+            <div className="border-b border-gray-200 p-4">
+              <p className="text-xs font-semibold uppercase text-primary">PLASHOE</p>
+              <h1 className="mt-1 text-2xl font-semibold text-dark">Store Admin</h1>
+            </div>
+            <nav className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4 lg:grid-cols-1" aria-label="Admin sections">
+              {sections.map((section) => {
+                const activeItem = section.id === activeSection;
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => setActiveSection(section.id)}
+                    className={`flex min-h-11 items-center gap-2 border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                      activeItem
+                        ? 'border-dark text-white'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-primary hover:text-primary'
+                    }`}
+                    style={
+                      activeItem
+                        ? { backgroundColor: '#262b2c', borderColor: '#262b2c', color: '#ffffff' }
+                        : undefined
+                    }
+                    aria-current={activeItem ? 'page' : undefined}
+                  >
+                    <FontAwesomeIcon icon={section.icon} className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                    {section.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
+
+        <section className="min-w-0 flex-1">
+          <ActiveComponent />
+        </section>
+      </div>
+    </main>
+  );
+}

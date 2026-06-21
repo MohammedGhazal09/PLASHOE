@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Layout from './components/Layout';
+import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 import { warmUpApiServer } from './services/serverWarmup';
 import {
@@ -16,10 +17,12 @@ import {
   Checkout,
   CheckoutReturn,
   Account,
+  AdminConsole,
   Contact,
   LookBook,
   OurStory,
   OrderDetail,
+  ProductDetail,
 } from './pages';
 import './App.css';
 
@@ -75,8 +78,17 @@ function App() {
             <Route path="contact" element={<Contact />} />
             <Route path="lookbook" element={<LookBook />} />
             <Route path="ourstory" element={<OurStory />} />
+            <Route path="products/:id" element={<ProductDetail />} />
 
             {/* Protected Routes */}
+            <Route
+              path="admin"
+              element={
+                <AdminRoute>
+                  <AdminConsole />
+                </AdminRoute>
+              }
+            />
             <Route
               path="checkout"
               element={

@@ -1,0 +1,15 @@
+{
+  "baseUrl": "http://127.0.0.1:5181",
+  "screenshots": [
+    ".planning/phases/21-shoppable-lookbook-and-outfit-bundles/artifacts/phase21-lookbook-desktop.png",
+    ".planning/phases/21-shoppable-lookbook-and-outfit-bundles/artifacts/phase21-lookbook-bundle-mobile.png"
+  ],
+  "checks": [
+    "Active lookbook scene renders from mocked API data",
+    "Hotspot product inspection and individual add-to-cart work",
+    "Bundle add-to-cart adds available items through cart store behavior",
+    "Mobile cart drawer opens after bundle add"
+  ],
+  "consoleErrors": [],
+  "ignoredConsole": []
+}

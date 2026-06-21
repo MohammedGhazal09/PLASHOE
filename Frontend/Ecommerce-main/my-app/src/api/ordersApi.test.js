@@ -56,3 +56,12 @@ test('cancel returns unwrapped cancel response data', async () => {
   expect(api.put).toHaveBeenCalledWith('/orders/order-1/cancel');
   expect(result.data).toEqual({ status: 'cancelled' });
 });
+
+test('reorder posts to the order reorder endpoint', async () => {
+  api.post.mockResolvedValue({ data: { success: true, data: { added: 1 } } });
+
+  const result = await ordersApi.reorder('order-1');
+
+  expect(api.post).toHaveBeenCalledWith('/orders/order-1/reorder');
+  expect(result.data).toEqual({ added: 1 });
+});

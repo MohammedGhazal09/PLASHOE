@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithRouter } from '../test/routerTestUtils';
 import ProductCard from './ProductCard';
 
 const { mockAddItem, mockOpenCart, mockToastSuccess, mockToastError } = vi.hoisted(() => ({
@@ -40,7 +41,7 @@ beforeEach(() => {
 });
 
 test('renders normalized product image and price fields', () => {
-  render(<ProductCard product={product} />);
+  renderWithRouter(<ProductCard product={product} />);
 
   expect(screen.getByAltText('Normalized Runner')).toHaveAttribute(
     'src',
@@ -50,8 +51,21 @@ test('renders normalized product image and price fields', () => {
   expect(screen.getByText('$60.00')).toBeInTheDocument();
 });
 
+test('links product image and name to the product detail route', () => {
+  renderWithRouter(<ProductCard product={product} />);
+
+  expect(screen.getByRole('link', { name: 'View Normalized Runner' })).toHaveAttribute(
+    'href',
+    '/products/local-male-0'
+  );
+  expect(screen.getByRole('link', { name: 'Normalized Runner' })).toHaveAttribute(
+    'href',
+    '/products/local-male-0'
+  );
+});
+
 test('adds a normalized cart-compatible product payload', async () => {
-  render(<ProductCard product={product} />);
+  renderWithRouter(<ProductCard product={product} />);
 
   fireEvent.click(screen.getByText('ADD TO CART'));
 
@@ -74,7 +88,7 @@ test('adds a normalized cart-compatible product payload', async () => {
 });
 
 test('uses the first available product size when size 40 is unavailable', async () => {
-  render(<ProductCard product={{ ...product, sizes: [41, 42] }} />);
+  renderWithRouter(<ProductCard product={{ ...product, sizes: [41, 42] }} />);
 
   fireEvent.click(screen.getByText('ADD TO CART'));
 

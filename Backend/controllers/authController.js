@@ -10,6 +10,16 @@ const generateToken = (id) => {
   });
 };
 
+const toAuthUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  addresses: user.addresses || [],
+  isAdmin: user.isAdmin,
+  token: generateToken(user._id)
+});
+
 // @desc    Register user
 // @route   POST /api/auth/register
 export const register = async (req, res, next) => {
@@ -30,13 +40,7 @@ export const register = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        token: generateToken(user._id)
-      }
+      data: toAuthUser(user)
     });
   } catch (error) {
     next(error);
@@ -69,13 +73,7 @@ export const login = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        token: generateToken(user._id)
-      }
+      data: toAuthUser(user)
     });
   } catch (error) {
     next(error);
@@ -95,12 +93,11 @@ export const getMe = async (req, res) => {
 // @route   PUT /api/auth/profile
 export const updateProfile = async (req, res, next) => {
   try {
-    const { name, email, phone } = req.body;
+    const { name, phone } = req.body;
     
     const user = await User.findById(req.user._id);
     
     if (name) user.name = name;
-    if (email) user.email = email;
     if (phone) user.phone = phone;
     
     await user.save();

@@ -11,6 +11,11 @@ export const cartApi = {
     return data;
   },
 
+  mergeItems: async (items) => {
+    const { data } = await api.post('/cart/merge', { items });
+    return data;
+  },
+
   updateItem: async (itemId, quantity) => {
     const { data } = await api.put(`/cart/items/${itemId}`, { quantity });
     return data;

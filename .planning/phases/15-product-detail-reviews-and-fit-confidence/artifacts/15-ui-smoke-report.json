@@ -1,0 +1,111 @@
+{
+  "generatedAt": "2026-06-20T22:02:37.944Z",
+  "url": "http://127.0.0.1:5175/products/local-male-0",
+  "mode": "local Vite fallback catalog; backend review submit not exercised",
+  "desktop": {
+    "viewport": {
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    },
+    "url": "http://127.0.0.1:5175/products/local-male-0?smoke=1781992953818",
+    "title": "Men's Black Knit Runner",
+    "hasAddToCart": true,
+    "hasWishlist": true,
+    "hasFit": true,
+    "hasReviews": true,
+    "hasRelated": true,
+    "relatedLinks": [
+      {
+        "text": "",
+        "href": "/products/local-male-2"
+      },
+      {
+        "text": "Men's Forest Knit Runner",
+        "href": "/products/local-male-2"
+      },
+      {
+        "text": "",
+        "href": "/products/local-male-4"
+      },
+      {
+        "text": "Men's Charcoal Knit Runner",
+        "href": "/products/local-male-4"
+      },
+      {
+        "text": "",
+        "href": "/products/local-male-5"
+      },
+      {
+        "text": "Men's Burgundy Knit Runner",
+        "href": "/products/local-male-5"
+      }
+    ],
+    "horizontalOverflowPx": 0,
+    "addToCartTop": 612,
+    "wishlistTop": 612,
+    "fitTop": 403,
+    "reviewsTop": 922,
+    "relatedTop": 1580,
+    "bodyHeight": 2804
+  },
+  "mobile": {
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "mobile": true
+    },
+    "url": "http://127.0.0.1:5175/products/local-male-0?smoke=1781992956143",
+    "title": "Men's Black Knit Runner",
+    "hasAddToCart": true,
+    "hasWishlist": true,
+    "hasFit": true,
+    "hasReviews": true,
+    "hasRelated": true,
+    "relatedLinks": [
+      {
+        "text": "",
+        "href": "/products/local-male-2"
+      },
+      {
+        "text": "Men's Forest Knit Runner",
+        "href": "/products/local-male-2"
+      },
+      {
+        "text": "",
+        "href": "/products/local-male-4"
+      },
+      {
+        "text": "Men's Charcoal Knit Runner",
+        "href": "/products/local-male-4"
+      },
+      {
+        "text": "",
+        "href": "/products/local-male-5"
+      },
+      {
+        "text": "Men's Burgundy Knit Runner",
+        "href": "/products/local-male-5"
+      }
+    ],
+    "horizontalOverflowPx": 0,
+    "addToCartTop": 1042,
+    "wishlistTop": 1102,
+    "fitTop": 929,
+    "reviewsTop": 1420,
+    "relatedTop": 2202,
+    "bodyHeight": 5820
+  },
+  "screenshots": {
+    "desktop": "E:\\PLASHOE\\PLASHOE\\.planning\\phases\\15-product-detail-reviews-and-fit-confidence\\artifacts\\15-ui-smoke-product-desktop.png",
+    "mobile": "E:\\PLASHOE\\PLASHOE\\.planning\\phases\\15-product-detail-reviews-and-fit-confidence\\artifacts\\15-ui-smoke-product-mobile.png"
+  },
+  "checks": {
+    "desktopDecisionVisible": true,
+    "mobileContentRendered": true,
+    "noDesktopOverflow": true,
+    "noMobileOverflow": true,
+    "relatedLinksRendered": true
+  },
+  "passed": true
+}

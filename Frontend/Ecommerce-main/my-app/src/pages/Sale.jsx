@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import { useCatalogProducts } from '../hooks/useCatalogProducts';
+import { useCatalogUrlQuery } from '../hooks/useCatalogUrlQuery';
 import saleHero from '../assets/images/sale-hero.webp';
 
 export default function Sale() {
-  const [query, setQuery] = useState({ sale: 'true', page: 1, limit: 20 });
-  const { products, pagination, loading, source } = useCatalogProducts(query);
+  const forcedFilters = { sale: 'true' };
+  const { query, setQuery, setPage } = useCatalogUrlQuery({ forcedParams: forcedFilters });
+  const { products, pagination, loading, error, source } = useCatalogProducts(query);
 
   if (loading && products.length === 0) {
     return (
@@ -41,11 +42,12 @@ export default function Sale() {
         showFilters={true}
         query={query}
         pagination={pagination}
+        loading={loading}
+        error={error}
         source={source}
-        onQueryChange={(nextQuery) =>
-          setQuery({ ...nextQuery, sale: 'true', page: nextQuery.page || 1 })
-        }
-        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+        lockedFilters={forcedFilters}
+        onQueryChange={setQuery}
+        onPageChange={setPage}
       />
 
     </div>

@@ -133,7 +133,6 @@ describe("auth routes", () => {
       .set(authHeader(user))
       .send({
         name: "  Updated Buyer  ",
-        email: "UPDATED-BUYER@EXAMPLE.COM",
         phone: " 5551234567 ",
       })
       .expect(200);
@@ -141,9 +140,42 @@ describe("auth routes", () => {
     expect(response.body.success).toBe(true);
     expect(response.body.data).toMatchObject({
       name: "Updated Buyer",
-      email: "updated-buyer@example.com",
+      email: "profile@example.com",
       phone: "5551234567",
     });
+  });
+
+  it("rejects profile email changes without a verified email-change flow", async () => {
+    const user = await createUser({ email: "profile-email@example.com" });
+
+    const response = await request(app)
+      .put("/api/auth/profile")
+      .set(authHeader(user))
+      .send({
+        email: "takeover@example.com",
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+
+    await request(app)
+      .post("/api/auth/login")
+      .send({
+        email: "takeover@example.com",
+        password: "password123",
+      })
+      .expect(401);
+
+    await request(app)
+      .post("/api/auth/login")
+      .send({
+        email: user.email,
+        password: "password123",
+      })
+      .expect(200);
   });
 
   it("rejects unknown profile fields including isAdmin", async () => {

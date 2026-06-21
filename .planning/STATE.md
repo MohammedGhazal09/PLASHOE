@@ -2,30 +2,30 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 11
-current_plan: 3
-status: blocked
-last_updated: "2026-06-14T03:10:00.000Z"
-last_activity: 2026-06-14
+current_phase: 9
+current_plan: Blocked on external setup
+status: external_setup_blocked
+last_updated: "2026-06-21T04:06:03.0196549+03:00"
+last_activity: 2026-06-21
 progress:
-  total_phases: 12
-  completed_phases: 10
-  total_plans: 36
-  completed_plans: 36
-  percent: 100
+  total_phases: 21
+  completed_phases: 18
+  total_plans: 51
+  completed_plans: 51
+  percent: 86
 ---
 
 # Project State: PLASHOE
 
-**Current Phase:** 11
-**Status:** Blocked on external Phase 09 provider/staging evidence after completing Phase 11 source-controlled plans
-**Current Plan:** 3
-**Next recommended run:** Revisit `$gsd-execute-phase 9` when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler evidence are available. Treat Phase 11 blockers as required-before-production inputs for Phase 12.
-**Last Activity:** 2026-06-14
+**Current Phase:** Phase 9 - Production Launch Setup and Staging Verification (blocked on external setup)
+**Status:** Feature phases 13-21 are complete; production launch, operational provider evidence, and release cutover remain blocked or not started.
+**Current Plan:** None active locally
+**Next recommended run:** Resume `$gsd-execute-phase 9` when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler evidence are available. Then complete Phase 11 provider evidence and Phase 12 release approval/cutover.
+**Last Activity:** 2026-06-21
 
 ## Current Focus
 
-Phase 10 is complete. Phase 11 source-controlled execution is complete with 3/3 plans, but verification is blocked on external staging/provider evidence that still belongs to Phase 9.
+Phases 13-21 are complete with source-controlled admin, wishlist, product detail, discovery, checkout conversion, returns, sustainability, retention, and shoppable lookbook work verified by local tests, builds, and browser-smoke evidence. Remaining roadmap focus is production readiness: Phase 9 is blocked on external staging/provider inputs, Phase 11 is blocked on live operations/provider proof, and Phase 12 remains an explicit production cutover approval step. No hosted, provider-delivery, or production success is claimed from the local feature sweep.
 
 ## Accumulated Context
 
@@ -58,6 +58,25 @@ Phase 10 is complete. Phase 11 source-controlled execution is complete with 3/3 
 - 2026-06-14: Completed Phase 10 Plan 10-02 with Vitest-native tests, shared router test helper, scoped expected-console suppression, and the `OrderDetail.jsx` hook warning fix.
 - 2026-06-14: Completed Phase 10 Plan 10-03 with strict frontend audit policy, Vitest CI command, active Vite/Vitest docs, and full Phase 10 verification.
 - 2026-06-14: Planned Phase 11 into structured webhook logging/evidence baseline, operations docs/alert/access matrix, and backup/incident/final verification across 3 waves.
+- 2026-06-20: Added Phase 13 for an admin store management console.
+- 2026-06-20: Added Phase 14 for wishlist and saved shopping intent.
+- 2026-06-20: Added Phase 15 for product detail, reviews, and fit confidence.
+- 2026-06-20: Added Phase 16 for advanced catalog discovery and search.
+- 2026-06-20: Added Phase 17 for checkout conversion and guest cart experience.
+- 2026-06-20: Added Phase 18 for returns, exchanges, and refund requests.
+- 2026-06-20: Added Phase 19 for sustainability impact and product care content.
+- 2026-06-20: Added Phase 20 for retention lifecycle commerce and personalization.
+- 2026-06-20: Added Phase 21 for shoppable lookbook and outfit bundles.
+- 2026-06-20: Expanded v2 requirements and traceability so phases 13-21 are mapped to concrete backlog requirements.
+- 2026-06-20: Completed Phase 13 with a protected admin console, admin order/resource screens, admin API wrappers, docs, focused tests, production build, and local browser-smoke evidence.
+- 2026-06-20: Completed Phase 14 with authenticated wishlist APIs, guest local wishlist behavior, auth merge/account management, docs, focused tests, production build, and local browser-smoke evidence.
+- 2026-06-20: Completed Phase 15 with rich product detail data, related-products API, verified-purchase reviews, product detail UI, fit guidance, docs, full backend/frontend test suites, production build, and local browser smoke evidence.
+- 2026-06-20: Completed Phase 16 with bounded product search/filter APIs, catalog URL state, expanded ProductGrid controls, docs, full backend/frontend test suites, production build, and local browser smoke evidence.
+- 2026-06-21: Completed Phase 17 with account-required checkout copy, protected guest-cart merge, unresolved local cart review, saved address reuse, docs, full backend/frontend test suites, production build, and local browser-smoke evidence.
+- 2026-06-21: Completed Phase 18 with persisted return/exchange requests, customer and admin APIs, eligibility enforcement, admin status history, docs, full backend/frontend test suites, production build, and local browser-smoke evidence.
+- 2026-06-21: Completed Phase 19 with source-backed sustainability and care content, admin/product/story UI coverage, docs, full backend/frontend test suites, production build, and local browser-smoke evidence.
+- 2026-06-21: Completed Phase 20 with back-in-stock intent capture, deterministic recommendations, reorder flow, docs, full backend/frontend test suites, production build, and local browser-smoke evidence; notification provider delivery remains intentionally out of scope.
+- 2026-06-21: Completed Phase 21 with lookbook model/API/admin management, storefront hotspots, bundle add-to-cart, docs, full backend/frontend test suites, production build, and local browser-smoke evidence.
 
 ### Decisions
 
@@ -65,6 +84,8 @@ Phase 10 is complete. Phase 11 source-controlled execution is complete with 3/3 
 - Use tests and contract checks as guardrails before security, payment, and deployment expansion.
 - Keep local `.env` files out of planning artifacts.
 - Keep Phase 3 dependency remediation bounded to patch/minor upgrades unless audit evidence requires a major migration.
+- Treat the completed phases 13-21 feature sweep as local/source-controlled evidence only; production readiness still depends on phases 9, 11, and 12.
+- Phase 13 was executed first because the admin console provided the management surface needed by later catalog, review, return, sustainability, retention, and lookbook work.
 
 ### Known Open Risks
 
@@ -73,3 +94,4 @@ Phase 10 is complete. Phase 11 source-controlled execution is complete with 3/3 
 - External monitoring, alerting, backup/restore drill proof, and host-specific rollback evidence remain blocked until Phase 9 provider/staging inputs exist; Phase 11 source-controlled docs and tests are complete.
 - Production release, tag/push decisions, rollback readiness, and post-launch review remain open until Phase 12 and require explicit user approval for release actions.
 - Phase 9 cannot be marked passed until staging backend/frontend origins, MongoDB isolation proof, Stripe test-mode dashboard evidence, and MapTiler/public config decisions are supplied.
+- Notification provider delivery remains intentionally deferred until consent, unsubscribe, suppression, audit, and rate-limit requirements are specified.

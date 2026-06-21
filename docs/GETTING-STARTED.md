@@ -90,10 +90,12 @@ Use the backend seed script only against a local or disposable development datab
 
 ```bash
 cd Backend
+$env:SEED_ADMIN_EMAIL="admin@example.test"
+$env:SEED_ADMIN_PASSWORD="change-this-local-password"
 npm run seed
 ```
 
-Run the seed command after `MONGO_URI` points to the intended local/development MongoDB database.
+Run the seed command after `MONGO_URI` points to the intended local/development MongoDB database. The script refuses non-local MongoDB URIs unless `ALLOW_NON_LOCAL_SEED=true` is set for disposable data.
 
 ## Smoke Checks
 

@@ -23,4 +23,9 @@ export const ordersApi = {
     const { data } = await api.put(`/orders/${id}/cancel`);
     return data;
   },
+
+  reorder: async (id) => {
+    const { data } = await api.post(`/orders/${id}/reorder`);
+    return data;
+  },
 };

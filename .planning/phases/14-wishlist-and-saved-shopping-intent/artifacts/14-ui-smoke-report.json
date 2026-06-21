@@ -1,0 +1,29 @@
+{
+  "desktopBefore": {
+    "width": 1440,
+    "scrollWidth": 1425,
+    "overflow": -15,
+    "wishlistButtonCount": 8,
+    "firstWishlistLabel": "Save Women's Blush Knit Trainer to wishlist",
+    "headerWishlistLabel": "Wishlist (0 items)"
+  },
+  "desktopAfter": {
+    "headerWishlistLabel": "Wishlist (1 item)",
+    "pressedWishlistButtons": 1,
+    "localStorageWishlist": "present",
+    "overflow": -15
+  },
+  "mobileAccount": {
+    "width": 390,
+    "scrollWidth": 390,
+    "overflow": 0,
+    "hasHeading": true,
+    "hasSeededItem": true,
+    "hasMoveToCart": true,
+    "hasRemove": true
+  },
+  "screenshots": [
+    "14-ui-smoke-home-desktop.png",
+    "14-ui-smoke-account-mobile.png"
+  ]
+}

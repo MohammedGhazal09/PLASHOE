@@ -93,16 +93,69 @@
 
 ## v2 Requirements
 
-- **V2-01**: Wishlist feature works end to end.
-- **V2-02**: Product reviews work end to end.
-- **V2-03**: Full admin product/coupon UI exists.
-- **V2-04**: Frontend platform improvements beyond Phase 10 are deferred unless new dependency remediation requires them.
+### Admin Store Management
+
+- [x] **V2-ADM-01**: A protected admin route shell is available only to authenticated admins.
+- [x] **V2-ADM-02**: Admins can list, filter, inspect, and update order fulfillment from frontend screens.
+- [x] **V2-ADM-03**: Admins can manage products, coupons, and contact messages from frontend screens.
+- [x] **V2-ADM-04**: Admin navigation, authorization, and critical admin workflows have focused tests.
+
+### Wishlist and Saved Shopping Intent
+
+- [x] **V2-WISH-01**: Authenticated wishlists persist through backend APIs.
+- [x] **V2-WISH-02**: Guest wishlist behavior is explicit, local, and safely reconciled or prompted on login.
+- [x] **V2-WISH-03**: Product cards, reusable product-detail-ready controls, account, and header surfaces expose wishlist state consistently.
+
+### Product Detail, Reviews, and Fit Confidence
+
+- [x] **V2-PDP-01**: Product detail routes render media, price, stock, sizes, description, materials, and add-to-cart.
+- [x] **V2-REV-01**: Verified-purchase review submission and listing work end to end.
+- [x] **V2-REV-02**: Review rating aggregation, validation, and moderation-safe rendering are implemented.
+- [x] **V2-FIT-01**: Fit guidance, size information, and related products are visible at the purchase decision point.
+
+### Advanced Catalog Discovery
+
+- [x] **V2-DISC-01**: Product list APIs support bounded text search plus category, gender, sale, size, price, rating, and sort filters.
+- [x] **V2-DISC-02**: Catalog UI keeps search, filter, sort, and page state in the URL.
+- [x] **V2-DISC-03**: Search and filter behavior has backend, frontend, and contract-level tests.
+
+### Checkout Conversion
+
+- [x] **V2-CHKX-01**: The selected guest checkout or account-required cart-merge policy is documented and implemented consistently.
+- [x] **V2-CHKX-02**: Guest and authenticated carts reconcile without duplicate, lost, or stale items.
+- [x] **V2-CHKX-03**: Saved address, checkout retry, payment return, and cart-conflict behavior remain covered by tests.
+
+### Returns and Exchanges
+
+- [x] **V2-RMA-01**: Return/exchange requests have a persisted model, customer API, admin API, and status history.
+- [x] **V2-RMA-02**: Eligibility rules account for order status, payment state, delivery date, item quantity, and configured return window.
+- [x] **V2-RMA-03**: Admins can approve, reject, receive, resolve, and record notes for requests.
+- [x] **V2-RMA-04**: Refund request state does not conflict with Stripe-origin refund webhook state.
+
+### Sustainability and Product Care
+
+- [x] **V2-SUS-01**: Product records can store structured sustainability, materials, manufacturing, and care information.
+- [x] **V2-SUS-02**: Admin product management can maintain sustainability and care fields.
+- [x] **V2-SUS-03**: Product detail and story surfaces render sustainability content with safe fallback behavior.
+
+### Retention and Personalization
+
+- [x] **V2-RET-01**: Shoppers can request back-in-stock notifications by product and size.
+- [x] **V2-RET-02**: Account and order surfaces support reorder or buy-again flows when products are still available.
+- [x] **V2-RET-03**: Abandoned-cart recovery is designed with explicit opt-in, privacy, and provider boundaries.
+- [x] **V2-RET-04**: Recommendations are explainable, bounded, and do not require invasive tracking.
+
+### Shoppable Lookbook
+
+- [x] **V2-LOOK-01**: Lookbook content can associate images or scenes with active products and optional outfit bundles.
+- [x] **V2-LOOK-02**: Shoppers can inspect tagged products and add individual items or available bundle items to cart.
+- [x] **V2-LOOK-03**: Admin maintenance, responsive behavior, accessibility, and focused tests cover shoppable lookbook interactions.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| New storefront marketing features | Current risk is reliability and production readiness, not more surface area. |
+| Pre-release storefront marketing expansion | Current v1 risk is reliability and production readiness; post-release growth features are tracked in phases 13-21. |
 | Mobile app | Web checkout must be reliable first. |
 | Multi-vendor marketplace | Not supported by current data model or admin workflow. |
 
@@ -160,15 +213,43 @@
 | REL-02 | Phase 12 | Not started |
 | REL-03 | Phase 12 | Not started |
 | REL-04 | Phase 12 | Not started |
-| V2-01 | Post-v1 | Deferred |
-| V2-02 | Post-v1 | Deferred |
-| V2-03 | Post-v1 | Deferred |
-| V2-04 | Post-v1 | Deferred |
+| V2-ADM-01 | Phase 13 | Complete |
+| V2-ADM-02 | Phase 13 | Complete |
+| V2-ADM-03 | Phase 13 | Complete |
+| V2-ADM-04 | Phase 13 | Complete |
+| V2-WISH-01 | Phase 14 | Complete |
+| V2-WISH-02 | Phase 14 | Complete |
+| V2-WISH-03 | Phase 14 | Complete |
+| V2-PDP-01 | Phase 15 | Complete |
+| V2-REV-01 | Phase 15 | Complete |
+| V2-REV-02 | Phase 15 | Complete |
+| V2-FIT-01 | Phase 15 | Complete |
+| V2-DISC-01 | Phase 16 | Complete |
+| V2-DISC-02 | Phase 16 | Complete |
+| V2-DISC-03 | Phase 16 | Complete |
+| V2-CHKX-01 | Phase 17 | Backlog |
+| V2-CHKX-02 | Phase 17 | Backlog |
+| V2-CHKX-03 | Phase 17 | Backlog |
+| V2-RMA-01 | Phase 18 | Backlog |
+| V2-RMA-02 | Phase 18 | Backlog |
+| V2-RMA-03 | Phase 18 | Backlog |
+| V2-RMA-04 | Phase 18 | Backlog |
+| V2-SUS-01 | Phase 19 | Backlog |
+| V2-SUS-02 | Phase 19 | Backlog |
+| V2-SUS-03 | Phase 19 | Backlog |
+| V2-RET-01 | Phase 20 | Backlog |
+| V2-RET-02 | Phase 20 | Backlog |
+| V2-RET-03 | Phase 20 | Backlog |
+| V2-RET-04 | Phase 20 | Backlog |
+| V2-LOOK-01 | Phase 21 | Backlog |
+| V2-LOOK-02 | Phase 21 | Backlog |
+| V2-LOOK-03 | Phase 21 | Backlog |
 
 **Coverage:**
 
 - v1 requirements: 50 total
-- Mapped to phases: 50
+- v2 requirements: 31 total
+- Mapped to phases: 81
 - Unmapped: 0
 
 ---

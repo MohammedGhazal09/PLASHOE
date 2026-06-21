@@ -4,8 +4,18 @@ import Cart from '../models/Cart.js';
 import Coupon from '../models/Coupon.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import { CHECKOUT_HOLDS } from '../config/security.js';
+import { releaseOrderReservationsOnce } from './paymentState.js';
 
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{8,200}$/;
+const ACTIVE_HOLD_PAYMENT_STATUSES = ['requires_payment', 'payment_pending'];
+const CANCELLABLE_PAYMENT_STATUSES = [
+  'requires_payment',
+  'payment_pending',
+  'payment_failed',
+  'payment_canceled',
+  'not_required',
+];
 
 export class CheckoutError extends Error {
   constructor(message, statusCode = 400, errors = []) {
@@ -329,6 +339,45 @@ const runHook = async (hooks, name) => {
   }
 };
 
+export const releaseExpiredCheckoutHolds = async ({ session, now = new Date() } = {}) => {
+  const expiredOrders = await Order.find({
+    paymentStatus: { $in: ACTIVE_HOLD_PAYMENT_STATUSES },
+    inventoryDecremented: true,
+    checkoutHoldExpiresAt: { $lte: now },
+  }).session(session);
+
+  for (const order of expiredOrders) {
+    await releaseOrderReservationsOnce({ order, session });
+    order.status = 'cancelled';
+    order.paymentStatus = 'payment_canceled';
+    order.paymentFailureReason = 'checkout hold expired';
+    order.checkoutHoldExpiresAt = null;
+    await order.save({ session });
+  }
+
+  return expiredOrders.length;
+};
+
+const enforceActiveCheckoutHoldLimit = async ({ userId, session, now }) => {
+  const activeHoldCount = await Order.countDocuments({
+    user: userId,
+    paymentStatus: { $in: ACTIVE_HOLD_PAYMENT_STATUSES },
+    inventoryDecremented: true,
+    checkoutHoldExpiresAt: { $gt: now },
+  }).session(session);
+
+  if (activeHoldCount >= CHECKOUT_HOLDS.maxActivePerUser) {
+    throw createConflict('Too many unpaid checkout holds. Complete or cancel an existing checkout first.', [
+      {
+        code: 'CHECKOUT_HOLD_LIMIT_REACHED',
+        resource: 'checkout',
+        requested: activeHoldCount + 1,
+        available: CHECKOUT_HOLDS.maxActivePerUser,
+      },
+    ]);
+  }
+};
+
 export const createCheckoutFromCart = async ({
   userId,
   shippingAddress,
@@ -342,6 +391,11 @@ export const createCheckoutFromCart = async ({
   const key = validateIdempotencyKey(idempotencyKey);
 
   return mongoose.connection.transaction(async (session) => {
+    const now = new Date();
+    const checkoutHoldExpiresAt = new Date(now.getTime() + CHECKOUT_HOLDS.ttlMs);
+
+    await releaseExpiredCheckoutHolds({ session, now });
+
     const cart = await getCart(userId, session);
     const replay = await resolveExistingOrder({
       userId,
@@ -355,6 +409,8 @@ export const createCheckoutFromCart = async ({
     if (replay) {
       return replay;
     }
+
+    await enforceActiveCheckoutHoldLimit({ userId, session, now });
 
     if (!cart || cart.items.length === 0) {
       throw createBadRequest('Cart is empty');
@@ -385,6 +441,9 @@ export const createCheckoutFromCart = async ({
           status: orderStatus,
           paymentStatus,
           paymentProvider,
+          checkoutHoldExpiresAt: ACTIVE_HOLD_PAYMENT_STATUSES.includes(paymentStatus)
+            ? checkoutHoldExpiresAt
+            : null,
           notes,
           idempotencyKey: key,
           cartFingerprint,
@@ -417,23 +476,7 @@ export const compensateCheckoutSideEffects = async ({ userId, orderId }) =>
       return { compensated: false };
     }
 
-    if (order.inventoryDecremented === true) {
-      for (const item of order.items) {
-        await Product.updateOne(
-          { _id: item.product },
-          { $inc: { stock: item.quantity } },
-          { session }
-        );
-      }
-    }
-
-    if (order.couponCode) {
-      await Coupon.updateOne(
-        { code: order.couponCode, usedCount: { $gt: 0 } },
-        { $inc: { usedCount: -1 } },
-        { session }
-      );
-    }
+    await releaseOrderReservationsOnce({ order, session });
 
     let cart = await Cart.findOne({ user: userId }).session(session);
 
@@ -454,6 +497,7 @@ export const compensateCheckoutSideEffects = async ({ userId, orderId }) =>
     order.inventoryDecremented = false;
     order.status = 'cancelled';
     order.paymentStatus = 'requires_payment';
+    order.checkoutHoldExpiresAt = null;
     await order.save({ session });
     await Order.deleteOne({ _id: order._id }).session(session);
 
@@ -487,37 +531,57 @@ export const cancelOrderWithStockRestore = async ({ userId, orderId }) =>
       throw createBadRequest('Cannot cancel an order after payment has been captured');
     }
 
+    if (!CANCELLABLE_PAYMENT_STATUSES.includes(order.paymentStatus)) {
+      throw createBadRequest('Order cannot be cancelled in its current payment state');
+    }
+
     if (!['pending', 'processing'].includes(order.status)) {
       throw createBadRequest('Order cannot be cancelled');
     }
 
     const shouldRestoreInventory = order.inventoryDecremented === true;
+    const cancelledPaymentStatus = order.paymentProvider
+      ? 'payment_canceled'
+      : order.paymentStatus;
+    const cancellationReason = order.paymentProvider
+      ? 'customer cancelled checkout'
+      : order.paymentFailureReason;
     const transition = await Order.updateOne(
       {
         _id: order._id,
         user: userId,
         status: { $in: ['pending', 'processing'] },
+        paymentStatus: { $in: CANCELLABLE_PAYMENT_STATUSES },
       },
-      { $set: { status: 'cancelled', inventoryDecremented: false } },
+      {
+        $set: {
+          status: 'cancelled',
+          paymentStatus: cancelledPaymentStatus,
+          paymentFailureReason: cancellationReason,
+          checkoutHoldExpiresAt: null,
+        },
+      },
       { session }
     );
 
     if (transition.modifiedCount !== 1) {
       const currentOrder = await Order.findById(orderId).session(session);
+
+      if (['paid', 'refunded', 'partially_refunded'].includes(currentOrder?.paymentStatus)) {
+        throw createBadRequest('Cannot cancel an order after payment has been captured');
+      }
+
       return { order: currentOrder, alreadyCancelled: true };
     }
 
     if (shouldRestoreInventory) {
-      for (const item of order.items) {
-        await Product.updateOne(
-          { _id: item.product },
-          { $inc: { stock: item.quantity } },
-          { session }
-        );
-      }
+      await releaseOrderReservationsOnce({ order, session });
     }
 
     order.status = 'cancelled';
+    order.paymentStatus = cancelledPaymentStatus;
+    order.paymentFailureReason = cancellationReason;
     order.inventoryDecremented = false;
+    order.checkoutHoldExpiresAt = null;
     return { order, alreadyCancelled: false };
   });

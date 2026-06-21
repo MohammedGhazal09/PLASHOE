@@ -7,12 +7,29 @@ const productSorts = {
   newest: { createdAt: -1 },
 };
 
-const buildProductQuery = ({ gender, category, sale } = {}) => {
+const buildProductQuery = ({
+  q,
+  gender,
+  category,
+  sale,
+  size,
+  minPrice,
+  maxPrice,
+  minRating,
+} = {}) => {
   const query = {};
 
+  if (q) query.$text = { $search: q };
   if (gender) query.gender = gender;
   if (category) query.category = category;
   if (sale === true) query.isOnSale = true;
+  if (size) query.sizes = size;
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    query['price.current'] = {};
+    if (minPrice !== undefined) query['price.current'].$gte = minPrice;
+    if (maxPrice !== undefined) query['price.current'].$lte = maxPrice;
+  }
+  if (minRating !== undefined) query.rating = { $gte: minRating };
 
   return query;
 };
@@ -25,10 +42,11 @@ const sendProductList = async (req, res, routeFilters = {}) => {
   const { sort, limit = 20, page = 1 } = filters;
   const query = buildProductQuery(filters);
   const skip = (page - 1) * limit;
+  const sortDefinition = productSorts[sort] || { createdAt: -1 };
 
   const [products, total] = await Promise.all([
     Product.find(query)
-      .sort(productSorts[sort] || {})
+      .sort(sortDefinition)
       .skip(skip)
       .limit(limit),
     Product.countDocuments(query),
@@ -71,6 +89,58 @@ export const getProduct = async (req, res, next) => {
     res.json({
       success: true,
       data: product
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const pushUniqueProducts = (target, source, seen, limit) => {
+  source.forEach((product) => {
+    const id = product._id.toString();
+    if (target.length < limit && !seen.has(id)) {
+      seen.add(id);
+      target.push(product);
+    }
+  });
+};
+
+// @desc    Get related products for one product
+// @route   GET /api/products/:id/related
+export const getRelatedProducts = async (req, res, next) => {
+  try {
+    const { limit = 4 } = req.query;
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    const products = [];
+    const seen = new Set([product._id.toString()]);
+    const baseProjection = null;
+    const sort = { rating: -1, createdAt: -1 };
+    const relatedQueries = [
+      { gender: product.gender, category: product.category, _id: { $ne: product._id } },
+      { category: product.category, _id: { $ne: product._id } },
+      { _id: { $ne: product._id } },
+    ];
+
+    for (const query of relatedQueries) {
+      if (products.length >= limit) break;
+      const candidates = await Product.find(query, baseProjection)
+        .sort(sort)
+        .limit(limit * 2);
+      pushUniqueProducts(products, candidates, seen, limit);
+    }
+
+    res.json({
+      success: true,
+      count: products.length,
+      data: products,
     });
   } catch (error) {
     next(error);

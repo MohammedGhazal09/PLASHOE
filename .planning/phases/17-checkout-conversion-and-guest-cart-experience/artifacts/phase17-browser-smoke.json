@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-06-20T23:10:56.530Z",
+  "baseUrl": "http://127.0.0.1:5177",
+  "checks": [
+    {
+      "name": "unauthenticated checkout intent redirects to account",
+      "viewport": {
+        "width": 1366,
+        "height": 900
+      },
+      "status": "passed",
+      "url": "http://127.0.0.1:5177/account",
+      "screenshot": "E:\\PLASHOE\\PLASHOE\\.planning\\phases\\17-checkout-conversion-and-guest-cart-experience\\artifacts\\phase17-account-checkout-intent-desktop.png",
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ]
+    },
+    {
+      "name": "authenticated checkout blocks unresolved local cart items",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "status": "passed",
+      "url": "http://127.0.0.1:5177/checkout",
+      "screenshot": "E:\\PLASHOE\\PLASHOE\\.planning\\phases\\17-checkout-conversion-and-guest-cart-experience\\artifacts\\phase17-checkout-local-review-mobile.png",
+      "alertText": "Some cart items are saved on this device only. Review your cart before checkout.",
+      "paymentButtonDisabled": true,
+      "paymentButtonStyles": {
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(31, 41, 55)",
+        "cursor": "not-allowed"
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ]
+    }
+  ],
+  "status": "passed"
+}

@@ -1,8 +1,11 @@
 import Order, { PAYMENT_STATUSES } from '../models/Order.js';
+import Coupon from '../models/Coupon.js';
 import Product from '../models/Product.js';
 
 const TERMINAL_UNPAID_STATUSES = new Set(['payment_failed', 'payment_canceled']);
 const REFUND_STATUSES = new Set(['refunded', 'partially_refunded']);
+const PAYMENT_CAPTURE_STATUSES = new Set(['requires_payment', 'payment_pending']);
+const PAID_LIKE_STATUSES = new Set(['paid', 'refunded', 'partially_refunded']);
 
 const assertKnownTarget = (targetStatus) => {
   if (!PAYMENT_STATUSES.includes(targetStatus) || targetStatus === 'not_required') {
@@ -10,7 +13,7 @@ const assertKnownTarget = (targetStatus) => {
   }
 };
 
-export const restoreOrderInventoryOnce = async ({ order, session }) => {
+export const releaseOrderReservationsOnce = async ({ order, session }) => {
   if (!order || order.inventoryDecremented !== true) {
     return false;
   }
@@ -37,9 +40,23 @@ export const restoreOrderInventoryOnce = async ({ order, session }) => {
     );
   }
 
+  if (order.couponCode) {
+    await Coupon.updateOne(
+      { code: order.couponCode, usedCount: { $gt: 0 } },
+      { $inc: { usedCount: -1 } },
+      { session }
+    );
+  }
+
   order.inventoryDecremented = false;
   return true;
 };
+
+export const restoreOrderInventoryOnce = releaseOrderReservationsOnce;
+
+const isCheckoutHoldExpired = (order) =>
+  order.checkoutHoldExpiresAt instanceof Date &&
+  order.checkoutHoldExpiresAt.getTime() <= Date.now();
 
 export const transitionOrderPaymentState = async ({
   orderId,
@@ -59,19 +76,51 @@ export const transitionOrderPaymentState = async ({
   }
 
   if (targetStatus === 'paid') {
+    if (order.paymentStatus === 'paid') {
+      if (providerIntentId) {
+        order.paymentProviderIntentId = providerIntentId;
+      }
+      await order.save({ session });
+      return order;
+    }
+
+    if (isCheckoutHoldExpired(order)) {
+      await releaseOrderReservationsOnce({ order, session });
+      order.paymentStatus = 'payment_canceled';
+      order.status = 'cancelled';
+      order.paymentFailureReason = 'checkout hold expired before payment capture';
+      order.checkoutHoldExpiresAt = null;
+      await order.save({ session });
+      return order;
+    }
+
+    if (
+      !PAYMENT_CAPTURE_STATUSES.has(order.paymentStatus) ||
+      order.status === 'cancelled' ||
+      order.inventoryDecremented !== true
+    ) {
+      return order;
+    }
+
     order.paymentStatus = 'paid';
     order.status = 'processing';
     order.paidAt = order.paidAt || new Date();
     order.paymentFailureReason = null;
+    order.checkoutHoldExpiresAt = null;
 
     if (providerIntentId) {
       order.paymentProviderIntentId = providerIntentId;
     }
   } else if (TERMINAL_UNPAID_STATUSES.has(targetStatus)) {
-    await restoreOrderInventoryOnce({ order, session });
+    if (PAID_LIKE_STATUSES.has(order.paymentStatus)) {
+      return order;
+    }
+
+    await releaseOrderReservationsOnce({ order, session });
     order.paymentStatus = targetStatus;
     order.status = targetStatus === 'payment_canceled' ? 'cancelled' : 'pending';
     order.paymentFailureReason = failureReason || null;
+    order.checkoutHoldExpiresAt = null;
 
     if (providerIntentId) {
       order.paymentProviderIntentId = providerIntentId;

@@ -1,0 +1,20 @@
+{
+  "baseUrl": "http://127.0.0.1:5180",
+  "screenshots": [
+    ".planning/phases/20-retention-lifecycle-commerce-and-personalization/artifacts/phase20-product-retention-desktop.png",
+    ".planning/phases/20-retention-lifecycle-commerce-and-personalization/artifacts/phase20-order-buy-again-mobile.png"
+  ],
+  "checks": [
+    "Out-of-stock product renders back-in-stock opt-in form",
+    "Back-in-stock request success status is shown after opt-in submit",
+    "Recommendation reason renders on product detail",
+    "Order detail buy-again action calls reorder flow and opens refreshed cart"
+  ],
+  "consoleErrors": [],
+  "ignoredConsole": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

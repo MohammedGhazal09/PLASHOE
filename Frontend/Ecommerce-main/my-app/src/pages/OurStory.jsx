@@ -37,9 +37,8 @@ export default function OurStory() {
           </h2>
           <p className="text-gray-500 text-lg leading-relaxed">
             At PLASHOE, we believe that fashion shouldn't cost the earth. Founded in 2020,
-            our mission is to create beautiful, comfortable footwear using recycled and
-            sustainable materials. Every pair of shoes we make helps reduce ocean plastic
-            and minimize our environmental footprint.
+            our mission is to create beautiful, comfortable footwear while documenting the
+            materials, care guidance, and source notes that belong to each product.
           </p>
         </div>
       </div>
@@ -52,24 +51,24 @@ export default function OurStory() {
             <img src={RecycledImg} alt="Recycled" className="w-24 h-24 mx-auto mb-6" />
             <h3 className="text-xl font-semibold mb-4">Recycled Materials</h3>
             <p className="text-gray-500">
-              We use recycled ocean plastics and other sustainable materials to create
-              our shoes, giving waste a second life.
+              Where recycled content is used, product pages identify the material and
+              source context so shoppers can review the claim clearly.
             </p>
           </div>
           <div className="text-center">
             <img src={VeganImg} alt="Vegan" className="w-24 h-24 mx-auto mb-6" />
-            <h3 className="text-xl font-semibold mb-4">100% Vegan</h3>
+            <h3 className="text-xl font-semibold mb-4">Material Transparency</h3>
             <p className="text-gray-500">
-              No animal products are used in any of our footwear. We believe in
-              compassionate fashion for all.
+              We keep material composition visible at the product level, including
+              care instructions that help customers maintain each pair.
             </p>
           </div>
           <div className="text-center">
             <img src={handMadeImg} alt="Handmade" className="w-24 h-24 mx-auto mb-6" />
-            <h3 className="text-xl font-semibold mb-4">Handcrafted</h3>
+            <h3 className="text-xl font-semibold mb-4">Responsible Craft</h3>
             <p className="text-gray-500">
-              Each pair is carefully crafted by skilled artisans who take pride in
-              their work and fair labor practices.
+              Manufacturing and durability notes are captured with source details
+              when supplier records are available.
             </p>
           </div>
         </div>
@@ -94,23 +93,22 @@ export default function OurStory() {
               turn this problem into a solution?"
             </p>
             <p className="text-gray-500 mb-6">
-              After years of research and development, we perfected a process that
-              transforms recycled ocean plastic into comfortable, stylish footwear.
-              Today, we've recycled over 1 million plastic bottles and helped clean
-              coastlines around the world.
+              Our current product story is built around evidence we can maintain:
+              material composition, manufacturing context, durability notes, and
+              practical care instructions.
             </p>
             <div className="grid grid-cols-3 gap-6 mt-10">
               <div className="text-center">
-                <h3 className="text-4xl font-bold text-[#6e7051]">1M+</h3>
-                <p className="text-gray-500">Bottles Recycled</p>
+                <h3 className="text-4xl font-bold text-[#6e7051]">01</h3>
+                <p className="text-gray-500">Materials</p>
               </div>
               <div className="text-center">
-                <h3 className="text-4xl font-bold text-[#6e7051]">50K+</h3>
-                <p className="text-gray-500">Happy Customers</p>
+                <h3 className="text-4xl font-bold text-[#6e7051]">02</h3>
+                <p className="text-gray-500">Source Notes</p>
               </div>
               <div className="text-center">
-                <h3 className="text-4xl font-bold text-[#6e7051]">20+</h3>
-                <p className="text-gray-500">Countries</p>
+                <h3 className="text-4xl font-bold text-[#6e7051]">03</h3>
+                <p className="text-gray-500">Care Guidance</p>
               </div>
             </div>
           </div>
@@ -122,10 +120,10 @@ export default function OurStory() {
         <h2 className="text-3xl font-semibold text-center mb-16">How We Make It</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {[
-            { step: '01', title: 'Collect', desc: 'Ocean plastic is collected from beaches and waterways' },
-            { step: '02', title: 'Process', desc: 'Materials are cleaned, sorted, and processed into fibers' },
+            { step: '01', title: 'Source', desc: 'Material and supplier records are captured for each product' },
+            { step: '02', title: 'Validate', desc: 'Impact notes require source context before they appear' },
             { step: '03', title: 'Design', desc: 'Our designers create comfortable, stylish footwear' },
-            { step: '04', title: 'Craft', desc: 'Skilled artisans handcraft each pair with care' },
+            { step: '04', title: 'Care', desc: 'Care guidance helps customers maintain each pair longer' },
           ].map((item) => (
             <div key={item.step} className="text-center">
               <div className="text-5xl font-bold text-[#6e7051] mb-4">{item.step}</div>
@@ -140,8 +138,8 @@ export default function OurStory() {
       <div className="py-20 px-[10%] text-center">
         <h2 className="text-3xl font-semibold mb-6">Join the Movement</h2>
         <p className="text-gray-500 max-w-2xl mx-auto mb-8">
-          Every purchase you make contributes to a cleaner planet. Together, we can
-          make a difference one step at a time.
+          Choose styles with clear material details, source notes, and care guidance
+          where those records are available.
         </p>
         <Link to="/collection">
           <button className="bg-[#6e7051] text-white py-4 px-12 font-semibold hover:bg-[#262b2c] transition-colors">

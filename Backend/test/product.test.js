@@ -3,6 +3,7 @@ import request from "supertest";
 import app from "../app.js";
 import Product from "../models/Product.js";
 import { createProduct } from "./helpers/factories.js";
+import { createProductSchema } from "../validators/product.js";
 
 describe("product catalog routes", () => {
   it("returns a bounded paginated product envelope by default", async () => {
@@ -64,6 +65,65 @@ describe("product catalog routes", () => {
       pages: 2,
     });
     expect(response.body.data[0].name).toBe("Low Price Runner");
+  });
+
+  it("supports bounded search with size, price, rating, and sale filters", async () => {
+    await createProduct({
+      name: "Trail Runner",
+      gender: "male",
+      category: "Running",
+      description: "Light trail shoe with a recycled mesh upper",
+      sizes: [40, 41, 42],
+      price: { original: 140, current: 95 },
+      rating: 4.7,
+      isOnSale: true,
+      image: "/images/trail-runner.jpg",
+    });
+    await createProduct({
+      name: "Road Runner",
+      gender: "male",
+      category: "Running",
+      description: "Road training shoe",
+      sizes: [43, 44],
+      price: { original: 120, current: 105 },
+      rating: 4.8,
+      isOnSale: true,
+      image: "/images/road-runner.jpg",
+    });
+    await createProduct({
+      name: "Trail Classic",
+      gender: "female",
+      category: "Classic",
+      description: "Retro trail-inspired court shoe",
+      sizes: [41],
+      price: { original: 110, current: 80 },
+      rating: 3.9,
+      isOnSale: true,
+      image: "/images/trail-classic.jpg",
+    });
+    await Product.init();
+
+    const response = await request(app)
+      .get("/api/products")
+      .query({
+        q: "trail",
+        gender: "male",
+        sale: "true",
+        size: 41,
+        minPrice: 90,
+        maxPrice: 100,
+        minRating: 4,
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      count: 1,
+      total: 1,
+      page: 1,
+      limit: 20,
+      pages: 1,
+    });
+    expect(response.body.data[0].name).toBe("Trail Runner");
   });
 
   it("returns paginated envelopes from legacy gender and sale routes", async () => {
@@ -140,6 +200,27 @@ describe("product catalog routes", () => {
     });
   });
 
+  it("validates advanced catalog query bounds", async () => {
+    const response = await request(app)
+      .get("/api/products")
+      .query({
+        q: "x".repeat(81),
+        size: 50,
+        minPrice: 200,
+        maxPrice: 100,
+        minRating: 6,
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Invalid request",
+    });
+    expect(response.body.errors.map((error) => error.path)).toEqual(
+      expect.arrayContaining(["q", "size", "minPrice", "minRating"])
+    );
+  });
+
   it("declares indexes that support catalog filters and sort options", () => {
     const indexFields = Product.schema.indexes().map(([fields]) => fields);
 
@@ -147,10 +228,67 @@ describe("product catalog routes", () => {
       expect.arrayContaining([
         { gender: 1, category: 1, createdAt: -1 },
         { isOnSale: 1, createdAt: -1 },
+        { sizes: 1 },
         { "price.current": 1 },
         { rating: -1 },
         { createdAt: -1 },
+        { name: "text", category: "text", description: "text" },
       ])
+    );
+  });
+
+  it("validates source-backed sustainability content", () => {
+    const baseProduct = {
+      name: "Evidence Runner",
+      gender: "male",
+      category: "Running",
+      image: "/images/evidence-runner.jpg",
+      price: { original: 120, current: 100 },
+    };
+
+    expect(() =>
+      createProductSchema.parse({
+        ...baseProduct,
+        sustainability: {
+          summary: "Upper material includes recycled textile.",
+        },
+      })
+    ).toThrow(/Sustainability source is required/);
+
+    expect(() =>
+      createProductSchema.parse({
+        ...baseProduct,
+        sustainability: {
+          impactMetrics: [{ label: "Recycled upper textile", value: "Documented", source: "" }],
+        },
+      })
+    ).toThrow(/Impact metric source is required/);
+
+    const parsed = createProductSchema.parse({
+      ...baseProduct,
+      sustainability: {
+        summary: "Upper material includes supplier-documented recycled textile.",
+        source: "Supplier material declaration",
+        impactMetrics: [
+          {
+            label: "Recycled upper textile",
+            value: "Documented",
+            source: "Supplier material declaration",
+          },
+        ],
+        manufacturing: {
+          location: "Portugal",
+          source: "Supplier onboarding record",
+        },
+        durability: {
+          summary: "Care-tested for everyday city wear.",
+          source: "PLASHOE care standard",
+        },
+      },
+    });
+
+    expect(parsed.sustainability.summary).toBe(
+      "Upper material includes supplier-documented recycled textile."
     );
   });
 });

@@ -126,6 +126,80 @@ describe("payment state model and transitions", () => {
     expect(updatedOrder.status).toBe("pending");
   });
 
+  it("does not regress paid orders to failed payment states", async () => {
+    const user = await createUser();
+    const order = await createProviderBackedOrder(user, {
+      paymentStatus: "paid",
+      status: "processing",
+      inventoryDecremented: false,
+      paidAt: new Date(),
+    });
+
+    const updatedOrder = await transitionOrderPaymentState({
+      orderId: order._id,
+      targetStatus: "payment_failed",
+      providerIntentId: "intent-placeholder",
+      failureReason: "late_failure",
+    });
+
+    expect(updatedOrder.paymentStatus).toBe("paid");
+    expect(updatedOrder.status).toBe("processing");
+    expect(updatedOrder.paymentFailureReason).toBeNull();
+  });
+
+  it("does not revive cancelled checkout orders on late paid transitions", async () => {
+    const user = await createUser();
+    const order = await createProviderBackedOrder(user, {
+      paymentStatus: "payment_canceled",
+      status: "cancelled",
+      inventoryDecremented: false,
+      checkoutHoldExpiresAt: null,
+    });
+
+    const updatedOrder = await transitionOrderPaymentState({
+      orderId: order._id,
+      targetStatus: "paid",
+      providerIntentId: "intent-late-success",
+    });
+
+    expect(updatedOrder.paymentStatus).toBe("payment_canceled");
+    expect(updatedOrder.status).toBe("cancelled");
+    expect(updatedOrder.paidAt).toBeNull();
+  });
+
+  it("expires unpaid holds instead of accepting late payment capture", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 3 });
+    const order = await createProviderBackedOrder(user, {
+      items: [
+        {
+          product: product._id,
+          name: product.name,
+          image: product.image,
+          quantity: 2,
+          size: 42,
+          price: product.price.current,
+        },
+      ],
+      paymentStatus: "payment_pending",
+      status: "pending",
+      inventoryDecremented: true,
+      checkoutHoldExpiresAt: new Date(Date.now() - 60_000),
+    });
+
+    const updatedOrder = await transitionOrderPaymentState({
+      orderId: order._id,
+      targetStatus: "paid",
+      providerIntentId: "intent-after-expiry",
+    });
+
+    expect(updatedOrder.paymentStatus).toBe("payment_canceled");
+    expect(updatedOrder.status).toBe("cancelled");
+    expect(updatedOrder.inventoryDecremented).toBe(false);
+    expect(updatedOrder.paidAt).toBeNull();
+    expect((await Product.findById(product._id)).stock).toBe(5);
+  });
+
   it("records full and partial refunds without restoring inventory", async () => {
     const user = await createUser();
     const order = await createProviderBackedOrder(user, {

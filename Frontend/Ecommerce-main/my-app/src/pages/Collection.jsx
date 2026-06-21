@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import { useCatalogProducts } from '../hooks/useCatalogProducts';
+import { useCatalogUrlQuery } from '../hooks/useCatalogUrlQuery';
 import collectionHero from '../assets/images/collection-hero.webp';
 
 export default function Collection() {
-  const [query, setQuery] = useState({ page: 1, limit: 20 });
-  const { products, pagination, loading, source } = useCatalogProducts(query);
+  const { query, setQuery, setPage } = useCatalogUrlQuery();
+  const { products, pagination, loading, error, source } = useCatalogProducts(query);
 
   if (loading && products.length === 0) {
     return (
@@ -41,9 +41,11 @@ export default function Collection() {
         showFilters={true}
         query={query}
         pagination={pagination}
+        loading={loading}
+        error={error}
         source={source}
         onQueryChange={setQuery}
-        onPageChange={(page) => setQuery((current) => ({ ...current, page }))}
+        onPageChange={setPage}
       />
     </div>
   );

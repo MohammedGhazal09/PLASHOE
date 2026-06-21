@@ -4,6 +4,7 @@ import { faXmark, faStar, faStarHalfAlt, faMinus, faPlus } from '@fortawesome/fr
 import { faStar as faStarEmpty } from '@fortawesome/free-regular-svg-icons';
 import { useCartStore } from '../store/cartStore';
 import toast from 'react-hot-toast';
+import WishlistButton from './WishlistButton';
 
 const DEFAULT_SIZES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
@@ -75,6 +76,7 @@ export default function QuickViewModal({ product, onClose }) {
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-800"
+          aria-label="Close quick view"
         >
           <FontAwesomeIcon icon={faXmark} className="text-2xl" />
         </button>
@@ -91,7 +93,10 @@ export default function QuickViewModal({ product, onClose }) {
 
           {/* Details */}
           <div className="md:w-1/2 p-8">
-            <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
+            <div className="mb-2 flex items-start justify-between gap-4">
+              <h2 className="text-2xl font-bold">{product.name}</h2>
+              <WishlistButton product={product} showText className="shrink-0 rounded" />
+            </div>
 
             {/* Rating */}
             <div className="flex items-center gap-2 mb-4">

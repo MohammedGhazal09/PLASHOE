@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import toast from 'react-hot-toast';
 import { cartApi } from '../api/cartApi';
+import { authApi } from '../api/authApi';
 import { ordersApi } from '../api/ordersApi';
 import { useAuthStore } from '../store/authStore';
 import { normalizeCartItem, useCartStore } from '../store/cartStore';
@@ -39,6 +40,7 @@ vi.mock('../api/cartApi', () => ({
   cartApi: {
     getCart: vi.fn(),
     addItem: vi.fn(),
+    mergeItems: vi.fn(),
     updateItem: vi.fn(),
     removeItem: vi.fn(),
     clearCart: vi.fn(),
@@ -84,14 +86,15 @@ const cartData = (overrides = {}) => ({
   ...overrides,
 });
 
-const resetStores = ({ authenticated = true, cart = cartData() } = {}) => {
+const resetStores = ({ authenticated = true, cart = cartData(), user } = {}) => {
   localStorage.clear();
   vi.clearAllMocks();
   mockNavigate.mockClear();
   cartApi.getCart.mockResolvedValue({ success: true, data: cart });
+  authApi.addAddress.mockResolvedValue({ success: true, data: [] });
   useAuthStore.setState({
     user: authenticated
-      ? { name: 'Test Buyer', email: 'buyer@example.com', addresses: [] }
+      ? user || { name: 'Test Buyer', email: 'buyer@example.com', addresses: [] }
       : null,
     token: authenticated ? 'test-token' : null,
     isAuthenticated: authenticated,
@@ -229,6 +232,79 @@ test('submits authenticated checkout-start and redirects to hosted payment', asy
   expect(mockNavigate).not.toHaveBeenCalledWith('/account', { state: { tab: 'orders' } });
 });
 
+test('prefills checkout from the default saved address', async () => {
+  const savedUser = {
+    name: 'Test Buyer',
+    email: 'buyer@example.com',
+    phone: '5550001111',
+    addresses: [
+      {
+        firstName: 'Backup',
+        lastName: 'Address',
+        street: '9 Backup Road',
+        city: 'Oldtown',
+        state: 'NY',
+        zipCode: '10001',
+        country: 'United States',
+        phone: '5550002222',
+        isDefault: false,
+      },
+      {
+        firstName: 'Default',
+        lastName: 'Buyer',
+        street: '123 Default Street',
+        city: 'Testville',
+        state: 'CA',
+        zipCode: '90210',
+        country: 'United States',
+        phone: '5551234567',
+        isDefault: true,
+      },
+    ],
+  };
+  resetStores({ user: savedUser });
+
+  const { container } = await renderCheckout();
+
+  expect(container.querySelector('input[name="firstName"]')).toHaveValue('Default');
+  expect(container.querySelector('input[name="lastName"]')).toHaveValue('Buyer');
+  expect(container.querySelector('input[name="address"]')).toHaveValue('123 Default Street');
+  expect(container.querySelector('input[name="phone"]')).toHaveValue('5551234567');
+});
+
+test('saves the checkout address when requested before payment redirect', async () => {
+  ordersApi.create.mockResolvedValue({
+    success: true,
+    data: {
+      payment: {
+        checkoutUrl: 'https://checkout.example.test/pay/session-2',
+      },
+    },
+  });
+  authApi.addAddress.mockResolvedValue({ success: true, data: [{ _id: 'address-1' }] });
+  const { container } = await renderCheckout();
+  const user = userEvent.setup();
+
+  await fillShippingForm(container, user);
+  await user.click(screen.getByLabelText(/save this address/i));
+  await user.click(screen.getByRole('button', { name: /continue to payment/i }));
+
+  await waitFor(() => {
+    expect(authApi.addAddress).toHaveBeenCalledWith({
+      firstName: 'Test',
+      lastName: 'Buyer',
+      street: '123 Test Street',
+      city: 'Testville',
+      state: 'CA',
+      zipCode: '90210',
+      country: 'United States',
+      phone: '5551234567',
+      isDefault: true,
+    });
+  });
+  expect(assignMock).toHaveBeenCalledWith('https://checkout.example.test/pay/session-2');
+});
+
 test('shows an error when checkout-start succeeds without a payment URL', async () => {
   ordersApi.create.mockResolvedValue({ success: true, data: { payment: {} } });
   const { container } = await renderCheckout();
@@ -269,6 +345,34 @@ test('keeps cart state and syncs after checkout conflict responses', async () =>
   } finally {
     consoleError.mockRestore();
   }
+});
+
+test('blocks payment start while authenticated cart still has local-only items', async () => {
+  resetStores({
+    cart: cartData({
+      items: [
+        {
+          _id: 'local-only-cart-item',
+          product: {
+            _id: 'local-shoe-1',
+            name: 'Local Runner',
+            image: '/local.jpg',
+            price: { current: 90, original: 120 },
+          },
+          quantity: 1,
+          size: 42,
+          priceAtAdd: 90,
+          source: 'local',
+        },
+      ],
+    }),
+  });
+
+  await renderCheckout();
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(/review your cart before checkout/i);
+  expect(screen.getByRole('button', { name: /review cart before payment/i })).toBeDisabled();
+  expect(ordersApi.create).not.toHaveBeenCalled();
 });
 
 test('shows the empty-cart message without calling the order API', async () => {

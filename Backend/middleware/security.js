@@ -65,6 +65,11 @@ export const couponValidationLimiter = createJsonRateLimit(
   'Too many coupon validation requests, please try again later'
 );
 
+export const webhookLimiter = createJsonRateLimit(
+  RATE_LIMITS.webhook,
+  'Too many webhook requests, please try again later'
+);
+
 export const handleSecurityErrors = (err, req, res, next) => {
   if (err?.type === 'entity.too.large' || err?.status === 413) {
     return res.status(413).json({

@@ -21,6 +21,18 @@ describe("cart routes", () => {
     });
   });
 
+  it("rejects guest cart merge without a token", async () => {
+    const response = await request(app)
+      .post("/api/cart/merge")
+      .send({ items: [] })
+      .expect(401);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Not authorized, no token",
+    });
+  });
+
   it("creates an empty cart for an authenticated user", async () => {
     const user = await createUser();
 
@@ -121,6 +133,110 @@ describe("cart routes", () => {
     const cart = await Cart.findOne({ user: user._id });
     expect(cart.items).toHaveLength(1);
     expect(cart.items[0].quantity).toBe(2);
+  });
+
+  it("merges guest cart items into existing authenticated cart lines without duplicates", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 10 });
+    const secondProduct = await createProduct({ stock: 5 });
+    await createCartForUser(user, [{ product, quantity: 1, size: 42 }]);
+
+    const response = await request(app)
+      .post("/api/cart/merge")
+      .set(authHeader(user))
+      .send({
+        items: [
+          { productId: product._id.toString(), quantity: 2, size: 42 },
+          { productId: product._id.toString(), quantity: 1, size: 42 },
+          { productId: secondProduct._id.toString(), quantity: 1, size: 41 },
+        ],
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      success: true,
+      message: "Cart merged",
+    });
+    expect(response.body.data.items).toHaveLength(2);
+
+    const mergedProduct = response.body.data.items.find(
+      (item) => item.product._id === product._id.toString()
+    );
+    const mergedSecondProduct = response.body.data.items.find(
+      (item) => item.product._id === secondProduct._id.toString()
+    );
+
+    expect(mergedProduct).toMatchObject({
+      quantity: 4,
+      size: 42,
+      priceAtAdd: product.price.current,
+    });
+    expect(mergedSecondProduct).toMatchObject({
+      quantity: 1,
+      size: 41,
+      priceAtAdd: secondProduct.price.current,
+    });
+  });
+
+  it("rejects merge stock conflicts without mutating the existing cart", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 3 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }]);
+
+    const response = await request(app)
+      .post("/api/cart/merge")
+      .set(authHeader(user))
+      .send({
+        items: [{ productId: product._id.toString(), quantity: 2, size: 42 }],
+      })
+      .expect(409);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Some cart items need review before checkout",
+      errors: [
+        {
+          code: "INSUFFICIENT_STOCK",
+          resource: "product",
+          productId: product._id.toString(),
+          requested: 4,
+          available: 3,
+        },
+      ],
+    });
+
+    const cart = await Cart.findOne({ user: user._id });
+    expect(cart.items).toHaveLength(1);
+    expect(cart.items[0].quantity).toBe(2);
+  });
+
+  it("rejects merge when a guest product no longer exists without creating a cart", async () => {
+    const user = await createUser();
+    const missingProductId = new mongoose.Types.ObjectId().toString();
+
+    const response = await request(app)
+      .post("/api/cart/merge")
+      .set(authHeader(user))
+      .send({
+        items: [{ productId: missingProductId, quantity: 1, size: 42 }],
+      })
+      .expect(409);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Some cart items need review before checkout",
+      errors: [
+        {
+          code: "PRODUCT_UNAVAILABLE",
+          resource: "product",
+          productId: missingProductId,
+          requested: 1,
+          available: 0,
+        },
+      ],
+    });
+
+    expect(await Cart.findOne({ user: user._id })).toBeNull();
   });
 
   it("rejects an unknown product when adding items", async () => {

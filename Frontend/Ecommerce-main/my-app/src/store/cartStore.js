@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import { cartApi } from '../api/cartApi';
 import { useAuthStore } from './authStore';
 
+const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
+
 const toId = (value) => {
   if (!value) return null;
   if (typeof value === 'object' && value._id) return String(value._id);
@@ -60,6 +62,35 @@ const normalizeCartItems = (items = []) => items.map(normalizeCartItem);
 
 const mutationIdFor = (item) => item.cartItemId || item.id || item._id;
 
+export const isBackendCartProductId = (productId) =>
+  Boolean(productId && OBJECT_ID_PATTERN.test(String(productId)) && !String(productId).startsWith('local-'));
+
+export const isLocalCartItem = (item = {}) => {
+  const normalized = normalizeCartItem(item);
+  return normalized.source === 'local' || !normalized.cartItemId;
+};
+
+export const hasLocalCartItems = (items = []) => items.some(isLocalCartItem);
+
+const aggregateMergePayload = (items = []) => {
+  const byKey = new Map();
+
+  for (const item of items) {
+    const normalized = normalizeCartItem(item);
+    const key = `${normalized.productId}:${normalized.size}`;
+    const current = byKey.get(key) || {
+      productId: normalized.productId,
+      quantity: 0,
+      size: Number(normalized.size),
+    };
+
+    current.quantity += normalized.quantity;
+    byKey.set(key, current);
+  }
+
+  return [...byKey.values()];
+};
+
 const serializeCartItem = ({ raw, ...item }) => item;
 
 const normalizePersistedState = (persistedState = {}) => ({
@@ -100,7 +131,7 @@ export const useCartStore = create(
       // Sync with backend (for authenticated users)
       syncCart: async () => {
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
-        if (!isAuthenticated) return;
+        if (!isAuthenticated) return { success: true, skipped: true };
 
         set({ isLoading: true });
         try {
@@ -112,11 +143,86 @@ export const useCartStore = create(
               discount: response.data.discount || 0,
               isLoading: false,
             });
+            return { success: true };
           } else {
             set({ isLoading: false });
+            return { success: false, message: response.message || 'Failed to load cart' };
           }
         } catch (error) {
-          set({ isLoading: false });
+          const message = error.response?.data?.message || 'Failed to load cart';
+          set({ isLoading: false, error: message });
+          return { success: false, message };
+        }
+      },
+
+      mergeLocalCart: async () => {
+        const isAuthenticated = useAuthStore.getState().isAuthenticated;
+        if (!isAuthenticated) {
+          return { success: false, message: 'Sign in to sync your cart.' };
+        }
+
+        const localItems = normalizeCartItems(get().items).filter(isLocalCartItem);
+
+        if (localItems.length === 0) {
+          return get().syncCart();
+        }
+
+        const backendSyncableItems = localItems.filter((item) =>
+          isBackendCartProductId(item.productId)
+        );
+        const localOnlyItems = localItems.filter(
+          (item) => !isBackendCartProductId(item.productId)
+        );
+
+        if (backendSyncableItems.length === 0) {
+          const message = 'Some cart items are saved on this device only. Review your cart before checkout.';
+          set({ items: localOnlyItems, error: message });
+          return {
+            success: false,
+            merged: 0,
+            localOnly: localOnlyItems.length,
+            message,
+          };
+        }
+
+        set({ isLoading: true, error: null });
+        try {
+          const response = await cartApi.mergeItems(aggregateMergePayload(backendSyncableItems));
+          const backendItems = response.success ? normalizeCartItems(response.data.items || []) : [];
+          const message = localOnlyItems.length
+            ? 'Some cart items are saved on this device only. Review your cart before checkout.'
+            : null;
+
+          set({
+            items: [...backendItems, ...localOnlyItems],
+            couponCode: response.data?.couponCode || null,
+            discount: response.data?.discount || 0,
+            isLoading: false,
+            error: message,
+          });
+
+          return {
+            success: localOnlyItems.length === 0,
+            merged: backendSyncableItems.length,
+            localOnly: localOnlyItems.length,
+            message: message || 'Cart saved to your account.',
+          };
+        } catch (error) {
+          const message =
+            error.response?.data?.message ||
+            'Some cart items need review before checkout.';
+          set({
+            items: localItems,
+            isLoading: false,
+            error: message,
+          });
+          return {
+            success: false,
+            merged: 0,
+            localOnly: localItems.length,
+            message,
+            errors: error.response?.data?.errors || [],
+          };
         }
       },
 

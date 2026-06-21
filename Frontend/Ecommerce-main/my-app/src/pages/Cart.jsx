@@ -1,14 +1,19 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faMinus, faPlus, faShoppingBag } from '@fortawesome/free-solid-svg-icons';
-import { useCartStore, selectSubtotal, selectTotal } from '../store/cartStore';
+import { hasLocalCartItems, useCartStore, selectSubtotal, selectTotal } from '../store/cartStore';
+import { useAuthStore } from '../store/authStore';
 import { joinPublicPath } from '../utils/publicPath';
 
 export default function Cart() {
+  const location = useLocation();
   const { items, updateItemQuantity, removeItem, clearCart, discount } =
     useCartStore();
   const subtotal = useCartStore(selectSubtotal);
   const total = useCartStore(selectTotal);
+  const { isAuthenticated } = useAuthStore();
+  const hasUnresolvedLocalItems = isAuthenticated && hasLocalCartItems(items);
+  const checkoutReviewMessage = location.state?.checkoutReview;
 
   if (items.length === 0) {
     return (
@@ -30,6 +35,13 @@ export default function Cart() {
   return (
     <div className="min-h-screen py-8 md:py-10 px-4 md:px-[5%] lg:px-[10%]">
       <h1 className="text-2xl md:text-3xl font-semibold mb-8 md:mb-10">Shopping Cart</h1>
+
+      {(hasUnresolvedLocalItems || checkoutReviewMessage) && (
+        <div role="alert" className="mb-6 border border-[#b42318] bg-red-50 p-4 text-sm text-[#b42318]">
+          {checkoutReviewMessage ||
+            'Some items were saved on this device and need review before checkout.'}
+        </div>
+      )}
 
       <div className="flex gap-8 lg:gap-10 flex-col lg:flex-row">
         {/* Cart Items */}

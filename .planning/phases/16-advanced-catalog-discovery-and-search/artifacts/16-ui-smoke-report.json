@@ -1,0 +1,47 @@
+{
+  "phase": 16,
+  "url": "http://127.0.0.1:5176/collection?q=trail&size=41&minPrice=80&sort=price-asc&page=2",
+  "date": "2026-06-20",
+  "server": {
+    "command": "npm run dev -- --host 127.0.0.1 --port 5176",
+    "frontend_origin": "http://127.0.0.1:5176",
+    "stopped_after_smoke": true
+  },
+  "screenshots": {
+    "desktop": ".planning/phases/16-advanced-catalog-discovery-and-search/artifacts/16-catalog-desktop.png",
+    "mobile": ".planning/phases/16-advanced-catalog-discovery-and-search/artifacts/16-catalog-mobile.png"
+  },
+  "dom_snapshot": ".planning/phases/16-advanced-catalog-discovery-and-search/artifacts/16-catalog-dom.html",
+  "checks": {
+    "search_restored": true,
+    "sort_restored": true,
+    "size_restored": true,
+    "min_price_restored": true,
+    "fallback_error_state_visible": true,
+    "no_results_state_visible": true,
+    "mobile_horizontal_overflow": false
+  },
+  "measured_mobile": {
+    "href": "http://127.0.0.1:5176/collection?q=trail&size=41&minPrice=80&sort=price-asc&page=2",
+    "innerWidth": 484,
+    "scrollWidth": 469,
+    "overflow": false,
+    "controls": [
+      { "label": "Search products", "value": "trail", "checked": false },
+      { "label": "Sort products", "value": "price-asc", "checked": false },
+      { "label": "Filter by category", "value": "all", "checked": false },
+      { "label": "Filter by size", "value": "41", "checked": false },
+      { "label": "Minimum price", "value": "80", "checked": false },
+      { "label": "Maximum price", "value": "", "checked": false },
+      { "label": "Minimum rating", "value": "", "checked": false },
+      { "label": "Sale products only", "value": "on", "checked": false }
+    ],
+    "countText": "Showing 0 of 0 products",
+    "noResults": true,
+    "fallbackAlert": true
+  },
+  "notes": [
+    "Backend API was intentionally not running during the storefront smoke, so catalogService exercised the fallback/error state path.",
+    "Chrome emitted GCM registration noise while writing screenshots; it did not block screenshot creation or DOM measurement."
+  ]
+}

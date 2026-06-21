@@ -53,8 +53,8 @@ export const config = {
   // Feature Flags
   features: {
     guestCheckout: readPublicEnv('REACT_APP_ENABLE_GUEST_CHECKOUT') === 'true',
-    wishlist: readPublicEnv('REACT_APP_ENABLE_WISHLIST') === 'true',
-    reviews: readPublicEnv('REACT_APP_ENABLE_REVIEWS') === 'true',
+    wishlist: readPublicEnv('REACT_APP_ENABLE_WISHLIST', 'true') !== 'false',
+    reviews: readPublicEnv('REACT_APP_ENABLE_REVIEWS', 'true') !== 'false',
   },
 };
 

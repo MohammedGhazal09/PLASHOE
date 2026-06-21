@@ -1,9 +1,19 @@
 import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { TestMemoryRouter } from '../test/routerTestUtils';
 import ProtectedRoute from './ProtectedRoute';
+
+const AccountRoute = () => {
+  const location = useLocation();
+  return (
+    <>
+      <h1>Account route</h1>
+      <p>Return path: {location.state?.from?.pathname || 'none'}</p>
+    </>
+  );
+};
 
 vi.mock('../api/authApi', () => ({
   authApi: {
@@ -28,7 +38,7 @@ const renderProtectedRoute = () =>
             </ProtectedRoute>
           }
         />
-        <Route path="/account" element={<h1>Account route</h1>} />
+        <Route path="/account" element={<AccountRoute />} />
       </Routes>
     </TestMemoryRouter>
   );
@@ -48,6 +58,7 @@ test('redirects unauthenticated users to the account route', () => {
   renderProtectedRoute();
 
   expect(screen.getByRole('heading', { name: /account route/i })).toBeInTheDocument();
+  expect(screen.getByText(/return path: \/checkout/i)).toBeInTheDocument();
   expect(screen.queryByText(/protected checkout content/i)).not.toBeInTheDocument();
 });
 

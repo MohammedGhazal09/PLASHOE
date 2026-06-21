@@ -25,14 +25,23 @@ const signPayload = (payload, timestamp = Math.floor(Date.now() / 1000)) => {
   return `t=${timestamp},v1=${signature}`;
 };
 
-const postEvent = (event, signatureOverride) => {
-  const payload = JSON.stringify(event);
+const postEvent = (event, signatureOverride, options = {}) => {
+  if (signatureOverride && typeof signatureOverride === "object") {
+    options = signatureOverride;
+    signatureOverride = undefined;
+  }
 
-  return request(app)
+  const payload = JSON.stringify(event);
+  const webhookRequest = request(app)
     .post("/api/webhooks/stripe")
     .set("Content-Type", "application/json")
-    .set("Stripe-Signature", signatureOverride || signPayload(payload))
-    .send(payload);
+    .set("Stripe-Signature", signatureOverride || signPayload(payload));
+
+  if (options.rateLimitKey) {
+    webhookRequest.set("x-rate-limit-test", options.rateLimitKey);
+  }
+
+  return webhookRequest.send(payload);
 };
 
 const captureStructuredLogs = () => {
@@ -121,6 +130,30 @@ describe("Stripe webhook route", () => {
     expect(JSON.stringify(logRecord)).not.toContain("event-invalid-signature");
   });
 
+  it("rate limits invalid webhook signatures before repeated verification work", async () => {
+    const event = stripeEvent({
+      id: "event-invalid-signature-limit",
+      object: {
+        id: "intent-invalid-limit",
+        object: "payment_intent",
+        metadata: {},
+      },
+    });
+    const invalidSignature = "t=1,v1=invalid";
+    const statuses = [];
+
+    for (let index = 0; index < 61; index += 1) {
+      const response = await postEvent(event, invalidSignature, {
+        rateLimitKey: "webhook-invalid-signature-limit",
+      });
+      statuses.push(response.status);
+    }
+
+    expect(statuses.slice(0, 60)).toEqual(Array(60).fill(400));
+    expect(statuses[60]).toBe(429);
+    expect(await PaymentEvent.countDocuments()).toBe(0);
+  });
+
   it("marks payment intent success as paid and fulfillment processing", async () => {
     const { order } = await createInventoryBackedPaymentOrder();
     const records = captureStructuredLogs();
@@ -157,6 +190,40 @@ describe("Stripe webhook route", () => {
       status: "processed",
       duplicate: false,
     });
+  });
+
+  it("does not regress paid orders when a later failure webhook arrives", async () => {
+    const { order } = await createInventoryBackedPaymentOrder();
+    const successEvent = stripeEvent({
+      id: "event-success-before-failure",
+      type: "payment_intent.succeeded",
+      object: {
+        id: "intent-paid-before-failure",
+        object: "payment_intent",
+        customer: "customer-placeholder",
+        metadata: { orderId: order._id.toString() },
+      },
+    });
+    const failureEvent = stripeEvent({
+      id: "event-failure-after-success",
+      type: "payment_intent.payment_failed",
+      object: {
+        id: "intent-paid-before-failure",
+        object: "payment_intent",
+        last_payment_error: { code: "card_declined" },
+        metadata: { orderId: order._id.toString() },
+      },
+    });
+
+    await postEvent(successEvent).expect(200);
+    await postEvent(failureEvent).expect(200);
+
+    const updatedOrder = await Order.findById(order._id);
+    expect(updatedOrder.paymentStatus).toBe("paid");
+    expect(updatedOrder.status).toBe("processing");
+    expect(updatedOrder.paymentFailureReason).toBeNull();
+    expect(await PaymentEvent.countDocuments()).toBe(2);
+    expect(await PaymentEvent.countDocuments({ status: "processed" })).toBe(2);
   });
 
   it("restores inventory once for duplicate failed payment events", async () => {

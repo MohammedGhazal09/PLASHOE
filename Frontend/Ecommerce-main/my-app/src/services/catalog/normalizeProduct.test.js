@@ -18,6 +18,40 @@ test('normalizes backend products into the catalog view model', () => {
     stock: 7,
     isOnSale: true,
     description: 'Fast shoe',
+    gallery: ['/images/runner-side.jpg'],
+    materials: [{ label: 'Upper', value: 'Recycled knit' }],
+    careInstructions: ['Spot clean'],
+    fitGuide: { summary: 'Runs true to size.' },
+    recommendationReason: 'Similar running styles',
+    sustainability: {
+      summary: 'Supplier-documented recycled upper textile.',
+      source: 'Supplier material declaration',
+      impactMetrics: [
+        { label: 'Recycled upper textile', value: 'Documented', source: 'Supplier material declaration' },
+        { label: 'Missing source', value: 'Hidden' },
+      ],
+      certifications: [
+        { name: 'Material declaration', issuer: 'PLASHOE supplier compliance' },
+        { name: 'Missing issuer' },
+      ],
+      manufacturing: {
+        location: 'Portugal',
+        source: 'Supplier onboarding record',
+      },
+      durability: {
+        summary: 'Care-tested for everyday city wear.',
+        source: 'PLASHOE care standard',
+      },
+    },
+    reviewCount: 4,
+    ratingDistribution: { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2 },
+    fitSummary: {
+      runsSmall: 0,
+      trueToSize: 3,
+      runsLarge: 1,
+      total: 4,
+      dominant: 'true_to_size',
+    },
   });
 
   expect(product).toMatchObject({
@@ -32,6 +66,42 @@ test('normalizes backend products into the catalog view model', () => {
     stock: 7,
     isOnSale: true,
     description: 'Fast shoe',
+    gallery: ['/images/runner-side.jpg'],
+    materials: [{ label: 'Upper', value: 'Recycled knit' }],
+    careInstructions: ['Spot clean'],
+    fitGuide: { summary: 'Runs true to size.' },
+    recommendationReason: 'Similar running styles',
+    sustainability: {
+      summary: 'Supplier-documented recycled upper textile.',
+      source: 'Supplier material declaration',
+      impactMetrics: [
+        { label: 'Recycled upper textile', value: 'Documented', source: 'Supplier material declaration' },
+      ],
+      certifications: [
+        { name: 'Material declaration', issuer: 'PLASHOE supplier compliance' },
+      ],
+      manufacturing: {
+        location: 'Portugal',
+        facility: '',
+        process: '',
+        source: 'Supplier onboarding record',
+      },
+      durability: {
+        summary: 'Care-tested for everyday city wear.',
+        repairability: '',
+        expectedUse: '',
+        source: 'PLASHOE care standard',
+      },
+    },
+    reviewCount: 4,
+    ratingDistribution: { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2 },
+    fitSummary: {
+      runsSmall: 0,
+      trueToSize: 3,
+      runsLarge: 1,
+      total: 4,
+      dominant: 'true_to_size',
+    },
     source: 'backend',
   });
 });
@@ -75,7 +145,37 @@ test('uses stable defaults when optional fields are missing', () => {
     stock: 0,
     isOnSale: false,
     description: '',
+    materials: [],
+    careInstructions: [],
+    sustainability: {
+      summary: '',
+      source: '',
+      impactMetrics: [],
+      certifications: [],
+      manufacturing: {
+        location: '',
+        facility: '',
+        process: '',
+        source: '',
+      },
+      durability: {
+        summary: '',
+        repairability: '',
+        expectedUse: '',
+        source: '',
+      },
+    },
+    reviewCount: 0,
+    ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    fitSummary: {
+      runsSmall: 0,
+      trueToSize: 0,
+      runsLarge: 0,
+      total: 0,
+      dominant: null,
+    },
   });
+  expect(product.gallery).toEqual([]);
   expect(product.sizes).toContain(40);
 });
 

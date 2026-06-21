@@ -14,6 +14,7 @@ vi.mock('../api/cartApi', () => ({
   cartApi: {
     getCart: vi.fn(),
     addItem: vi.fn(),
+    mergeItems: vi.fn(),
     updateItem: vi.fn(),
     removeItem: vi.fn(),
     clearCart: vi.fn(),
@@ -60,6 +61,16 @@ const product = {
   price: {
     original: 120,
     current: 100,
+  },
+};
+
+const backendProduct = {
+  _id: '64f000000000000000000001',
+  name: 'Backend Merge Runner',
+  image: '/backend-runner.jpg',
+  price: {
+    original: 150,
+    current: 125,
   },
 };
 
@@ -156,6 +167,127 @@ test('accumulates duplicate guest product and size quantities without API calls'
     source: 'local',
   });
   expect(cartApi.addItem).not.toHaveBeenCalled();
+});
+
+test('merges backend-syncable guest cart items after authentication', async () => {
+  useAuthStore.setState({ isAuthenticated: true, token: 'token' });
+  useCartStore.setState({
+    items: [
+      normalizeCartItem({
+        _id: 'local-merge-1',
+        product: backendProduct,
+        quantity: 2,
+        size: 42,
+        priceAtAdd: 100,
+        source: 'local',
+      }),
+    ],
+  });
+  cartApi.mergeItems.mockResolvedValue({
+    success: true,
+    data: {
+      items: [
+        {
+          _id: 'cart-item-1',
+          product: backendProduct,
+          quantity: 2,
+          size: 42,
+          priceAtAdd: 125,
+        },
+      ],
+      couponCode: null,
+      discount: 0,
+    },
+  });
+
+  let result;
+  await act(async () => {
+    result = await useCartStore.getState().mergeLocalCart();
+  });
+
+  expect(cartApi.mergeItems).toHaveBeenCalledWith([
+    { productId: backendProduct._id, quantity: 2, size: 42 },
+  ]);
+  expect(result).toMatchObject({ success: true, merged: 1, localOnly: 0 });
+  expect(useCartStore.getState().items[0]).toMatchObject({
+    id: 'cart-item-1',
+    cartItemId: 'cart-item-1',
+    productId: backendProduct._id,
+    quantity: 2,
+    unitPrice: 125,
+    source: 'backend',
+  });
+});
+
+test('keeps local-only cart items for review after authentication', async () => {
+  useAuthStore.setState({ isAuthenticated: true, token: 'token' });
+  useCartStore.setState({
+    items: [
+      normalizeCartItem({
+        _id: 'local-only-1',
+        product,
+        quantity: 1,
+        size: 42,
+        priceAtAdd: 100,
+        source: 'local',
+      }),
+    ],
+  });
+
+  let result;
+  await act(async () => {
+    result = await useCartStore.getState().mergeLocalCart();
+  });
+
+  expect(cartApi.mergeItems).not.toHaveBeenCalled();
+  expect(result).toMatchObject({ success: false, merged: 0, localOnly: 1 });
+  expect(useCartStore.getState().items[0]).toMatchObject({
+    productId: product._id,
+    source: 'local',
+  });
+});
+
+test('preserves guest cart items when merge returns a checkout conflict', async () => {
+  useAuthStore.setState({ isAuthenticated: true, token: 'token' });
+  useCartStore.setState({
+    items: [
+      normalizeCartItem({
+        _id: 'local-conflict-1',
+        product: backendProduct,
+        quantity: 4,
+        size: 42,
+        priceAtAdd: 100,
+        source: 'local',
+      }),
+    ],
+  });
+  cartApi.mergeItems.mockRejectedValue({
+    response: {
+      data: {
+        message: 'Some cart items need review before checkout',
+        errors: [{ code: 'INSUFFICIENT_STOCK' }],
+      },
+    },
+  });
+
+  let result;
+  await act(async () => {
+    result = await useCartStore.getState().mergeLocalCart();
+  });
+
+  expect(result).toMatchObject({
+    success: false,
+    message: 'Some cart items need review before checkout',
+    localOnly: 1,
+  });
+  expect(useCartStore.getState()).toMatchObject({
+    error: 'Some cart items need review before checkout',
+  });
+  expect(useCartStore.getState().items[0]).toMatchObject({
+    productId: backendProduct._id,
+    quantity: 4,
+    source: 'local',
+  });
 });
 
 test('updates and removes guest cart items locally', async () => {

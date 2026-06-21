@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-06-20T23:33:04.551Z",
+  "baseUrl": "http://127.0.0.1:5178",
+  "checks": [
+    {
+      "name": "customer order detail return request",
+      "status": "passed",
+      "screenshot": "E:\\PLASHOE\\PLASHOE\\.planning\\phases\\18-returns-exchanges-and-refund-requests\\artifacts\\phase18-order-detail-return-desktop.png",
+      "consoleErrors": []
+    },
+    {
+      "name": "admin returns queue and detail",
+      "status": "passed",
+      "screenshot": "E:\\PLASHOE\\PLASHOE\\.planning\\phases\\18-returns-exchanges-and-refund-requests\\artifacts\\phase18-admin-returns-mobile.png",
+      "consoleErrors": []
+    }
+  ],
+  "status": "passed"
+}

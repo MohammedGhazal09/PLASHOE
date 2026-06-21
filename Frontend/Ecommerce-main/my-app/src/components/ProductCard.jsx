@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar, faStarHalfAlt } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarEmpty } from '@fortawesome/free-regular-svg-icons';
 import { useCartStore } from '../store/cartStore';
 import toast from 'react-hot-toast';
+import WishlistButton from './WishlistButton';
 
 const DEFAULT_SIZES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
@@ -15,6 +17,7 @@ export default function ProductCard({ product, onQuickView }) {
   const originalPrice = product.price?.original || price;
   const hasDiscount = originalPrice > price;
   const image = product.image || '';
+  const productLink = product.id ? `/products/${product.id}` : null;
   const sizes = product.sizes?.length ? product.sizes : DEFAULT_SIZES;
   const [selectedSize, setSelectedSize] = useState(() => sizes[0]);
 
@@ -72,17 +75,32 @@ export default function ProductCard({ product, onQuickView }) {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative overflow-hidden">
-        <img
-          src={image}
-          alt={product.name}
-          className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {productLink ? (
+          <Link to={productLink} aria-label={`View ${product.name}`}>
+            <img
+              src={image}
+              alt={product.name}
+              className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </Link>
+        ) : (
+          <img
+            src={image}
+            alt={product.name}
+            className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        )}
         
         {hasDiscount && (
           <span className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 text-xs font-semibold">
             SALE
           </span>
         )}
+
+        <WishlistButton
+          product={product}
+          className="absolute right-2 top-2 z-10 rounded-full bg-white/95 p-0 shadow-sm"
+        />
 
         {/* Quick actions on hover */}
         <div
@@ -121,6 +139,7 @@ export default function ProductCard({ product, onQuickView }) {
                 onQuickView?.(product);
               }}
               className="px-4 border border-gray-300 text-gray-600 hover:border-black transition-colors"
+              aria-label={`Quick view ${product.name}`}
             >
               👁
             </button>
@@ -129,7 +148,15 @@ export default function ProductCard({ product, onQuickView }) {
       </div>
 
       <div className="mt-3 text-center">
-        <h3 className="font-semibold text-gray-800">{product.name}</h3>
+        <h3 className="font-semibold text-gray-800">
+          {productLink ? (
+            <Link to={productLink} className="hover:text-[#6e7051] focus:outline-none focus:ring-2 focus:ring-[#6e7051] focus:ring-offset-2">
+              {product.name}
+            </Link>
+          ) : (
+            product.name
+          )}
+        </h3>
         <div className="flex justify-center gap-1 my-1">
           {renderStars(product.rating || 0)}
         </div>

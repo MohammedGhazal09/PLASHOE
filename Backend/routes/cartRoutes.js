@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getCart,
   addToCart,
+  mergeCartItems,
   updateCartItem,
   removeFromCart,
   clearCart,
@@ -14,6 +15,7 @@ import {
   addCartItemSchema,
   cartCouponSchema,
   cartItemParamsSchema,
+  mergeCartItemsSchema,
   updateCartItemSchema,
 } from '../validators/cart.js';
 
@@ -23,6 +25,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', getCart);
+router.post('/merge', validateRequest({ body: mergeCartItemsSchema }), mergeCartItems);
 router.post('/items', validateRequest({ body: addCartItemSchema }), addToCart);
 router.put(
   '/items/:itemId',

@@ -17,6 +17,51 @@ const stockConflict = ({ message, product, cartItemId, requested }) => ({
   ]
 });
 
+const productUnavailableConflict = ({ productId, cartItemId, requested }) => ({
+  code: 'PRODUCT_UNAVAILABLE',
+  resource: 'product',
+  productId,
+  ...(cartItemId ? { cartItemId } : {}),
+  requested,
+  available: 0
+});
+
+const toIdString = (value) => {
+  if (!value) return '';
+  if (value._id) return value._id.toString();
+  return value.toString();
+};
+
+const cartLineKey = ({ productId, size }) => `${productId}:${size}`;
+
+const aggregateMergeItems = (items = []) => {
+  const byKey = new Map();
+
+  for (const item of items) {
+    const productId = toIdString(item.productId);
+    const size = Number(item.size);
+    const key = cartLineKey({ productId, size });
+    const current = byKey.get(key) || { productId, size, quantity: 0 };
+
+    current.quantity += Number(item.quantity || 1);
+    byKey.set(key, current);
+  }
+
+  return [...byKey.values()];
+};
+
+const getCartLineProductId = (item) => toIdString(item.product);
+
+const getCartLineKey = (item) =>
+  cartLineKey({ productId: getCartLineProductId(item), size: Number(item.size) });
+
+const mergeConflictResponse = (res, message, errors) =>
+  res.status(409).json({
+    success: false,
+    message,
+    errors
+  });
+
 // @desc    Get user's cart
 // @route   GET /api/cart
 export const getCart = async (req, res, next) => {
@@ -103,6 +148,126 @@ export const addToCart = async (req, res, next) => {
 
     res.json({
       success: true,
+      data: cart
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Merge guest cart items into authenticated cart
+// @route   POST /api/cart/merge
+export const mergeCartItems = async (req, res, next) => {
+  try {
+    const incomingItems = aggregateMergeItems(req.body.items);
+    let cart = await Cart.findOne({ user: req.user._id });
+    const existingItems = cart?.items || [];
+    const productIds = new Set(incomingItems.map((item) => item.productId));
+
+    for (const item of existingItems) {
+      productIds.add(getCartLineProductId(item));
+    }
+
+    const products = await Product.find({ _id: { $in: [...productIds] } });
+    const productsById = new Map(products.map((product) => [product._id.toString(), product]));
+    const errors = [];
+    const finalQuantities = new Map();
+
+    for (const item of existingItems) {
+      const productId = getCartLineProductId(item);
+      const key = getCartLineKey(item);
+      const current = finalQuantities.get(key) || {
+        productId,
+        size: Number(item.size),
+        quantity: 0,
+        cartItemId: item._id.toString()
+      };
+
+      current.quantity += item.quantity;
+      finalQuantities.set(key, current);
+
+      if (!productsById.has(productId)) {
+        errors.push(
+          productUnavailableConflict({
+            productId,
+            cartItemId: item._id.toString(),
+            requested: item.quantity
+          })
+        );
+      }
+    }
+
+    for (const item of incomingItems) {
+      const key = cartLineKey(item);
+      const current = finalQuantities.get(key) || {
+        productId: item.productId,
+        size: item.size,
+        quantity: 0
+      };
+
+      current.quantity += item.quantity;
+      finalQuantities.set(key, current);
+
+      if (!productsById.has(item.productId)) {
+        errors.push(
+          productUnavailableConflict({
+            productId: item.productId,
+            requested: item.quantity
+          })
+        );
+      }
+    }
+
+    for (const item of finalQuantities.values()) {
+      const product = productsById.get(item.productId);
+      if (product && item.quantity > product.stock) {
+        errors.push({
+          code: 'INSUFFICIENT_STOCK',
+          resource: 'product',
+          productId: item.productId,
+          ...(item.cartItemId ? { cartItemId: item.cartItemId } : {}),
+          requested: item.quantity,
+          available: product.stock
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      return mergeConflictResponse(
+        res,
+        'Some cart items need review before checkout',
+        errors
+      );
+    }
+
+    if (!cart) {
+      cart = new Cart({ user: req.user._id, items: [] });
+    }
+
+    for (const item of incomingItems) {
+      const existingItem = cart.items.find(
+        (cartItem) => getCartLineKey(cartItem) === cartLineKey(item)
+      );
+
+      if (existingItem) {
+        existingItem.quantity += item.quantity;
+      } else {
+        const product = productsById.get(item.productId);
+        cart.items.push({
+          product: item.productId,
+          quantity: item.quantity,
+          size: item.size,
+          priceAtAdd: product.price.current
+        });
+      }
+    }
+
+    await cart.save();
+    await cart.populate('items.product', 'name image price');
+
+    res.json({
+      success: true,
+      message: 'Cart merged',
       data: cart
     });
   } catch (error) {

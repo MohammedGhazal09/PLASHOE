@@ -4,7 +4,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faTruck, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 import { ordersApi } from '../api/ordersApi';
+import { returnsApi } from '../api/returnsApi';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
 import TrackingTimeline from '../components/TrackingTimeline';
 import { getPaymentStatusLabel, isPaymentCancellationLocked } from '../utils/paymentStatus';
 import { joinPublicPath } from '../utils/publicPath';
@@ -13,17 +15,53 @@ export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const syncCart = useCartStore((state) => state.syncCart);
+  const openCart = useCartStore((state) => state.openCart);
 
   const [order, setOrder] = useState(null);
+  const [returnRequests, setReturnRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [returnLoading, setReturnLoading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [reordering, setReordering] = useState(false);
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
+  const [returnForm, setReturnForm] = useState({
+    type: 'return',
+    orderItemId: '',
+    quantity: 1,
+    reason: '',
+    exchangeSize: '',
+    customerNotes: '',
+  });
+
+  const loadReturnRequests = useCallback(async () => {
+    setReturnLoading(true);
+    try {
+      const response = await returnsApi.getMine({ orderId: id });
+      if (response.success) {
+        setReturnRequests(response.data || []);
+      }
+    } catch {
+      setReturnRequests([]);
+    } finally {
+      setReturnLoading(false);
+    }
+  }, [id]);
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ordersApi.getById(id);
       if (response.success) {
-        setOrder(response.data);
+        const nextOrder = response.data;
+        setOrder(nextOrder);
+        const firstItem = nextOrder.items?.[0];
+        if (firstItem?._id) {
+          setReturnForm((current) => ({
+            ...current,
+            orderItemId: current.orderItemId || firstItem._id,
+          }));
+        }
       } else {
         toast.error('Order not found');
         navigate('/account', { state: { tab: 'orders' } });
@@ -42,7 +80,14 @@ export default function OrderDetail() {
       return;
     }
     loadOrder();
-  }, [isAuthenticated, loadOrder, navigate]);
+    loadReturnRequests();
+  }, [isAuthenticated, loadOrder, loadReturnRequests, navigate]);
+
+  const canRequestReturn =
+    order &&
+    order.status === 'delivered' &&
+    Boolean(order.deliveredAt) &&
+    ['paid', 'not_required'].includes(order.paymentStatus || 'not_required');
 
   const handleCancel = async () => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
@@ -67,6 +112,78 @@ export default function OrderDetail() {
     order &&
     !['shipped', 'delivered', 'cancelled'].includes(order.status) &&
     !isPaymentCancellationLocked(order.paymentStatus);
+
+  const handleReorder = async () => {
+    setReordering(true);
+    try {
+      const response = await ordersApi.reorder(id);
+      if (response.success) {
+        await syncCart();
+        openCart();
+        toast.success(`${response.data?.added || 0} item(s) moved to cart.`);
+        if (response.data?.skipped?.length > 0) {
+          toast.error('Some items are no longer available and were skipped.');
+        }
+      } else {
+        toast.error(response.message || 'No items are available to reorder.');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'No items are available to reorder.');
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const handleReturnSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!returnForm.orderItemId || !returnForm.reason.trim()) {
+      toast.error('Choose an item and reason before submitting');
+      return;
+    }
+
+    if (returnForm.type === 'exchange' && !returnForm.exchangeSize) {
+      toast.error('Choose a desired exchange size');
+      return;
+    }
+
+    setReturnSubmitting(true);
+    try {
+      const itemPayload = {
+        orderItemId: returnForm.orderItemId,
+        quantity: Number(returnForm.quantity || 1),
+        reason: returnForm.reason,
+      };
+
+      if (returnForm.type === 'exchange') {
+        itemPayload.exchangeSize = Number(returnForm.exchangeSize);
+      }
+
+      const response = await returnsApi.create({
+        orderId: id,
+        type: returnForm.type,
+        items: [itemPayload],
+        customerNotes: returnForm.customerNotes || undefined,
+      });
+
+      if (response.success) {
+        toast.success('Return request submitted');
+        setReturnForm((current) => ({
+          ...current,
+          reason: '',
+          exchangeSize: '',
+          customerNotes: '',
+        }));
+        await loadReturnRequests();
+      } else {
+        toast.error(response.message || 'Return request failed');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Return request failed');
+    } finally {
+      setReturnSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -184,6 +301,111 @@ export default function OrderDetail() {
               ))}
             </div>
           </div>
+
+          <div className="bg-white border rounded-lg p-6">
+            <h2 className="text-lg font-semibold mb-4">Returns & Exchanges</h2>
+            {returnLoading ? (
+              <p role="status" className="text-sm text-gray-600">Loading return requests...</p>
+            ) : returnRequests.length > 0 ? (
+              <div className="space-y-3">
+                {returnRequests.map((request) => (
+                  <div key={request._id} className="border border-gray-200 p-3 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-dark">{request.requestNumber}</p>
+                      <span className="text-gray-600">{request.status}</span>
+                    </div>
+                    <p className="mt-1 text-gray-600">
+                      {request.type} request for {(request.items || []).reduce((total, item) => total + Number(item.quantity || 0), 0)} item(s)
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">No return or exchange requests for this order.</p>
+            )}
+
+            {canRequestReturn ? (
+              <form onSubmit={handleReturnSubmit} className="mt-5 grid gap-4 md:grid-cols-2">
+                <label className="text-sm font-semibold text-dark">
+                  Request type
+                  <select
+                    value={returnForm.type}
+                    onChange={(event) => setReturnForm((current) => ({ ...current, type: event.target.value }))}
+                    className="mt-1 w-full border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="return">Return</option>
+                    <option value="exchange">Exchange</option>
+                  </select>
+                </label>
+                <label className="text-sm font-semibold text-dark">
+                  Item
+                  <select
+                    value={returnForm.orderItemId}
+                    onChange={(event) => setReturnForm((current) => ({ ...current, orderItemId: event.target.value }))}
+                    className="mt-1 w-full border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    {(order.items || []).map((item) => (
+                      <option key={item._id || item.name} value={item._id}>
+                        {item.productName || item.name} - size {item.size}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-sm font-semibold text-dark">
+                  Quantity
+                  <input
+                    type="number"
+                    min="1"
+                    value={returnForm.quantity}
+                    onChange={(event) => setReturnForm((current) => ({ ...current, quantity: event.target.value }))}
+                    className="mt-1 w-full border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </label>
+                {returnForm.type === 'exchange' && (
+                  <label className="text-sm font-semibold text-dark">
+                    Desired size
+                    <input
+                      type="number"
+                      min="1"
+                      value={returnForm.exchangeSize}
+                      onChange={(event) => setReturnForm((current) => ({ ...current, exchangeSize: event.target.value }))}
+                      className="mt-1 w-full border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </label>
+                )}
+                <label className="text-sm font-semibold text-dark md:col-span-2">
+                  Reason
+                  <input
+                    value={returnForm.reason}
+                    onChange={(event) => setReturnForm((current) => ({ ...current, reason: event.target.value }))}
+                    className="mt-1 w-full border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Fit, damage, wrong item, or another issue"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-dark md:col-span-2">
+                  Notes
+                  <textarea
+                    value={returnForm.customerNotes}
+                    onChange={(event) => setReturnForm((current) => ({ ...current, customerNotes: event.target.value }))}
+                    className="mt-1 min-h-24 w-full border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </label>
+                <div className="md:col-span-2">
+                  <button
+                    type="submit"
+                    disabled={returnSubmitting}
+                    className="min-h-11 bg-[#6e7051] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {returnSubmitting ? 'Submitting...' : 'Submit return request'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <p className="mt-5 border border-gray-200 bg-[#f1f1ef] p-3 text-sm text-gray-600">
+                This order is not currently eligible for a return or exchange. Eligible orders must be delivered, within the return window, and in a refundable payment state.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -240,6 +462,15 @@ export default function OrderDetail() {
           </div>
 
           {/* Cancel Button */}
+          <button
+            type="button"
+            onClick={handleReorder}
+            disabled={reordering}
+            className="w-full py-3 bg-[#6e7051] text-white font-semibold rounded hover:bg-[#262b2c] transition-colors disabled:opacity-50"
+          >
+            {reordering ? 'ADDING TO CART...' : 'BUY AGAIN'}
+          </button>
+
           {canCancel && (
             <button
               onClick={handleCancel}

@@ -3,7 +3,9 @@ import ContactMessage from "../../models/ContactMessage.js";
 import Coupon from "../../models/Coupon.js";
 import Order from "../../models/Order.js";
 import Product from "../../models/Product.js";
+import Review from "../../models/Review.js";
 import User from "../../models/User.js";
+import Wishlist from "../../models/Wishlist.js";
 
 let sequence = 0;
 
@@ -83,6 +85,32 @@ export const createCartForUser = async (user, items = [], overrides = {}) => {
     ...overrides,
   });
 };
+
+export const createWishlistForUser = async (user, products = [], overrides = {}) => {
+  const sourceProducts = products.length > 0 ? products : [await createProduct()];
+
+  return Wishlist.create({
+    user: user._id,
+    items: sourceProducts.map((product) => ({
+      product: product._id || product,
+      addedAt: new Date(),
+    })),
+    ...overrides,
+  });
+};
+
+export const createReviewForProduct = async (user, product, overrides = {}) =>
+  Review.create({
+    product: product._id,
+    user: user._id,
+    rating: 5,
+    title: "Great fit",
+    comment: "Comfortable all day and the sizing felt right.",
+    fit: "true_to_size",
+    verifiedPurchase: true,
+    isApproved: true,
+    ...overrides,
+  });
 
 export const createOrder = async (user, overrides = {}) => {
   const product = overrides.items ? null : await createProduct();

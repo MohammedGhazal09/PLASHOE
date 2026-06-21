@@ -11,6 +11,10 @@ export const addCartItemSchema = strictObject({
   size: z.coerce.number().int('size must be an integer').min(35).max(45),
 });
 
+export const mergeCartItemsSchema = strictObject({
+  items: z.array(addCartItemSchema).min(1).max(100),
+});
+
 export const updateCartItemSchema = strictObject({
   quantity: positiveInteger('quantity', 99),
 });

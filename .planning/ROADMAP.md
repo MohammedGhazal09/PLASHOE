@@ -2,7 +2,7 @@
 
 ## Overview
 
-This roadmap turns the verified PLASHOE gaps into execution phases. The sequence starts with defects already proven by spike 001, then adds test coverage, security hardening, checkout integrity, payment readiness, admin fulfillment, catalog/frontend cleanup, deployment operations, production launch setup, frontend tooling modernization, operational monitoring, and final release cutover.
+This roadmap turns the verified PLASHOE gaps into execution phases. The sequence starts with defects already proven by spike 001, then adds test coverage, security hardening, checkout integrity, payment readiness, admin fulfillment, catalog/frontend cleanup, deployment operations, production launch setup, frontend tooling modernization, operational monitoring, and final release cutover. Post-release phases then expand the store into richer admin operations, shopping intent, product confidence, discovery, checkout conversion, returns, sustainability content, retention, and shoppable merchandising.
 
 ## Phases
 
@@ -23,6 +23,15 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 10: Frontend Tooling Modernization and Warning Cleanup** - Remove accepted CRA/tooling debt and clean non-blocking frontend test/build warnings. (completed 2026-06-14)
 - [ ] **Phase 11: Operational Monitoring Alerting and Incident Readiness** - Wire live monitoring, alerts, backup verification, and incident response operations.
 - [ ] **Phase 12: Release Gate Production Cutover and Post Launch Review** - Run the final release gate, production cutover, rollback readiness, and post-launch review.
+- [x] **Phase 13: Admin Store Management Console** - Build protected operator screens for store administration beyond raw API access. (completed 2026-06-20)
+- [x] **Phase 14: Wishlist and Saved Shopping Intent** - Let shoppers save products and resume purchase intent across sessions. (completed 2026-06-20)
+- [x] **Phase 15: Product Detail Reviews and Fit Confidence** - Add richer product detail, reviews, fit guidance, and related products. (completed 2026-06-20)
+- [x] **Phase 16: Advanced Catalog Discovery and Search** - Improve product finding through search, filters, URL state, and indexed queries. (completed 2026-06-20)
+- [x] **Phase 17: Checkout Conversion and Guest Cart Experience** - Reduce checkout friction with the selected guest or cart-login policy. (completed 2026-06-21)
+- [x] **Phase 18: Returns Exchanges and Refund Requests** - Add customer return/exchange requests and operator resolution workflows. (completed 2026-06-21)
+- [x] **Phase 19: Sustainability Impact and Product Care Content** - Make product sustainability and care information first-class content. (completed 2026-06-20)
+- [x] **Phase 20: Retention Lifecycle Commerce and Personalization** - Add back-in-stock, reorder, cart recovery, and recommendation workflows. (completed 2026-06-21)
+- [x] **Phase 21: Shoppable Lookbook and Outfit Bundles** - Turn lookbook content into tagged, bundle-ready merchandising. (completed 2026-06-21)
 
 ## Phase Details
 
@@ -424,9 +433,246 @@ Plan candidates:
 - D-56: Do not tag or push a production release until the user explicitly approves release actions.
 - D-57: Production deploy must use environment secret stores rather than committed configuration.
 
+### Phase 13: Admin Store Management Console
+
+**Goal**: Operators can run day-to-day store administration from protected frontend screens instead of raw API calls.
+**Depends on**: Phase 12
+**Requirements**: V2-ADM-01, V2-ADM-02, V2-ADM-03, V2-ADM-04
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/api/adminApi.js`, `Backend/routes/adminOrderRoutes.js`, `Backend/routes/productRoutes.js`, `docs/API.md`
+**Success Criteria** (what must be TRUE):
+
+  1. A protected admin route shell is visible only to authenticated admins.
+  2. Admins can list, filter, inspect, and update order fulfillment from the frontend.
+  3. Admins can manage products, coupons, and contact messages without direct API tooling.
+  4. Admin navigation, authorization, and critical admin workflows have focused tests.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 13-01: Add admin route shell, authorization guard, and navigation.
+- 13-02: Build order list/detail/fulfillment screens on existing admin APIs.
+- 13-03: Add product CRUD, coupon management, and contact-message operations.
+- 13-04: Add admin UI tests, API-wrapper coverage, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-58: Do not weaken backend admin authorization; frontend admin hiding is only a UX layer.
+
+### Phase 14: Wishlist and Saved Shopping Intent
+
+**Goal**: Shoppers can save products, revisit them later, and move saved intent into cart.
+**Depends on**: Phase 13
+**Requirements**: V2-WISH-01, V2-WISH-02, V2-WISH-03
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/pages/Account.jsx`, `Frontend/Ecommerce-main/my-app/src/components/ProductCard.jsx`, `Frontend/Ecommerce-main/my-app/src/config/config.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Authenticated wishlists persist through backend APIs and survive device/session changes.
+  2. Guest wishlist behavior is explicit, local, and reconciles or prompts safely on login.
+  3. Product cards, product detail, account, and header surfaces expose wishlist state consistently.
+  4. Wishlist add/remove/move-to-cart behavior has frontend and backend tests.
+
+**Plans**: 4 plans
+
+Plan candidates:
+
+- 14-01: Backend wishlist persistence and API.
+- 14-02: Frontend wishlist API, store, and reconciliation.
+- 14-03: Storefront wishlist controls, header count, and account management.
+- 14-04: Wishlist tests, documentation, browser smoke, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+
+### Phase 15: Product Detail Reviews and Fit Confidence
+
+**Goal**: Shoppers can evaluate individual products with rich product information, verified reviews, fit guidance, and related products.
+**Depends on**: Phase 14
+**Requirements**: V2-PDP-01, V2-REV-01, V2-REV-02, V2-FIT-01
+**Canonical refs**: `Backend/models/Product.js`, `Frontend/Ecommerce-main/my-app/src/api/productsApi.js`, `Frontend/Ecommerce-main/my-app/src/components/QuickViewModal.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/OrderDetail.jsx`
+**Success Criteria** (what must be TRUE):
+
+  1. Product detail routes render product media, price, stock, sizes, description, materials, and add-to-cart.
+  2. Reviews support verified-purchase submission, listing, rating aggregation, and abuse-safe validation.
+  3. Fit guidance and size information are visible at the decision point.
+  4. Related products are generated through a bounded, testable catalog rule.
+
+**Plans**: 4 plans
+
+Plan candidates:
+
+- 15-01: Product detail data, route, and related products.
+- 15-02: Verified purchase review API and aggregation.
+- 15-03: Product detail page, reviews UI, fit guidance, and related products.
+- 15-04: Product detail reviews docs, browser smoke, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-59: Review content must be validated and moderated enough to avoid unsafe public rendering.
+
+### Phase 16: Advanced Catalog Discovery and Search
+
+**Goal**: Shoppers can find the right product quickly through search, filtering, sorting, pagination, and shareable catalog state.
+**Depends on**: Phase 15
+**Requirements**: V2-DISC-01, V2-DISC-02, V2-DISC-03
+**Canonical refs**: `Backend/controllers/productController.js`, `Backend/validators/product.js`, `Frontend/Ecommerce-main/my-app/src/components/ProductGrid.jsx`, `Frontend/Ecommerce-main/my-app/src/hooks/useCatalogProducts.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Product list APIs support bounded text search plus category, gender, sale, size, price, rating, and sort filters.
+  2. Catalog UI keeps search/filter/sort/page state in the URL and restores it on reload/share.
+  3. Empty, loading, error, and no-results states are clear and do not break layout.
+  4. Search/filter behavior is covered by backend, frontend, and contract-level tests.
+
+**Plans**: 3 plans
+
+Plan candidates:
+
+- 16-01: Extend product query validation, indexes, and API contracts.
+- 16-02: Build search/filter URL-state UI and catalog behavior.
+- 16-03: Add test coverage, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-60: Keep catalog queries bounded; do not introduce unindexed unbounded search.
+
+### Phase 17: Checkout Conversion and Guest Cart Experience
+
+**Goal**: Checkout drop-off is reduced by making the guest/account policy explicit and removing avoidable friction in cart, address, and payment handoff.
+**Depends on**: Phase 16
+**Requirements**: V2-CHKX-01, V2-CHKX-02, V2-CHKX-03
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx`, `Frontend/Ecommerce-main/my-app/src/store/cartStore.js`, `Frontend/Ecommerce-main/my-app/src/components/ProtectedRoute.jsx`, `Backend/controllers/orderController.js`
+**Success Criteria** (what must be TRUE):
+
+  1. The selected guest checkout or account-required cart-merge policy is documented and implemented consistently.
+  2. Guest and authenticated carts reconcile without duplicate, lost, or stale items.
+  3. Saved addresses and checkout validation reduce repeated entry without weakening backend validation.
+  4. Checkout retry, payment return, and cart-conflict behavior remain covered by tests.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 17-01: Decide and encode guest checkout versus login-required cart merge.
+- 17-02: Implement cart reconciliation and address reuse in checkout/account flows.
+- 17-03: Add checkout conversion tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-61: Preserve Phase 4 idempotency, stock, and coupon consistency guarantees.
+
+### Phase 18: Returns Exchanges and Refund Requests
+
+**Goal**: Customers and operators can handle returns, exchanges, and refund requests with clear eligibility and auditable status changes.
+**Depends on**: Phase 17
+**Requirements**: V2-RMA-01, V2-RMA-02, V2-RMA-03, V2-RMA-04
+**Canonical refs**: `Backend/models/Order.js`, `Backend/controllers/webhookController.js`, `Backend/services/paymentState.js`, `Frontend/Ecommerce-main/my-app/src/pages/OrderDetail.jsx`
+**Success Criteria** (what must be TRUE):
+
+  1. Return/exchange requests have a persisted model, customer API, admin API, and status history.
+  2. Eligibility rules account for order status, payment state, delivery date, item quantity, and configured return window.
+  3. Admins can approve, reject, receive, resolve, and record notes for requests.
+  4. Refund request state does not conflict with Stripe-origin refund webhook state.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 18-01: Add return/exchange data model, eligibility rules, and APIs.
+- 18-02: Add customer order-detail request UI and admin resolution UI.
+- 18-03: Add payment/refund consistency tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-62: Do not initiate real refunds without explicit product and payment-provider policy.
+
+### Phase 19: Sustainability Impact and Product Care Content
+
+**Goal**: PLASHOE product pages communicate sustainability impact, materials, care, and durability in a maintainable way.
+**Depends on**: Phase 18
+**Requirements**: V2-SUS-01, V2-SUS-02, V2-SUS-03
+**Canonical refs**: `Backend/models/Product.js`, `Backend/validators/product.js`, `Frontend/Ecommerce-main/my-app/src/pages/OurStory.jsx`
+**Success Criteria** (what must be TRUE):
+
+  1. Product records can store structured sustainability, materials, manufacturing, and care information.
+  2. Admin product management can maintain sustainability and care fields.
+  3. Product detail and story surfaces render the content without unsupported claims or layout breakage.
+  4. Missing sustainability data has a safe fallback that does not fabricate impact metrics.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 19-01: Add product sustainability/care schema, validators, and admin fields.
+- 19-02: Add product/story UI for impact, materials, and care guidance.
+- 19-03: Add content validation, docs, tests, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-63: Do not display environmental claims without sourceable content fields.
+
+### Phase 20: Retention Lifecycle Commerce and Personalization
+
+**Goal**: PLASHOE can drive repeat purchases through opted-in lifecycle workflows and useful recommendations.
+**Depends on**: Phase 19
+**Requirements**: V2-RET-01, V2-RET-02, V2-RET-03, V2-RET-04
+**Canonical refs**: `Backend/models/Product.js`, `Backend/models/Cart.js`, `Backend/models/Order.js`, `Frontend/Ecommerce-main/my-app/src/store/cartStore.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Shoppers can request back-in-stock notifications by product and size.
+  2. Account/order surfaces support reorder or buy-again flows when products are still available.
+  3. Abandoned-cart recovery is designed with explicit opt-in, privacy, and provider boundaries.
+  4. Recommendations are explainable, bounded, and do not require invasive tracking.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 20-01: Add back-in-stock notification intent and availability checks.
+- 20-02: Add reorder/buy-again flows and cart recovery boundaries.
+- 20-03: Add recommendation rules and customer-facing surfaces.
+- 20-04: Add privacy docs, tests, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-64: Lifecycle messaging must be opt-in and avoid committing provider secrets or contact lists.
+
+### Phase 21: Shoppable Lookbook and Outfit Bundles
+
+**Goal**: Lookbook content becomes shoppable merchandising where tagged products and outfit bundles can move directly into cart.
+**Depends on**: Phase 20
+**Requirements**: V2-LOOK-01, V2-LOOK-02, V2-LOOK-03
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/pages/LookBook.jsx`, `Backend/models/Product.js`, `Frontend/Ecommerce-main/my-app/src/store/cartStore.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Lookbook content can associate images/scenes with active products and optional outfit bundles.
+  2. Shoppers can inspect tagged products and add individual items or available bundle items to cart.
+  3. Admins can maintain lookbook entries without code edits or broken product references.
+  4. Lookbook interactions are responsive, accessible, and covered by focused tests.
+
+**Plans**: 0 plans
+
+Plan candidates:
+
+- 21-01: Add lookbook content model/API and admin maintenance workflow.
+- 21-02: Build shoppable hotspots, product tag panels, and bundle add-to-cart flow.
+- 21-03: Add responsive/accessibility tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-65: Bundle add-to-cart must respect stock, size selection, and cart normalization rules.
+
 ## Progress
 
-**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12
+**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -442,10 +688,20 @@ Plan candidates:
 | 10. Frontend Tooling Modernization and Warning Cleanup | 3/3 | Complete | 2026-06-14 |
 | 11. Operational Monitoring Alerting and Incident Readiness | 3/3 | Blocked on external setup |  |
 | 12. Release Gate Production Cutover and Post Launch Review | 0/0 | Not started | |
+| 13. Admin Store Management Console | 4/4 | Complete    | 2026-06-20 |
+| 14. Wishlist and Saved Shopping Intent | 4/4 | Complete    | 2026-06-20 |
+| 15. Product Detail Reviews and Fit Confidence | 4/4 | Complete    | 2026-06-20 |
+| 16. Advanced Catalog Discovery and Search | 3/3 | Complete    | 2026-06-20 |
+| 17. Checkout Conversion and Guest Cart Experience | 3/3 | Complete    | 2026-06-21 |
+| 18. Returns Exchanges and Refund Requests | 3/3 | Complete    | 2026-06-21 |
+| 19. Sustainability Impact and Product Care Content | 3/3 | Complete    | 2026-06-20 |
+| 20. Retention Lifecycle Commerce and Personalization | 4/4 | Complete    | 2026-06-21 |
+| 21. Shoppable Lookbook and Outfit Bundles | 3/3 | Complete    | 2026-06-21 |
 
 ## Recommendations
 
-- Start Phase 9 execution next because production launch setup blocks credible staging and production evidence.
-- Keep Phase 10 separate from launch setup so tooling migration risk does not block external account/configuration work.
-- Treat Phase 12 as the only production cutover phase; earlier phases should produce staging proof and operational readiness.
+- Resume Phase 9 evidence capture when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler inputs are available.
+- Keep Phase 11 focused on live monitoring, alerting, backup/restore, and incident-readiness evidence once the provider setup exists.
+- Treat Phase 12 as the only production cutover phase; local completion of phases 13-21 does not imply hosted release approval.
+- For future product work after the current sweep, prioritize searchable product pickers in admin/lookbook flows before adding more merchandising complexity.
 - Preserve the no-subagent constraint for GSD execution unless the repository instruction changes.

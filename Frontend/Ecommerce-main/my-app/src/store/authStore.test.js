@@ -85,6 +85,37 @@ test('logout clears authenticated state in store and session storage', async () 
   });
 });
 
+test('addAddress stores returned addresses on the authenticated user', async () => {
+  useAuthStore.setState({
+    user: { _id: 'user-1', name: 'Session User', email: 'session@example.com' },
+    token: 'session-token',
+    isAuthenticated: true,
+  });
+  const addresses = [
+    {
+      _id: 'address-1',
+      firstName: 'Test',
+      lastName: 'Buyer',
+      street: '123 Test Street',
+      city: 'Testville',
+      state: 'CA',
+      zipCode: '90210',
+      country: 'United States',
+      phone: '5551234567',
+      isDefault: true,
+    },
+  ];
+  authApi.addAddress.mockResolvedValue({ success: true, data: addresses });
+
+  let result;
+  await act(async () => {
+    result = await useAuthStore.getState().addAddress(addresses[0]);
+  });
+
+  expect(result).toEqual({ success: true, data: addresses });
+  expect(useAuthStore.getState().user.addresses).toEqual(addresses);
+});
+
 test('axios request interceptor attaches bearer token from the auth store', () => {
   useAuthStore.setState({
     user: { _id: 'user-1' },

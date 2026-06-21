@@ -7,18 +7,29 @@ import {
   getSaleProducts,
   getBestsellers,
   getCategories,
+  getRelatedProducts,
   createProduct,
   updateProduct,
   deleteProduct
 } from '../controllers/productController.js';
+import {
+  createProductReview,
+  getProductReviews,
+} from '../controllers/reviewController.js';
 import { protect, admin } from '../middleware/auth.js';
 import { validateRequest } from '../middleware/validate.js';
 import {
   createProductSchema,
   productParamsSchema,
   productQuerySchema,
+  relatedProductsQuerySchema,
   updateProductSchema,
 } from '../validators/product.js';
+import {
+  reviewCreateSchema,
+  reviewListQuerySchema,
+  reviewParamsSchema,
+} from '../validators/review.js';
 
 const router = express.Router();
 
@@ -29,6 +40,22 @@ router.get('/women', validateRequest({ query: productQuerySchema }), getWomenPro
 router.get('/sale', validateRequest({ query: productQuerySchema }), getSaleProducts);
 router.get('/bestsellers', getBestsellers);
 router.get('/categories', getCategories);
+router.get(
+  '/:id/related',
+  validateRequest({ params: productParamsSchema, query: relatedProductsQuerySchema }),
+  getRelatedProducts
+);
+router.get(
+  '/:id/reviews',
+  validateRequest({ params: reviewParamsSchema, query: reviewListQuerySchema }),
+  getProductReviews
+);
+router.post(
+  '/:id/reviews',
+  protect,
+  validateRequest({ params: reviewParamsSchema, body: reviewCreateSchema }),
+  createProductReview
+);
 router.get('/:id', validateRequest({ params: productParamsSchema }), getProduct);
 
 // Admin routes

@@ -23,6 +23,9 @@ export default defineConfig({
   build: {
     outDir: 'build',
     rolldownOptions: {
+      checks: {
+        pluginTimings: false,
+      },
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) {

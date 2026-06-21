@@ -11,12 +11,30 @@ const toPositiveInt = (value, fallback) => {
 };
 
 const isSaleQuery = (value) => value === true || value === 'true';
+const toOptionalNumber = (value) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+};
+
+const cleanTextParam = (value) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
 
 export const cleanCatalogParams = (params = {}) => {
   const cleaned = { ...params };
 
+  cleaned.q = cleanTextParam(cleaned.q);
+  if (!cleaned.q) delete cleaned.q;
   if (!cleaned.category || cleaned.category === 'all') delete cleaned.category;
   if (!cleaned.sort || cleaned.sort === 'default') delete cleaned.sort;
+  if (!cleaned.size) delete cleaned.size;
+  if (!cleaned.minPrice && cleaned.minPrice !== 0) delete cleaned.minPrice;
+  if (!cleaned.maxPrice && cleaned.maxPrice !== 0) delete cleaned.maxPrice;
+  if (!cleaned.minRating && cleaned.minRating !== 0) delete cleaned.minRating;
+  if (!isSaleQuery(cleaned.sale)) delete cleaned.sale;
 
   cleaned.page = toPositiveInt(cleaned.page, DEFAULT_PAGE);
   cleaned.limit = toPositiveInt(cleaned.limit, DEFAULT_LIMIT);
@@ -58,9 +76,28 @@ const sortCatalogProducts = (products, sort) => {
 };
 
 const matchesCatalogParams = (product, catalogParams) => {
+  const minPrice = toOptionalNumber(catalogParams.minPrice);
+  const maxPrice = toOptionalNumber(catalogParams.maxPrice);
+  const minRating = toOptionalNumber(catalogParams.minRating);
+  const size = toOptionalNumber(catalogParams.size);
+  const search = cleanTextParam(catalogParams.q)?.toLowerCase();
+  const currentPrice = Number(product.price?.current ?? 0);
+
+  if (search) {
+    const matchesSearch = [product.name, product.category, product.description]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(search));
+
+    if (!matchesSearch) return false;
+  }
+
   if (catalogParams.gender && product.gender !== catalogParams.gender) return false;
   if (catalogParams.category && product.category !== catalogParams.category) return false;
   if (isSaleQuery(catalogParams.sale) && !product.isOnSale) return false;
+  if (size !== undefined && !product.sizes?.includes(size)) return false;
+  if (minPrice !== undefined && currentPrice < minPrice) return false;
+  if (maxPrice !== undefined && currentPrice > maxPrice) return false;
+  if (minRating !== undefined && Number(product.rating ?? 0) < minRating) return false;
 
   return true;
 };
@@ -89,24 +126,22 @@ export const loadFallbackCatalogProducts = async (params = {}) => {
     ...(database.male || []).map((product) => ({ product, group: 'male' })),
   ];
 
-  const filteredEntries = entries.filter(({ product, group }) => {
-    if (catalogParams.gender && catalogParams.gender !== group) return false;
-    if (catalogParams.category && product.category !== catalogParams.category) return false;
-    if (isSaleQuery(catalogParams.sale)) {
-      const normalized = normalizeProduct(product, { source: 'fallback', sourceGroup: group });
-      return normalized.isOnSale;
-    }
-    return true;
-  });
-
   const sourceGroup = isSaleQuery(catalogParams.sale) ? 'sale' : undefined;
+  const filteredEntries = entries.filter(({ product, group }) => {
+    const normalized = normalizeProduct(
+      { ...product, gender: group },
+      { source: 'fallback', sourceGroup: sourceGroup || group }
+    );
+
+    return matchesCatalogParams(normalized, catalogParams);
+  });
   const normalizedProducts = filteredEntries.map(({ product, group }, index) =>
     normalizeProduct(
       { ...product, gender: group },
       { source: 'fallback', sourceGroup: sourceGroup || group, index }
     )
   );
-  const sortedProducts = sortCatalogProducts(normalizedProducts, catalogParams.sort);
+  const sortedProducts = applyCatalogFilters(normalizedProducts, catalogParams);
   const start = (catalogParams.page - 1) * catalogParams.limit;
   const pagedProducts = sortedProducts.slice(start, start + catalogParams.limit);
 

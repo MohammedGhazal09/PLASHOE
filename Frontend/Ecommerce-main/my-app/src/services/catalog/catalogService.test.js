@@ -145,6 +145,77 @@ test('applies catalog filters and sort to backend data defensively', async () =>
   expect(result.pagination).toMatchObject({ count: 2, total: 2, page: 1, limit: 20, pages: 1 });
 });
 
+test('passes and defensively applies advanced discovery params', async () => {
+  productsApi.getAll.mockResolvedValue({
+    success: true,
+    count: 3,
+    total: 3,
+    page: 1,
+    limit: 20,
+    pages: 1,
+    data: [
+      {
+        _id: 'trail-runner',
+        name: 'Trail Runner',
+        gender: 'male',
+        category: 'Running',
+        description: 'Trail traction shoe',
+        sizes: [41, 42],
+        rating: 4.8,
+        isOnSale: true,
+        image: '/images/trail-runner.jpg',
+        price: { original: 150, current: 110 },
+      },
+      {
+        _id: 'road-runner',
+        name: 'Road Runner',
+        gender: 'male',
+        category: 'Running',
+        description: 'Road shoe',
+        sizes: [43],
+        rating: 4.9,
+        isOnSale: true,
+        image: '/images/road-runner.jpg',
+        price: { original: 140, current: 120 },
+      },
+      {
+        _id: 'trail-classic',
+        name: 'Trail Classic',
+        gender: 'male',
+        category: 'Classic',
+        description: 'Trail inspired classic',
+        sizes: [41],
+        rating: 3.8,
+        isOnSale: true,
+        image: '/images/trail-classic.jpg',
+        price: { original: 100, current: 90 },
+      },
+    ],
+  });
+
+  const result = await loadCatalogProducts({
+    q: ' trail ',
+    size: '41',
+    minPrice: '100',
+    maxPrice: '115',
+    minRating: '4',
+    sale: 'true',
+  });
+
+  expect(productsApi.getAll).toHaveBeenCalledWith({
+    q: 'trail',
+    size: '41',
+    minPrice: '100',
+    maxPrice: '115',
+    minRating: '4',
+    sale: 'true',
+    page: 1,
+    limit: 20,
+  });
+  expect(result.products.map((product) => product.name)).toEqual(['Trail Runner']);
+  expect(result.pagination).toMatchObject({ count: 1, total: 1, page: 1, limit: 20, pages: 1 });
+});
+
 test('treats valid empty backend responses as authoritative', async () => {
   productsApi.getAll.mockResolvedValue({
     success: true,

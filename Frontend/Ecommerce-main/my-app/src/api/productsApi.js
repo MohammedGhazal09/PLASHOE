@@ -11,6 +11,11 @@ export const productsApi = {
     return data;
   },
 
+  getRelated: async (id, params = {}) => {
+    const { data } = await api.get(`/products/${id}/related`, { params });
+    return data;
+  },
+
   getMen: async (params = {}) => {
     const { data } = await api.get('/products/men', { params });
     return data;

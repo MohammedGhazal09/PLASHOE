@@ -1,0 +1,13 @@
+{
+  "baseUrl": "http://127.0.0.1:5179",
+  "results": [
+    {
+      "surface": "product-detail",
+      "status": "passed"
+    },
+    {
+      "surface": "ourstory",
+      "status": "passed"
+    }
+  ]
+}

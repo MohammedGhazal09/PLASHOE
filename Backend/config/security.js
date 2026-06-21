@@ -20,6 +20,10 @@ export const RATE_LIMITS = {
     windowMs: 15 * 60 * 1000,
     max: 30,
   },
+  webhook: {
+    windowMs: 15 * 60 * 1000,
+    max: 60,
+  },
 };
 
 export const JWT_SECURITY = {
@@ -27,4 +31,9 @@ export const JWT_SECURITY = {
   algorithms: ['HS256'],
   defaultExpiresIn: '1h',
   minSecretLength: 32,
+};
+
+export const CHECKOUT_HOLDS = {
+  ttlMs: 30 * 60 * 1000,
+  maxActivePerUser: 3,
 };

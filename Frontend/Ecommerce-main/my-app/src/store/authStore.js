@@ -94,6 +94,28 @@ export const useAuthStore = create(
         }
       },
 
+      addAddress: async (address) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.addAddress(address);
+          if (response.success) {
+            set((state) => ({
+              user: state.user ? { ...state.user, addresses: response.data } : state.user,
+              isLoading: false,
+              error: null,
+            }));
+            return { success: true, data: response.data };
+          }
+
+          set({ isLoading: false });
+          return { success: false, message: response.message || 'Address save failed' };
+        } catch (error) {
+          const message = error.response?.data?.message || 'Address save failed';
+          set({ error: message, isLoading: false });
+          return { success: false, message };
+        }
+      },
+
       // Clear error
       clearError: () => set({ error: null }),
     }),
