@@ -86,6 +86,11 @@ test('renders shoppable lookbook entries and adds a tagged product to cart', asy
   const user = userEvent.setup();
   renderWithRouter(<LookBook />);
 
+  expect(await screen.findByRole('heading', { name: /the lookbook/i })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /explore scenes/i })).toHaveAttribute(
+    'href',
+    '#lookbook-scenes'
+  );
   expect(await screen.findByText('City Commute')).toBeInTheDocument();
   expect(screen.getAllByText('City Runner')).toHaveLength(2);
   await user.selectOptions(screen.getAllByLabelText(/size/i)[0], '42');

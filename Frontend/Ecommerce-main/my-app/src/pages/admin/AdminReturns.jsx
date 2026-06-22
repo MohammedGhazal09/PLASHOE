@@ -155,7 +155,7 @@ export default function AdminReturns() {
           </select>
         </label>
         <div className="flex items-end">
-          <button type="submit" className="min-h-11 w-full bg-primary px-4 py-2 text-sm font-semibold text-white">
+          <button type="submit" className="button-control button-control--primary button-control--full button-control--compact">
             Apply filters
           </button>
         </div>
@@ -200,7 +200,7 @@ export default function AdminReturns() {
                     <button
                       type="button"
                       onClick={() => openRequest(request._id)}
-                      className="min-h-11 border border-primary px-3 py-2 text-sm font-semibold text-primary"
+                      className="button-control button-control--secondary button-control--compact"
                     >
                       Inspect
                     </button>
@@ -283,7 +283,7 @@ export default function AdminReturns() {
                   className="mt-1 w-full border border-gray-300 px-3 py-2 text-sm"
                 />
               </label>
-              <button type="submit" disabled={saving} className="min-h-11 w-full bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+              <button type="submit" disabled={saving} className="button-control button-control--primary button-control--full button-control--compact">
                 {saving ? 'Saving...' : 'Update return'}
               </button>
             </form>

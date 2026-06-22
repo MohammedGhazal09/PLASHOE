@@ -7,6 +7,28 @@ const productSorts = {
   newest: { createdAt: -1 },
 };
 
+const searchableProductFields = ['name', 'category', 'description'];
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildSearchQuery = (searchTerm) => {
+  const terms = searchTerm
+    .trim()
+    .split(/\s+/)
+    .map(escapeRegex)
+    .filter(Boolean);
+
+  if (terms.length === 0) return null;
+
+  const termQueries = terms.map((term) => ({
+    $or: searchableProductFields.map((field) => ({
+      [field]: { $regex: term, $options: 'i' },
+    })),
+  }));
+
+  return termQueries.length === 1 ? termQueries[0] : { $and: termQueries };
+};
+
 const buildProductQuery = ({
   q,
   gender,
@@ -19,7 +41,9 @@ const buildProductQuery = ({
 } = {}) => {
   const query = {};
 
-  if (q) query.$text = { $search: q };
+  if (q) {
+    Object.assign(query, buildSearchQuery(q));
+  }
   if (gender) query.gender = gender;
   if (category) query.category = category;
   if (sale === true) query.isOnSale = true;

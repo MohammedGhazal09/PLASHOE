@@ -64,12 +64,12 @@ export default function CheckoutReturn({ variant = 'success' }) {
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <Link to="/account" state={{ tab: 'orders' }}>
-            <button className="bg-[#6e7051] text-white py-3 px-8 font-semibold">
+            <button className="button-control button-control--primary button-control--wide">
               VIEW ORDERS
             </button>
           </Link>
           <Link to="/collection">
-            <button className="border border-[#6e7051] text-[#6e7051] py-3 px-8 font-semibold">
+            <button className="button-control button-control--secondary button-control--wide">
               SHOP COLLECTION
             </button>
           </Link>
@@ -98,12 +98,12 @@ export default function CheckoutReturn({ variant = 'success' }) {
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link to={`/order/${order._id}`}>
-            <button className="bg-[#6e7051] text-white py-3 px-8 font-semibold">
+            <button className="button-control button-control--primary button-control--wide">
               VIEW ORDER
             </button>
           </Link>
           <Link to="/account" state={{ tab: 'orders' }}>
-            <button className="border border-[#6e7051] text-[#6e7051] py-3 px-8 font-semibold">
+            <button className="button-control button-control--secondary button-control--wide">
               ACCOUNT ORDERS
             </button>
           </Link>

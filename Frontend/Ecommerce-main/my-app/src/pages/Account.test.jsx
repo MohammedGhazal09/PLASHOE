@@ -132,7 +132,10 @@ test('renders saved wishlist items in the account wishlist tab', async () => {
   expect(await screen.findByRole('heading', { name: /my wishlist/i })).toBeInTheDocument();
   expect(screen.getByText('Saved Runner')).toBeInTheDocument();
   expect(screen.getByLabelText(/size for saved runner/i)).toHaveValue('41');
-  expect(screen.getByRole('button', { name: /move to cart/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /move to cart/i })).toHaveClass(
+    'button-control--dark',
+    'wishlist-move-button'
+  );
 });
 
 test('shows wishlist load errors without hiding saved items', async () => {

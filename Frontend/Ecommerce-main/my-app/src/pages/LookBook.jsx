@@ -201,20 +201,26 @@ export default function LookBook() {
   return (
     <main className="min-h-screen bg-white text-[#262b2c]">
       <section
-        className="relative min-h-[300px] bg-cover bg-center px-6 py-16 md:min-h-[380px]"
+        className="lookbook-hero"
         style={{ backgroundImage: `url(${lookbookHero})` }}
       >
-        <div className="absolute inset-0 bg-white/25" />
-        <div className="relative mx-auto flex max-w-7xl flex-col justify-end">
-          <h1 className="text-4xl font-semibold leading-tight md:text-6xl">Look Book</h1>
-          <p className="mt-3 max-w-xl text-base text-[#262b2c] md:text-lg">
-            Shop tagged scenes and build full outfits from current PLASHOE styles.
+        <div className="lookbook-hero__content">
+          <p className="lookbook-hero__eyebrow">PLASHOE Editorial</p>
+          <h1 className="lookbook-hero__title" aria-label="The Lookbook">
+            <span>The</span>
+            <span>Lookbook</span>
+          </h1>
+          <p className="lookbook-hero__copy">
+            Curated scenes, tagged pairs, and outfit builds for the latest PLASHOE silhouettes.
           </p>
+          <a className="lookbook-hero__link" href="#lookbook-scenes">
+            Explore scenes
+          </a>
         </div>
       </section>
 
       {activeEntries.length > 0 ? (
-        <section className="mx-auto grid max-w-7xl gap-10 px-4 py-10 md:px-6">
+        <section id="lookbook-scenes" className="mx-auto grid max-w-7xl gap-10 px-4 py-10 md:px-6">
           {activeEntries.map((entry) => {
             const selectedHotspot = entry.selectedHotspot;
             const selectedProduct = selectedHotspot?.product;
@@ -280,7 +286,7 @@ export default function LookBook() {
                           type="button"
                           disabled={selectedProduct.stock <= 0}
                           onClick={() => handleAddProduct(entry, selectedProduct, selectedProductSize)}
-                          className="min-h-11 self-end bg-[#6e7051] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          className="button-control button-control--primary button-control--compact self-end"
                         >
                           Add tagged product
                         </button>
@@ -326,7 +332,7 @@ export default function LookBook() {
                       <button
                         type="button"
                         onClick={() => handleAddBundle(entry)}
-                        className="mt-4 min-h-11 w-full bg-[#262b2c] px-4 py-2 text-sm font-semibold text-white"
+                        className="button-control button-control--dark button-control--full mt-4"
                       >
                         Add available bundle items
                       </button>
@@ -338,7 +344,7 @@ export default function LookBook() {
           })}
         </section>
       ) : (
-        <section className="px-[5%] py-12">
+        <section id="lookbook-scenes" className="px-[5%] py-12">
           {loadError && <p className="mb-6 border border-[#d9d9d2] p-3 text-sm text-[#6b6f68]">{loadError}</p>}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {fallbackLooks.map((look) => (

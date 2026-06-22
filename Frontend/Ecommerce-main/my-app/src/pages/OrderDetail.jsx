@@ -198,7 +198,7 @@ export default function OrderDetail() {
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-semibold mb-4">Order Not Found</h1>
         <Link to="/account" state={{ tab: 'orders' }}>
-          <button className="text-[#6e7051] hover:underline">Back to Orders</button>
+          <button className="button-control button-control--secondary">Back to Orders</button>
         </Link>
       </div>
     );
@@ -210,7 +210,8 @@ export default function OrderDetail() {
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={() => navigate('/account', { state: { tab: 'orders' } })}
-          className="p-2 hover:bg-gray-100 rounded-full"
+          className="button-control button-control--secondary button-control--icon"
+          aria-label="Back to orders"
         >
           <FontAwesomeIcon icon={faArrowLeft} />
         </button>
@@ -394,7 +395,7 @@ export default function OrderDetail() {
                   <button
                     type="submit"
                     disabled={returnSubmitting}
-                    className="min-h-11 bg-[#6e7051] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                    className="button-control button-control--primary button-control--compact"
                   >
                     {returnSubmitting ? 'Submitting...' : 'Submit return request'}
                   </button>
@@ -466,7 +467,7 @@ export default function OrderDetail() {
             type="button"
             onClick={handleReorder}
             disabled={reordering}
-            className="w-full py-3 bg-[#6e7051] text-white font-semibold rounded hover:bg-[#262b2c] transition-colors disabled:opacity-50"
+            className="button-control button-control--primary button-control--full"
           >
             {reordering ? 'ADDING TO CART...' : 'BUY AGAIN'}
           </button>
@@ -475,7 +476,7 @@ export default function OrderDetail() {
             <button
               onClick={handleCancel}
               disabled={cancelling}
-              className="w-full py-3 border-2 border-red-500 text-red-500 font-semibold rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+              className="button-control button-control--danger button-control--full"
             >
               {cancelling ? 'CANCELLING...' : 'CANCEL ORDER'}
             </button>

@@ -392,11 +392,11 @@ export default function AdminProducts() {
         </label>
         <div className="flex gap-2 md:justify-end">
           {editingId && (
-            <button type="button" onClick={resetForm} className="min-h-11 border border-gray-300 px-4 py-2 text-sm font-semibold text-dark">
+            <button type="button" onClick={resetForm} className="button-control button-control--secondary button-control--compact">
               Cancel
             </button>
           )}
-          <button type="submit" disabled={saving} className="min-h-11 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+          <button type="submit" disabled={saving} className="button-control button-control--primary button-control--compact">
             {saving ? 'Saving...' : 'Save product'}
           </button>
         </div>
@@ -430,8 +430,8 @@ export default function AdminProducts() {
                   <td className="px-4 py-3 text-gray-700">{product.stock ?? 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => editProduct(product)} className="min-h-11 border border-primary px-3 py-2 text-sm font-semibold text-primary">Edit</button>
-                      <button type="button" onClick={() => deleteProduct(product)} className="min-h-11 border border-red-300 px-3 py-2 text-sm font-semibold text-red-700">Delete</button>
+                      <button type="button" onClick={() => editProduct(product)} className="button-control button-control--secondary button-control--compact">Edit</button>
+                      <button type="button" onClick={() => deleteProduct(product)} className="button-control button-control--danger button-control--compact">Delete</button>
                     </div>
                   </td>
                 </tr>

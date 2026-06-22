@@ -125,7 +125,7 @@ export default function AdminCoupons() {
           Active
         </label>
         <div className="flex items-end">
-          <button type="submit" className="min-h-11 w-full bg-primary px-4 py-2 text-sm font-semibold text-white">
+          <button type="submit" className="button-control button-control--primary button-control--full button-control--compact">
             Create coupon
           </button>
         </div>
@@ -164,7 +164,7 @@ export default function AdminCoupons() {
                   </td>
                   <td className="px-4 py-3 text-gray-700">{coupon.isActive ? 'active' : 'inactive'}</td>
                   <td className="px-4 py-3">
-                    <button type="button" onClick={() => deleteCoupon(coupon)} className="min-h-11 border border-red-300 px-3 py-2 text-sm font-semibold text-red-700">
+                    <button type="button" onClick={() => deleteCoupon(coupon)} className="button-control button-control--danger button-control--compact">
                       Delete
                     </button>
                   </td>

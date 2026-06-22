@@ -54,7 +54,7 @@ export default function WishlistButton({
       disabled={isBusy}
       aria-label={label}
       aria-pressed={saved}
-      className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[#262b2c] transition-colors hover:border-[#6e7051] hover:text-[#6e7051] focus:outline-none focus:ring-2 focus:ring-[#6e7051] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      className={`button-control button-control--secondary ${showText ? '' : 'button-control--icon'} ${className}`}
     >
       <FontAwesomeIcon
         icon={saved ? faHeartSolid : faHeartRegular}

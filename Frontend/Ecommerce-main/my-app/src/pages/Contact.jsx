@@ -218,7 +218,7 @@ export default function Contact() {
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-[#6e7051] text-white py-3 px-10 font-semibold hover:bg-[#262b2c] transition-colors disabled:opacity-50"
+                className="button-control button-control--primary button-control--wide"
               >
                 {loading ? 'SENDING...' : 'SEND MESSAGE'}
               </button>

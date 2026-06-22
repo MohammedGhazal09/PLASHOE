@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import ProductGrid from './ProductGrid';
 
 vi.mock('./ProductCard', () => ({
@@ -191,6 +192,32 @@ test('emits advanced query changes with page reset', () => {
   expect(handleQueryChange).toHaveBeenCalledWith({ page: 1, limit: 20, maxPrice: '140' });
   expect(handleQueryChange).toHaveBeenCalledWith({ page: 1, limit: 20, minRating: '4' });
   expect(handleQueryChange).toHaveBeenCalledWith({ page: 1, limit: 20, sale: 'true' });
+});
+
+test('clears controlled search text from the explicit clear button', async () => {
+  const user = userEvent.setup();
+  const handleQueryChange = vi.fn();
+
+  render(
+    <ProductGrid
+      products={products}
+      query={{ gender: 'male', q: 'shoe', page: 2, limit: 20 }}
+      pagination={{ page: 2, limit: 20, total: 40, count: 20, pages: 2 }}
+      lockedFilters={{ gender: 'male' }}
+      onQueryChange={handleQueryChange}
+      onPageChange={vi.fn()}
+    />
+  );
+
+  expect(screen.getByLabelText('Search products')).toHaveValue('shoe');
+
+  await user.click(screen.getByRole('button', { name: /clear search/i }));
+
+  expect(handleQueryChange).toHaveBeenCalledWith({
+    gender: 'male',
+    page: 1,
+    limit: 20,
+  });
 });
 
 test('emits previous and next page changes from pagination metadata', () => {

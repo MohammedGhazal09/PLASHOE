@@ -42,16 +42,9 @@ export default function AdminConsole() {
                     key={section.id}
                     type="button"
                     onClick={() => setActiveSection(section.id)}
-                    className={`flex min-h-11 items-center gap-2 border px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                      activeItem
-                        ? 'border-dark text-white'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-primary hover:text-primary'
+                    className={`button-control button-control--full button-control--start button-control--compact ${
+                      activeItem ? 'button-control--dark' : 'button-control--secondary'
                     }`}
-                    style={
-                      activeItem
-                        ? { backgroundColor: '#262b2c', borderColor: '#262b2c', color: '#ffffff' }
-                        : undefined
-                    }
                     aria-current={activeItem ? 'page' : undefined}
                   >
                     <FontAwesomeIcon icon={section.icon} className="h-4 w-4 flex-shrink-0" aria-hidden="true" />

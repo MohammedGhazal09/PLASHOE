@@ -51,6 +51,17 @@ test('renders normalized product image and price fields', () => {
   expect(screen.getByText('$60.00')).toBeInTheDocument();
 });
 
+test('renders product actions as readable buttons without hover-only text', () => {
+  renderWithRouter(<ProductCard product={product} />);
+
+  const addButton = screen.getByRole('button', { name: 'ADD TO CART' });
+  const quickViewButton = screen.getByRole('button', { name: 'Quick view Normalized Runner' });
+
+  expect(addButton).toHaveClass('button-control--primary');
+  expect(quickViewButton).toHaveClass('button-control--secondary');
+  expect(quickViewButton).toHaveTextContent('Quick view');
+});
+
 test('links product image and name to the product detail route', () => {
   renderWithRouter(<ProductCard product={product} />);
 

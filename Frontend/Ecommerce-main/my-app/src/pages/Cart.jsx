@@ -24,7 +24,7 @@ export default function Cart() {
         <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-center">Your Cart is Empty</h1>
         <p className="text-gray-500 mb-8 text-center">Looks like you haven't added any items yet.</p>
         <Link to="/collection">
-          <button className="bg-primary text-white py-3 px-10 font-semibold hover:bg-dark transition-colors">
+          <button className="button-control button-control--primary button-control--wide">
             CONTINUE SHOPPING
           </button>
         </Link>
@@ -75,7 +75,7 @@ export default function Cart() {
                   <p className="text-gray-500 text-sm mb-2">Size: {item.size}</p>
                   <button
                     onClick={() => removeItem(mutationId)}
-                    className="text-red-500 text-sm flex items-center gap-1 hover:text-red-700 transition-colors w-fit"
+                    className="button-control button-control--link-danger"
                   >
                     <FontAwesomeIcon icon={faTrash} className="text-xs" /> Remove
                   </button>
@@ -95,8 +95,9 @@ export default function Cart() {
                   onClick={() =>
                     updateItemQuantity(mutationId, item.quantity - 1)
                   }
-                  className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="button-control button-control--secondary button-control--icon"
                   disabled={item.quantity <= 1}
+                  aria-label={`Decrease ${item.name} quantity`}
                 >
                   <FontAwesomeIcon icon={faMinus} className="text-xs" />
                 </button>
@@ -105,7 +106,8 @@ export default function Cart() {
                   onClick={() =>
                     updateItemQuantity(mutationId, item.quantity + 1)
                   }
-                  className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                  className="button-control button-control--secondary button-control--icon"
+                  aria-label={`Increase ${item.name} quantity`}
                 >
                   <FontAwesomeIcon icon={faPlus} className="text-xs" />
                 </button>
@@ -122,7 +124,7 @@ export default function Cart() {
 
           <button
             onClick={clearCart}
-            className="mt-6 text-gray-500 hover:text-red-500 transition-colors flex items-center gap-2"
+            className="button-control button-control--link-danger mt-6"
           >
             <FontAwesomeIcon icon={faTrash} className="text-sm" />
             Clear Cart
@@ -156,14 +158,14 @@ export default function Cart() {
           </div>
 
           <Link to="/checkout">
-            <button className="w-full bg-primary text-white py-4 font-semibold hover:bg-dark transition-colors mb-3">
+            <button className="button-control button-control--primary button-control--full mb-3">
               PROCEED TO CHECKOUT
             </button>
           </Link>
 
           <Link
             to="/collection"
-            className="block text-center py-3 text-gray-600 hover:text-primary transition-colors"
+            className="button-control button-control--secondary button-control--full"
           >
             Continue Shopping
           </Link>

@@ -75,7 +75,7 @@ export default function QuickViewModal({ product, onClose }) {
       <div className="relative bg-white w-full max-w-4xl mx-4 rounded-lg shadow-xl overflow-hidden">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-800"
+          className="button-control button-control--secondary button-control--icon absolute top-4 right-4 z-10"
           aria-label="Close quick view"
         >
           <FontAwesomeIcon icon={faXmark} className="text-2xl" />
@@ -134,11 +134,7 @@ export default function QuickViewModal({ product, onClose }) {
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`w-10 h-10 border ${
-                      selectedSize === size
-                        ? 'bg-black text-white border-black'
-                        : 'bg-white text-gray-600 border-gray-300 hover:border-black'
-                    }`}
+                    className={`choice-button ${selectedSize === size ? 'choice-button--selected' : ''}`}
                   >
                     {size}
                   </button>
@@ -152,14 +148,16 @@ export default function QuickViewModal({ product, onClose }) {
               <div className="flex items-center border border-gray-300 w-fit">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 hover:bg-gray-100"
+                  className="button-control button-control--secondary button-control--icon"
+                  aria-label="Decrease quantity"
                 >
                   <FontAwesomeIcon icon={faMinus} />
                 </button>
                 <span className="px-6 py-2 border-x border-gray-300">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="px-4 py-2 hover:bg-gray-100"
+                  className="button-control button-control--secondary button-control--icon"
+                  aria-label="Increase quantity"
                 >
                   <FontAwesomeIcon icon={faPlus} />
                 </button>
@@ -169,7 +167,7 @@ export default function QuickViewModal({ product, onClose }) {
             {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
-              className="w-full bg-[#6e7051] text-white py-4 font-semibold text-lg hover:bg-[#262b2c] transition-colors"
+              className="button-control button-control--primary button-control--full"
             >
               ADD TO CART - ${(price * quantity).toFixed(2)}
             </button>

@@ -14,6 +14,9 @@ function CatalogQueryHarness({ forcedParams = {} }) {
       <button type="button" onClick={() => setQuery({ q: 'trail', sort: 'price-asc' })}>
         Search
       </button>
+      <button type="button" onClick={() => setQuery({ page: 1, limit: 20 })}>
+        Clear filters
+      </button>
       <button type="button" onClick={() => setPage(3)}>
         Page 3
       </button>
@@ -52,6 +55,22 @@ test('writes catalog query updates and page changes back to the URL', () => {
 
   fireEvent.click(screen.getByText('Page 3'));
   expect(screen.getByTestId('location')).toHaveTextContent('?q=trail&sort=price-asc&page=3');
+});
+
+test('removes omitted catalog filters when a full cleaned query is written', () => {
+  renderWithRouter(<CatalogQueryHarness />, {
+    initialEntries: ['/collection?q=trail&category=Running&page=2'],
+  });
+
+  fireEvent.click(screen.getByText('Clear filters'));
+
+  expect(screen.getByTestId('location').textContent).toBe('');
+  expect(JSON.parse(screen.getByTestId('query').textContent)).toMatchObject({
+    page: 1,
+    limit: 20,
+  });
+  expect(JSON.parse(screen.getByTestId('query').textContent)).not.toHaveProperty('q');
+  expect(JSON.parse(screen.getByTestId('query').textContent)).not.toHaveProperty('category');
 });
 
 test('keeps route-forced filters out of the shareable URL', () => {

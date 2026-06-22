@@ -17,6 +17,7 @@ const CATALOG_QUERY_KEYS = [
 ];
 
 const normalizeValue = (value) => {
+  if (value === null || value === undefined) return undefined;
   if (typeof value !== 'string') return value;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
@@ -101,13 +102,14 @@ export const useCatalogUrlQuery = ({
 
   const setQuery = useCallback(
     (updates) => {
+      const parsedDefaultQuery = JSON.parse(defaultQueryKey);
       updateUrlQuery({
-        ...query,
+        ...DEFAULT_QUERY,
         ...updates,
-        page: updates.page || DEFAULT_QUERY.page,
+        page: updates.page || parsedDefaultQuery.page || DEFAULT_QUERY.page,
       });
     },
-    [query, updateUrlQuery]
+    [defaultQueryKey, updateUrlQuery]
   );
 
   const setPage = useCallback(
@@ -126,4 +128,3 @@ export const useCatalogUrlQuery = ({
     setPage,
   };
 };
-

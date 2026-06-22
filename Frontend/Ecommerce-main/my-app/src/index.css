@@ -15,6 +15,338 @@ code {
     monospace;
 }
 
+/* Fallbacks for brand utilities that must remain visible in production builds. */
+.bg-primary,
+.bg-\[\#6e7051\] {
+  background-color: #6e7051;
+}
+
+.hover\:bg-primary-hover:hover,
+.hover\:bg-\[\#5a5c42\]:hover {
+  background-color: #5a5c42;
+}
+
+.bg-dark,
+.bg-\[\#262b2c\],
+.hover\:bg-dark:hover,
+.hover\:bg-\[\#262b2c\]:hover {
+  background-color: #262b2c;
+}
+
+.bg-\[\#f1f1ef\] {
+  background-color: #f1f1ef;
+}
+
+.text-dark,
+.text-\[\#262b2c\] {
+  color: #262b2c;
+}
+
+.text-primary,
+.text-\[\#6e7051\] {
+  color: #6e7051;
+}
+
+.text-\[\#6b6f68\] {
+  color: #6b6f68;
+}
+
+.text-\[\#b42318\] {
+  color: #b42318;
+}
+
+.hover\:text-\[\#7a271a\]:hover {
+  color: #7a271a;
+}
+
+.border-primary,
+.border-\[\#6e7051\] {
+  border-color: #6e7051;
+}
+
+.border-\[\#262b2c\] {
+  border-color: #262b2c;
+}
+
+.border-\[\#d9d9d2\] {
+  border-color: #d9d9d2;
+}
+
+.border-\[\#b42318\] {
+  border-color: #b42318;
+}
+
+.disabled\:opacity-50:disabled,
+.disabled\:opacity-60:disabled {
+  opacity: 1;
+}
+
+.button-control {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: #262b2c;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.button-control:hover {
+  text-decoration: none;
+}
+
+.button-control:focus-visible {
+  outline: 3px solid rgba(110, 112, 81, 0.35);
+  outline-offset: 3px;
+}
+
+.button-control:disabled,
+.button-control--disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
+}
+
+.button-control--full {
+  width: 100%;
+}
+
+.button-control--responsive-full {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .button-control--responsive-full {
+    width: auto;
+  }
+}
+
+.button-control--grow {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .button-control--grow {
+    flex: 1 1 0;
+    width: auto;
+  }
+}
+
+.button-control--compact {
+  padding: 0.55rem 0.9rem;
+}
+
+.button-control--wide {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+}
+
+.button-control--start {
+  justify-content: flex-start;
+}
+
+.button-control--icon {
+  min-width: 44px;
+  width: 44px;
+  padding: 0;
+}
+
+.button-control--plain-icon {
+  min-width: 44px;
+  width: 44px;
+  border-color: transparent;
+  background-color: transparent;
+  color: #262b2c;
+  padding: 0;
+}
+
+.button-control--plain-icon:hover:not(:disabled) {
+  color: #6e7051;
+}
+
+.button-control--inverse-icon {
+  min-width: 44px;
+  width: 44px;
+  border-color: transparent;
+  background-color: transparent;
+  color: #ffffff;
+  padding: 0;
+}
+
+.button-control--inverse-icon:hover:not(:disabled) {
+  color: #e6ead8;
+}
+
+@media (min-width: 1024px) {
+  .button-control--mobile-only {
+    display: none;
+  }
+}
+
+.button-control--primary {
+  border-color: #6e7051;
+  background-color: #6e7051;
+  color: #ffffff;
+}
+
+.button-control--primary:hover:not(:disabled) {
+  border-color: #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
+}
+
+.button-control--primary:disabled,
+.button-control--primary.button-control--disabled {
+  border-color: #4b5563;
+  background-color: #4b5563;
+  color: #ffffff;
+}
+
+.button-control--dark {
+  border-color: #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
+}
+
+.button-control--dark:hover:not(:disabled) {
+  border-color: #6e7051;
+  background-color: #6e7051;
+  color: #ffffff;
+}
+
+.button-control--dark:disabled,
+.button-control--dark.button-control--disabled {
+  border-color: #4b5563;
+  background-color: #4b5563;
+  color: #ffffff;
+}
+
+.button-control--secondary {
+  border-color: #262b2c;
+  background-color: #ffffff;
+  color: #262b2c;
+}
+
+.button-control--secondary:hover:not(:disabled) {
+  border-color: #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
+}
+
+.button-control--secondary:disabled,
+.button-control--secondary.button-control--disabled {
+  border-color: #d1d5db;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.button-control--light {
+  border-color: #ffffff;
+  background-color: #ffffff;
+  color: #262b2c;
+}
+
+.button-control--light:hover:not(:disabled) {
+  border-color: #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
+}
+
+.button-control--danger {
+  border-color: #b42318;
+  background-color: #ffffff;
+  color: #b42318;
+}
+
+.button-control--danger:hover:not(:disabled) {
+  border-color: #7a271a;
+  background-color: #fff1f0;
+  color: #7a271a;
+}
+
+.button-control--danger:disabled,
+.button-control--danger.button-control--disabled {
+  border-color: #9ca3af;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.button-control--link-danger {
+  min-height: 44px;
+  border-color: transparent;
+  background-color: transparent;
+  color: #b42318;
+  padding: 0.5rem 0;
+}
+
+.button-control--link-danger:hover:not(:disabled) {
+  color: #7a271a;
+}
+
+.button-control--pagination {
+  border-color: #d1d5db;
+  background-color: #ffffff;
+  color: #262b2c;
+}
+
+.button-control--pagination:hover:not(:disabled) {
+  border-color: #262b2c;
+}
+
+.button-control--pagination:disabled,
+.button-control--pagination.button-control--disabled {
+  border-color: #d1d5db;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.choice-button {
+  display: inline-flex;
+  min-height: 40px;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #4b5563;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.choice-button:hover {
+  border-color: #262b2c;
+}
+
+.choice-button:focus-visible {
+  outline: 3px solid rgba(110, 112, 81, 0.35);
+  outline-offset: 3px;
+}
+
+.choice-button--selected {
+  border-color: #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
+}
+
 .auth-submit-button {
   display: inline-flex;
   width: 100%;
@@ -71,4 +403,184 @@ code {
 .auth-switch-button:hover {
   border-color: #262b2c;
   color: #262b2c;
+}
+
+.wishlist-move-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.wishlist-move-button:hover:not(:disabled) {
+  border-color: #6e7051;
+  background-color: #6e7051;
+  color: #ffffff;
+}
+
+.wishlist-move-button:focus-visible {
+  outline: 3px solid rgba(110, 112, 81, 0.35);
+  outline-offset: 3px;
+}
+
+.wishlist-move-button:disabled {
+  cursor: not-allowed;
+  border-color: #8a8d79;
+  background-color: #8a8d79;
+  color: #ffffff;
+  opacity: 1;
+}
+
+.checkout-payment-button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
+  padding: 0.875rem 1rem;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-align: center;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.checkout-payment-button:hover:not(:disabled) {
+  border-color: #6e7051;
+  background-color: #6e7051;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(38, 43, 44, 0.16);
+}
+
+.checkout-payment-button:focus-visible {
+  outline: 3px solid rgba(110, 112, 81, 0.35);
+  outline-offset: 3px;
+}
+
+.checkout-payment-button:disabled,
+.checkout-payment-button--disabled {
+  cursor: not-allowed;
+  border-color: #4b5563;
+  background-color: #4b5563;
+  color: #ffffff;
+  opacity: 1;
+  box-shadow: none;
+}
+
+.lookbook-hero {
+  position: relative;
+  isolate: isolate;
+  display: flex;
+  min-height: clamp(360px, 44vw, 560px);
+  align-items: center;
+  overflow: hidden;
+  background-position: center;
+  background-size: cover;
+  padding: clamp(3.5rem, 7vw, 6rem) clamp(1.5rem, 6vw, 5.5rem);
+}
+
+.lookbook-hero::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: '';
+  background:
+    linear-gradient(90deg, rgba(16, 18, 17, 0.82) 0%, rgba(16, 18, 17, 0.56) 38%, rgba(16, 18, 17, 0.14) 72%),
+    linear-gradient(0deg, rgba(16, 18, 17, 0.36) 0%, rgba(16, 18, 17, 0.02) 58%);
+}
+
+.lookbook-hero__content {
+  width: min(100%, 720px);
+  color: #ffffff;
+  text-align: left;
+}
+
+.lookbook-hero__eyebrow {
+  margin: 0 0 1rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.lookbook-hero__title {
+  display: grid;
+  gap: 0.15em;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(3.75rem, 9vw, 8rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 0.88;
+  text-wrap: balance;
+  text-shadow: 0 14px 40px rgba(0, 0, 0, 0.32);
+}
+
+.lookbook-hero__copy {
+  max-width: 42rem;
+  margin: 1.35rem 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  line-height: 1.6;
+}
+
+.lookbook-hero__link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  color: #ffffff;
+  padding: 0.75rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.lookbook-hero__link:hover {
+  border-color: #ffffff;
+  background-color: #ffffff;
+  color: #262b2c;
+}
+
+.lookbook-hero__link:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.48);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .lookbook-hero {
+    min-height: 420px;
+    background-position: 58% center;
+  }
+
+  .lookbook-hero__title {
+    font-size: clamp(3.25rem, 18vw, 4.75rem);
+  }
 }

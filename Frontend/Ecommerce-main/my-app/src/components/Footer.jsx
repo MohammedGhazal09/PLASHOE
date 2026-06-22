@@ -47,12 +47,12 @@ export default function Footer() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link to="/men">
-              <button className="w-full sm:w-auto bg-white text-dark px-10 py-3 font-semibold hover:bg-dark hover:text-white transition-colors">
+              <button className="button-control button-control--light button-control--wide button-control--responsive-full">
                 SHOP MEN
               </button>
             </Link>
             <Link to="/women">
-              <button className="w-full sm:w-auto bg-white text-dark px-10 py-3 font-semibold hover:bg-dark hover:text-white transition-colors">
+              <button className="button-control button-control--light button-control--wide button-control--responsive-full">
                 SHOP WOMEN
               </button>
             </Link>

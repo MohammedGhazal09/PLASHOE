@@ -176,7 +176,7 @@ export default function AdminOrders() {
           </select>
         </label>
         <div className="flex items-end">
-          <button type="submit" className="min-h-11 w-full bg-primary px-4 py-2 text-sm font-semibold text-white">
+          <button type="submit" className="button-control button-control--primary button-control--full button-control--compact">
             Apply filters
           </button>
         </div>
@@ -219,7 +219,7 @@ export default function AdminOrders() {
                     <button
                       type="button"
                       onClick={() => openOrder(order._id)}
-                      className="min-h-11 border border-primary px-3 py-2 text-sm font-semibold text-primary"
+                      className="button-control button-control--secondary button-control--compact"
                     >
                       Inspect
                     </button>
@@ -236,7 +236,7 @@ export default function AdminOrders() {
           type="button"
           disabled={meta.page <= 1 || loading}
           onClick={() => loadOrders(meta.page - 1)}
-          className="min-h-11 border border-gray-300 px-3 py-2 disabled:opacity-50"
+          className="button-control button-control--pagination button-control--compact"
         >
           Previous
         </button>
@@ -247,7 +247,7 @@ export default function AdminOrders() {
           type="button"
           disabled={meta.page >= meta.pages || loading}
           onClick={() => loadOrders(meta.page + 1)}
-          className="min-h-11 border border-gray-300 px-3 py-2 disabled:opacity-50"
+          className="button-control button-control--pagination button-control--compact"
         >
           Next
         </button>
@@ -317,7 +317,7 @@ export default function AdminOrders() {
                   className="mt-1 w-full border border-gray-300 px-3 py-2 text-sm"
                 />
               </label>
-              <button type="submit" disabled={saving} className="min-h-11 w-full bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+              <button type="submit" disabled={saving} className="button-control button-control--primary button-control--full button-control--compact">
                 {saving ? 'Saving...' : 'Update fulfillment'}
               </button>
             </form>

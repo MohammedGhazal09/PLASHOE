@@ -68,6 +68,7 @@ test('renders an accessible unsaved wishlist button', () => {
 
   const button = screen.getByRole('button', { name: /save local runner to wishlist/i });
   expect(button).toHaveAttribute('aria-pressed', 'false');
+  expect(button).toHaveClass('button-control--secondary', 'button-control--icon');
 });
 
 test('toggles local wishlist state and updates the accessible label', async () => {

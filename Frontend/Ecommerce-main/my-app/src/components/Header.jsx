@@ -54,7 +54,7 @@ export default function Header() {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="lg:hidden p-2 text-gray-600 hover:text-dark transition-colors"
+          className="button-control button-control--plain-icon button-control--mobile-only"
           aria-label="Open menu"
         >
           <FontAwesomeIcon icon={faBars} className="text-xl" />
@@ -125,7 +125,7 @@ export default function Header() {
           )}
           <button
             onClick={openCart}
-            className="p-2 text-dark hover:text-primary transition-colors"
+            className="button-control button-control--plain-icon"
             aria-label="Open cart"
           >
             <Badge
@@ -168,7 +168,7 @@ export default function Header() {
             <img src={siteLogo} alt="PLASHOE" className="w-40 h-auto" />
             <button
               onClick={() => setDrawerOpen(false)}
-              className="p-2 text-gray-600 hover:text-dark transition-colors"
+              className="button-control button-control--plain-icon"
               aria-label="Close menu"
             >
               <FontAwesomeIcon icon={faXmark} className="text-xl" />

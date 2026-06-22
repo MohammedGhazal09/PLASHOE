@@ -215,7 +215,7 @@ export default function Checkout() {
         <h1 className="text-3xl font-semibold mb-4">Your Cart is Empty</h1>
         <p className="text-gray-500 mb-8">Add some items to checkout.</p>
         <Link to="/collection">
-          <button className="bg-[#6e7051] text-white py-3 px-10 font-semibold">
+          <button className="button-control button-control--primary button-control--wide">
             SHOP NOW
           </button>
         </Link>
@@ -406,7 +406,7 @@ export default function Checkout() {
                 <button
                   type="button"
                   onClick={handleApplyCoupon}
-                  className="bg-gray-800 text-white px-4 py-2 text-sm hover:bg-black"
+                  className="button-control button-control--dark button-control--compact"
                 >
                   Apply
                 </button>
@@ -441,10 +441,8 @@ export default function Checkout() {
             <button
               type="submit"
               disabled={loading || hasUnresolvedLocalItems}
-              className={`w-full py-4 font-semibold mt-6 transition-colors ${
-                loading || hasUnresolvedLocalItems
-                  ? 'bg-gray-800 text-white cursor-not-allowed'
-                  : 'bg-[#6e7051] text-white hover:bg-[#262b2c]'
+              className={`button-control button-control--dark button-control--full checkout-payment-button ${
+                loading || hasUnresolvedLocalItems ? 'button-control--disabled checkout-payment-button--disabled' : ''
               }`}
             >
               {hasUnresolvedLocalItems ? 'REVIEW CART BEFORE PAYMENT' : loading ? 'PROCESSING...' : 'CONTINUE TO PAYMENT'}

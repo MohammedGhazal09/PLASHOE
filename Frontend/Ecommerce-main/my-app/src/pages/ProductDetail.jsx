@@ -439,7 +439,7 @@ export default function ProductDetail() {
         </p>
         <Link
           to="/collection"
-          className="inline-flex min-h-[44px] items-center bg-[#6e7051] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#262b2c]"
+          className="button-control button-control--primary"
         >
           Shop collection
         </Link>
@@ -518,11 +518,7 @@ export default function ProductDetail() {
                     type="button"
                     onClick={() => setSelectedSize(size)}
                     aria-pressed={selectedSize === size}
-                    className={`min-h-[44px] min-w-[44px] border px-3 text-sm font-semibold ${
-                      selectedSize === size
-                        ? 'border-[#262b2c] bg-[#262b2c] text-white'
-                        : 'border-[#d9d9d2] bg-white text-[#262b2c] hover:border-[#262b2c]'
-                    }`}
+                    className={`choice-button ${selectedSize === size ? 'choice-button--selected' : ''}`}
                   >
                     {size}
                   </button>
@@ -549,7 +545,7 @@ export default function ProductDetail() {
               type="button"
               onClick={handleAddToCart}
               disabled={!selectedSize || isOutOfStock}
-              className="min-h-[48px] flex-1 bg-[#6e7051] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#262b2c] disabled:cursor-not-allowed disabled:opacity-60"
+              className="button-control button-control--primary button-control--grow"
             >
               Add to Cart
             </button>
@@ -594,7 +590,7 @@ export default function ProductDetail() {
               <button
                 type="submit"
                 disabled={isSubmittingBackInStock}
-                className="mt-4 min-h-[44px] w-full bg-[#262b2c] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="button-control button-control--dark button-control--full mt-4"
               >
                 {isSubmittingBackInStock ? 'Saving...' : 'Notify me'}
               </button>
@@ -856,7 +852,7 @@ export default function ProductDetail() {
               <button
                 type="submit"
                 disabled={isSubmittingReview}
-                className="mt-5 min-h-[44px] w-full bg-[#6e7051] px-4 py-3 font-semibold text-white transition-colors hover:bg-[#262b2c] disabled:cursor-not-allowed disabled:opacity-60"
+                className="button-control button-control--primary button-control--full mt-5"
               >
                 {isSubmittingReview ? 'Submitting...' : 'Submit review'}
               </button>

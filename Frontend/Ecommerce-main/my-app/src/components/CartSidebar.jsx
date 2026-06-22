@@ -24,7 +24,7 @@ export default function CartSidebar() {
           <h2 className="text-lg font-semibold">Shopping Cart ({items.length})</h2>
           <button
             onClick={closeCart}
-            className="p-2 text-gray-500 hover:text-dark transition-colors"
+            className="button-control button-control--secondary button-control--icon"
             aria-label="Close cart"
           >
             <FontAwesomeIcon icon={faXmark} className="text-xl" />
@@ -58,16 +58,16 @@ export default function CartSidebar() {
                         <div className="flex items-center gap-2 mb-2">
                           <button
                             onClick={() => updateQuantity && updateQuantity(mutationId, Math.max(1, item.quantity - 1))}
-                            className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors"
-                            aria-label="Decrease quantity"
+                            className="button-control button-control--secondary button-control--icon"
+                            aria-label={`Decrease ${item.name} quantity`}
                           >
                             <FontAwesomeIcon icon={faMinus} className="text-xs" />
                           </button>
                           <span className="w-8 text-center font-medium">{item.quantity}</span>
                           <button
                             onClick={() => updateQuantity && updateQuantity(mutationId, item.quantity + 1)}
-                            className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors"
-                            aria-label="Increase quantity"
+                            className="button-control button-control--secondary button-control--icon"
+                            aria-label={`Increase ${item.name} quantity`}
                           >
                             <FontAwesomeIcon icon={faPlus} className="text-xs" />
                           </button>
@@ -87,8 +87,8 @@ export default function CartSidebar() {
                       </div>
                       <button
                         onClick={() => removeItem(mutationId)}
-                        className="p-2 text-gray-400 hover:text-red-500 transition-colors self-start"
-                        aria-label="Remove item"
+                        className="button-control button-control--danger button-control--icon self-start"
+                        aria-label={`Remove ${item.name}`}
                       >
                         <FontAwesomeIcon icon={faTrash} />
                       </button>
@@ -106,12 +106,12 @@ export default function CartSidebar() {
               </div>
               <div className="flex flex-col gap-3">
                 <Link to="/cart" onClick={closeCart}>
-                  <button className="w-full py-3 bg-primary text-white font-semibold tracking-wide hover:bg-primary-hover transition-colors">
+                  <button className="button-control button-control--primary button-control--full">
                     VIEW CART
                   </button>
                 </Link>
                 <Link to="/checkout" onClick={closeCart}>
-                  <button className="w-full py-3 bg-dark text-white font-semibold tracking-wide hover:bg-dark-light transition-colors">
+                  <button className="button-control button-control--dark button-control--full">
                     CHECKOUT
                   </button>
                 </Link>
@@ -127,7 +127,7 @@ export default function CartSidebar() {
               Your cart is empty
             </h5>
             <Link to="/" onClick={closeCart}>
-              <button className="px-8 py-3 bg-primary text-white font-semibold tracking-wide hover:bg-primary-hover transition-colors">
+              <button className="button-control button-control--primary button-control--wide">
                 CONTINUE SHOPPING
               </button>
             </Link>

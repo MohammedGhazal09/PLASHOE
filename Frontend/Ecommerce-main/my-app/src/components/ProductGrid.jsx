@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import ProductCard from './ProductCard';
 import QuickViewModal from './QuickViewModal';
 
@@ -83,6 +85,7 @@ export default function ProductGrid({
   const sortBy = activeQuery.sort || 'default';
   const saleLocked = isSaleQuery(lockedFilters.sale);
   const saleOnly = isSaleQuery(activeQuery.sale);
+  const hasSearchQuery = Boolean(activeQuery.q);
 
   const displayedProducts = useMemo(() => {
     const result = products.filter((product) => matchesQuery(product, activeQuery));
@@ -143,14 +146,26 @@ export default function ProductGrid({
 
       {showFilters && (
         <div className="mb-8 grid gap-3 rounded border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-2 lg:grid-cols-4">
-          <input
-            type="search"
-            value={activeQuery.q || ''}
-            onChange={(e) => updateQuery({ q: e.target.value })}
-            aria-label="Search products"
-            placeholder="Search products"
-            className="border border-gray-300 px-4 py-2"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={activeQuery.q || ''}
+              onChange={(e) => updateQuery({ q: e.target.value })}
+              aria-label="Search products"
+              placeholder="Search products"
+              className="w-full border border-gray-300 px-4 py-2 pr-10"
+            />
+            {hasSearchQuery && (
+              <button
+                type="button"
+                onClick={() => updateQuery({ q: undefined })}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center text-gray-500 hover:text-dark focus:outline-none focus:ring-2 focus:ring-dark"
+              >
+                <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+              </button>
+            )}
+          </div>
 
           <select
             value={sortBy}
@@ -280,7 +295,7 @@ export default function ProductGrid({
             type="button"
             onClick={() => changePage(currentPage - 1)}
             disabled={!canGoPrevious}
-            className="border border-gray-300 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed hover:border-black"
+            className="button-control button-control--pagination"
           >
             Previous
           </button>
@@ -291,7 +306,7 @@ export default function ProductGrid({
             type="button"
             onClick={() => changePage(currentPage + 1)}
             disabled={!canGoNext}
-            className="border border-gray-300 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed hover:border-black"
+            className="button-control button-control--pagination"
           >
             Next
           </button>

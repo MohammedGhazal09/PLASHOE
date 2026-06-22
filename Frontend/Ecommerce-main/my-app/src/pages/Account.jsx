@@ -346,7 +346,7 @@ export default function Account() {
               ))}
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-3 flex items-center gap-3 text-red-500 hover:bg-red-50"
+                className="button-control button-control--danger button-control--full button-control--start"
               >
                 <FontAwesomeIcon icon={faSignOutAlt} />
                 Logout
@@ -411,7 +411,7 @@ export default function Account() {
                 <div className="text-center py-10 text-gray-500">
                   <p>No orders yet</p>
                   <Link to="/collection">
-                    <button className="mt-4 bg-[#6e7051] text-white px-6 py-2 hover:bg-[#262b2c]">
+                    <button className="button-control button-control--primary mt-4">
                       Start Shopping
                     </button>
                   </Link>
@@ -511,7 +511,7 @@ export default function Account() {
                   <p className="mt-2">Save products while browsing and they will appear here.</p>
                   <Link
                     to="/collection"
-                    className="mt-4 inline-flex min-h-[44px] items-center bg-[#6e7051] px-5 py-2 text-sm font-semibold text-white hover:bg-[#262b2c]"
+                    className="button-control button-control--primary mt-4"
                   >
                     Browse products
                   </Link>
@@ -568,14 +568,14 @@ export default function Account() {
                             type="button"
                             onClick={() => handleMoveToCart(item)}
                             disabled={!selectedSize || item.stock === 0}
-                            className="min-h-[44px] bg-[#6e7051] px-4 py-2 text-sm font-semibold text-white hover:bg-[#262b2c] disabled:cursor-not-allowed disabled:opacity-60"
+                            className="button-control button-control--dark button-control--full wishlist-move-button"
                           >
                             Move to cart
                           </button>
                           <button
                             type="button"
                             onClick={() => handleRemoveWishlistItem(item.productId)}
-                            className="min-h-[44px] border border-[#b42318] px-4 py-2 text-sm font-semibold text-[#b42318] hover:bg-red-50"
+                            className="button-control button-control--danger button-control--full"
                           >
                             Remove
                           </button>

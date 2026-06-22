@@ -206,7 +206,10 @@ test('submits authenticated checkout-start and redirects to hosted payment', asy
   await fillShippingForm(container, user);
   expect(screen.queryByText(new RegExp('no real payment will be ' + 'processed', 'i'))).not.toBeInTheDocument();
   expect(screen.queryByText(new RegExp('automatically ' + 'confirmed', 'i'))).not.toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: /continue to payment/i }));
+  const paymentButton = screen.getByRole('button', { name: /continue to payment/i });
+  expect(paymentButton).toHaveClass('button-control--dark', 'checkout-payment-button');
+  expect(paymentButton).not.toHaveClass('checkout-payment-button--disabled');
+  await user.click(paymentButton);
 
   await waitFor(() => {
     expect(ordersApi.create).toHaveBeenCalledWith(
@@ -371,7 +374,9 @@ test('blocks payment start while authenticated cart still has local-only items',
   await renderCheckout();
 
   expect(await screen.findByRole('alert')).toHaveTextContent(/review your cart before checkout/i);
-  expect(screen.getByRole('button', { name: /review cart before payment/i })).toBeDisabled();
+  const paymentButton = screen.getByRole('button', { name: /review cart before payment/i });
+  expect(paymentButton).toBeDisabled();
+  expect(paymentButton).toHaveClass('button-control--disabled', 'checkout-payment-button--disabled');
   expect(ordersApi.create).not.toHaveBeenCalled();
 });
 

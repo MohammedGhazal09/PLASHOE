@@ -81,11 +81,11 @@ export default function AdminMessages() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {!message.isRead && (
-                    <button type="button" onClick={() => markRead(message)} className="min-h-11 border border-primary px-3 py-2 text-sm font-semibold text-primary">
+                    <button type="button" onClick={() => markRead(message)} className="button-control button-control--secondary button-control--compact">
                       Mark as read
                     </button>
                   )}
-                  <button type="button" onClick={() => deleteMessage(message)} className="min-h-11 border border-red-300 px-3 py-2 text-sm font-semibold text-red-700">
+                  <button type="button" onClick={() => deleteMessage(message)} className="button-control button-control--danger button-control--compact">
                     Delete
                   </button>
                 </div>

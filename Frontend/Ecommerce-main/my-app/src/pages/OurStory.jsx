@@ -142,7 +142,7 @@ export default function OurStory() {
           where those records are available.
         </p>
         <Link to="/collection">
-          <button className="bg-[#6e7051] text-white py-4 px-12 font-semibold hover:bg-[#262b2c] transition-colors">
+          <button className="button-control button-control--primary button-control--wide">
             SHOP COLLECTION
           </button>
         </Link>

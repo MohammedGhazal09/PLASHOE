@@ -62,12 +62,12 @@ export default function Home() {
         </p>
         <div className="relative z-10 flex flex-col sm:flex-row gap-4">
           <Link to="/men">
-            <button className="w-full sm:w-auto bg-white text-dark py-3 px-8 font-semibold hover:bg-primary hover:text-white transition-colors">
+            <button className="button-control button-control--light button-control--wide button-control--responsive-full">
               SHOP MEN
             </button>
           </Link>
           <Link to="/women">
-            <button className="w-full sm:w-auto bg-white text-dark py-3 px-8 font-semibold hover:bg-primary hover:text-white transition-colors">
+            <button className="button-control button-control--light button-control--wide button-control--responsive-full">
               SHOP WOMEN
             </button>
           </Link>
@@ -100,7 +100,7 @@ export default function Home() {
             adipiscing at ut magna.
           </p>
           <Link to="/ourstory">
-            <button className="font-semibold border-b-2 border-orange-400 mt-8 md:mt-10 hover:border-dark transition-colors">
+            <button className="button-control button-control--secondary mt-8 md:mt-10">
               READ MORE
             </button>
           </Link>
@@ -116,7 +116,7 @@ export default function Home() {
             nullam nunc nulla adipiscing morbi.
           </p>
           <Link to="/ourstory">
-            <button className="bg-primary text-white py-3 px-10 font-semibold hover:bg-dark transition-colors">
+            <button className="button-control button-control--primary button-control--wide">
               DISCOVER
             </button>
           </Link>
@@ -163,7 +163,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-black/10 hover:from-black/65 hover:via-black/35 hover:to-black/20 transition-colors" />
           <h2 className="relative z-10 text-3xl md:text-4xl font-bold text-white mb-4">Men Collection</h2>
           <Link to="/men" className="relative z-10">
-            <button className="border-2 border-white text-white py-3 px-10 font-semibold hover:bg-white hover:text-dark transition-colors">
+            <button className="button-control button-control--light button-control--wide">
               SHOP MEN
             </button>
           </Link>
@@ -179,7 +179,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-l from-black/55 via-black/25 to-black/10 hover:from-black/65 hover:via-black/35 hover:to-black/20 transition-colors" />
           <h2 className="relative z-10 text-3xl md:text-4xl font-bold text-white mb-4">Women Collection</h2>
           <Link to="/women" className="relative z-10">
-            <button className="border-2 border-white text-white py-3 px-10 font-semibold hover:bg-white hover:text-dark transition-colors">
+            <button className="button-control button-control--light button-control--wide">
               SHOP WOMEN
             </button>
           </Link>
@@ -266,21 +266,21 @@ export default function Home() {
             placeholder="Enter your email"
             className="flex-1 px-4 py-3 rounded-none border-0 focus:ring-2 focus:ring-primary"
           />
-          <button className="bg-primary text-white px-8 py-3 font-semibold hover:bg-primary-hover transition-colors">
+          <button className="button-control button-control--primary button-control--wide">
             SUBSCRIBE
           </button>
         </div>
         <div className="flex justify-center gap-6 mt-8 text-white text-xl">
-          <button className="hover:text-primary transition-colors" aria-label="Instagram">
+          <button className="button-control button-control--inverse-icon" aria-label="Instagram">
             <FontAwesomeIcon icon={faInstagram} />
           </button>
-          <button className="hover:text-primary transition-colors" aria-label="Pinterest">
+          <button className="button-control button-control--inverse-icon" aria-label="Pinterest">
             <FontAwesomeIcon icon={faPinterestP} />
           </button>
-          <button className="hover:text-primary transition-colors" aria-label="Facebook">
+          <button className="button-control button-control--inverse-icon" aria-label="Facebook">
             <FontAwesomeIcon icon={faFacebook} />
           </button>
-          <button className="hover:text-primary transition-colors" aria-label="Twitter">
+          <button className="button-control button-control--inverse-icon" aria-label="Twitter">
             <FontAwesomeIcon icon={faXTwitter} />
           </button>
         </div>

@@ -11,7 +11,6 @@ const DEFAULT_SIZES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 export default function ProductCard({ product, onQuickView }) {
   const { addItem, openCart } = useCartStore();
-  const [isHovered, setIsHovered] = useState(false);
 
   const price = product.price?.current || 0;
   const originalPrice = product.price?.original || price;
@@ -69,11 +68,7 @@ export default function ProductCard({ product, onQuickView }) {
   };
 
   return (
-    <div
-      className="relative group bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="relative group bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="relative overflow-hidden">
         {productLink ? (
           <Link to={productLink} aria-label={`View ${product.name}`}>
@@ -102,13 +97,8 @@ export default function ProductCard({ product, onQuickView }) {
           className="absolute right-2 top-2 z-10 rounded-full bg-white/95 p-0 shadow-sm"
         />
 
-        {/* Quick actions on hover */}
-        <div
-          className={`absolute bottom-0 left-0 right-0 bg-white bg-opacity-95 p-4 transition-all duration-300 ${
-            isHovered ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-          }`}
-        >
-          <div className="flex gap-2 mb-3">
+        <div className="border-x border-b border-gray-100 bg-white p-4">
+          <div className="mb-3 flex flex-wrap gap-2">
             {sizes.map((size) => (
               <button
                 key={size}
@@ -116,20 +106,16 @@ export default function ProductCard({ product, onQuickView }) {
                   e.preventDefault();
                   setSelectedSize(size);
                 }}
-                className={`w-8 h-8 text-xs border ${
-                  selectedSize === size
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-gray-600 border-gray-300 hover:border-black'
-                }`}
+                className={`choice-button ${selectedSize === size ? 'choice-button--selected' : ''}`}
               >
                 {size}
               </button>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleAddToCart}
-              className="flex-1 bg-[#6e7051] text-white py-2 text-sm font-semibold hover:bg-[#262b2c] transition-colors"
+              className="button-control button-control--primary button-control--compact"
             >
               ADD TO CART
             </button>
@@ -138,10 +124,10 @@ export default function ProductCard({ product, onQuickView }) {
                 e.preventDefault();
                 onQuickView?.(product);
               }}
-              className="px-4 border border-gray-300 text-gray-600 hover:border-black transition-colors"
+              className="button-control button-control--secondary button-control--compact"
               aria-label={`Quick view ${product.name}`}
             >
-              👁
+              Quick view
             </button>
           </div>
         </div>

@@ -126,6 +126,54 @@ describe("product catalog routes", () => {
     expect(response.body.data[0].name).toBe("Trail Runner");
   });
 
+  it("matches partial search terms across collection and gender catalog routes", async () => {
+    await createProduct({
+      name: "Men Chelsea Boot",
+      gender: "male",
+      category: "Classic",
+      description: "Polished ankle boot",
+      image: "/images/men-chelsea-boot.jpg",
+    });
+    await createProduct({
+      name: "Women Ankle Boot",
+      gender: "female",
+      category: "Classic",
+      description: "Soft leather boot",
+      image: "/images/women-ankle-boot.jpg",
+    });
+    await createProduct({
+      name: "Road Sneaker",
+      gender: "male",
+      category: "Sneaker",
+      description: "Daily walking shoe",
+      image: "/images/road-sneaker.jpg",
+    });
+    await Product.init();
+
+    const collectionResponse = await request(app)
+      .get("/api/products")
+      .query({ q: "boo" })
+      .expect(200);
+    expect(collectionResponse.body).toMatchObject({ count: 2, total: 2 });
+    expect(collectionResponse.body.data.map((product) => product.name)).toEqual(
+      expect.arrayContaining(["Men Chelsea Boot", "Women Ankle Boot"])
+    );
+
+    const menResponse = await request(app)
+      .get("/api/products/men")
+      .query({ q: "chel" })
+      .expect(200);
+    expect(menResponse.body).toMatchObject({ count: 1, total: 1 });
+    expect(menResponse.body.data[0].name).toBe("Men Chelsea Boot");
+
+    const womenResponse = await request(app)
+      .get("/api/products/women")
+      .query({ q: "ANK" })
+      .expect(200);
+    expect(womenResponse.body).toMatchObject({ count: 1, total: 1 });
+    expect(womenResponse.body.data[0].name).toBe("Women Ankle Boot");
+  });
+
   it("returns paginated envelopes from legacy gender and sale routes", async () => {
     await Promise.all(
       Array.from({ length: 22 }, (_, index) =>
