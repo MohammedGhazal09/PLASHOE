@@ -64,13 +64,8 @@ const shouldUseMockPaymentProvider = (env = process.env) =>
     env.PAYMENTS_ENABLED.trim().toLowerCase() === 'false') ||
   !hasCompleteStripeConfig(env);
 
-const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
-
-const getFrontendUrl = () =>
-  trimTrailingSlash(process.env.FRONTEND_URL || 'http://localhost:3000');
-
 const buildMockCheckoutUrl = (orderId) =>
-  `${getFrontendUrl()}/checkout/mock?orderId=${encodeURIComponent(orderId.toString())}`;
+  `/checkout/mock?orderId=${encodeURIComponent(orderId.toString())}`;
 
 const createMockSession = (order) => ({
   id: `mock-session-${order._id}`,

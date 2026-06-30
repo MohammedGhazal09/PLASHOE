@@ -413,7 +413,7 @@ describe("order routes", () => {
       });
       expect(responsePayment(response)).toMatchObject({
         provider: "mock",
-        checkoutUrl: `http://localhost:3000/checkout/mock?orderId=${responseOrder(response)._id}`,
+        checkoutUrl: `/checkout/mock?orderId=${responseOrder(response)._id}`,
         sessionId: `mock-session-${responseOrder(response)._id}`,
         demoMode: true,
       });

@@ -828,7 +828,7 @@ When Stripe config is incomplete or `PAYMENTS_ENABLED=false`, checkout returns a
 ```json
 {
   "provider": "mock",
-  "checkoutUrl": "https://frontend.example.test/checkout/mock?orderId=665000000000000000000010",
+  "checkoutUrl": "/checkout/mock?orderId=665000000000000000000010",
   "sessionId": "mock-session-665000000000000000000010",
   "paymentIntentId": null,
   "demoMode": true
