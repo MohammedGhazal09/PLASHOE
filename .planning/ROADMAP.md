@@ -917,9 +917,37 @@ Plan candidates:
 - D-75: Do not store card numbers, fake PANs, or payment secrets; the mock gateway only emits controlled demo outcomes.
 - D-76: Keep real Stripe production setup blocked behind Phase 9/12 provider evidence and explicit release approval.
 
+### Phase 31: Implement PayPal sandbox checkout provider support
+
+**Goal:** Checkout can use PayPal sandbox hosted checkout as the visible payment-provider path when PayPal sandbox config is present, while retaining Stripe support and mock fallback.
+**Requirements**: V3-PAYPAL-01, V3-PAYPAL-02, V3-PAYPAL-03, V3-PAYPAL-04, V3-PAYPAL-05
+**Depends on:** Phase 30
+**Canonical refs**: `Backend/services/paymentService.js`, `Backend/services/paymentProvider.js`, `Backend/controllers/webhookController.js`, `Backend/config/env.js`, `Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/CheckoutReturn.jsx`, `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Runtime config selects PayPal only when `PAYMENT_PROVIDER=paypal`, payments are enabled, and required PayPal sandbox vars are present.
+  2. Checkout creates a PayPal Orders v2 hosted approval URL and persists PayPal provider ids on the existing order payment fields.
+  3. PayPal success return captures the order through a protected backend endpoint and transitions the local order to paid.
+  4. `/api/webhooks/paypal` verifies PayPal webhook deliveries and reconciles completed, failed/reversed, and refunded events idempotently.
+  5. Checkout and return UI clearly show PayPal sandbox hosted-payment behavior without collecting card data in PLASHOE.
+
+**Plans:** 3 plans
+
+Plans:
+
+- [x] 31-01: Add PayPal provider config and hosted checkout creation.
+- [x] 31-02: Add PayPal capture and webhook reconciliation.
+- [x] 31-03: Add frontend return handling, docs, tests, visual QA, and reviews.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-77: Keep PayPal credentials backend-only and out of source, frontend bundles, logs, and planning artifacts.
+- D-78: Keep mock fallback available whenever selected provider config is incomplete or payments are disabled.
+
 ## Progress
 
-**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24 -> Phase 25 -> Phase 26 -> Phase 27 -> Phase 28 -> Phase 29 -> Phase 30
+**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24 -> Phase 25 -> Phase 26 -> Phase 27 -> Phase 28 -> Phase 29 -> Phase 30 -> Phase 31
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -953,13 +981,15 @@ Plan candidates:
 | 28. Shipping Rates and International Checkout Rules | 3/3 | Complete | 2026-06-30 |
 | 29. Demo Admin Portfolio Access and Safe Preview Mode | 3/3 | Complete | 2026-06-30 |
 | 30. Hybrid Sandbox Payment Demo Mode | 3/3 | Complete | 2026-06-30 |
+| 31. Implement PayPal sandbox checkout provider support | 3/3 | Complete | 2026-06-30 |
 
 ## Recommendations
 
 - Resume Phase 9 evidence capture when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler inputs are available.
 - Keep Phase 11 focused on live monitoring, alerting, backup/restore, and incident-readiness evidence once the provider setup exists.
 - Treat Phase 12 as the only production cutover phase; local completion of phases 13-21 does not imply hosted release approval.
-- Product-growth and portfolio-demo phases 22-30 are complete; resume external production-readiness phases when provider inputs are available.
+- Product-growth and portfolio-demo phases 22-31 are complete; deploy with PayPal sandbox env vars before claiming hosted production availability.
 - Keep Phase 29 as a read-only preview path for signed-in reviewers; do not grant real admin privileges to every signup.
 - Keep Phase 30 as sandbox-only payment demonstration work; do not imply production payment launch or real-money processing.
+- Keep PayPal sandbox configured only through backend deployment secrets; do not expose payment secrets in frontend env vars.
 - Preserve the no-subagent constraint for GSD execution unless the repository instruction changes.

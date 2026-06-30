@@ -5,6 +5,7 @@ import { transitionOrderPaymentState } from '../services/paymentState.js';
 import { logError, logInfo, logWarn, serializeError } from '../utils/logger.js';
 
 const PROVIDER = 'stripe';
+const PAYPAL_PROVIDER = 'paypal';
 
 class WebhookReconciliationError extends Error {
   constructor(message) {
@@ -146,10 +147,10 @@ const getWebhookLogMetadata = ({
   return metadata;
 };
 
-const claimPaymentEvent = async (event) => {
+const claimPaymentEvent = async (event, providerName = PROVIDER) => {
   try {
     const eventRecord = await PaymentEvent.create({
-      provider: PROVIDER,
+      provider: providerName,
       providerEventId: event.id,
       eventType: event.type,
       status: 'processing',
@@ -162,7 +163,7 @@ const claimPaymentEvent = async (event) => {
     }
 
     const existingEvent = await PaymentEvent.findOne({
-      provider: PROVIDER,
+      provider: providerName,
       providerEventId: event.id,
     });
 
@@ -345,6 +346,262 @@ const dispatchEvent = async (event) => {
   }
 };
 
+const normalizePayPalWebhookEvent = (event = {}) => ({
+  ...event,
+  type: event.type || event.event_type,
+});
+
+const getPayPalResource = (event) => event?.resource || {};
+
+const getPrimaryPayPalPurchaseUnit = (resource = {}) =>
+  Array.isArray(resource.purchase_units) && resource.purchase_units.length > 0
+    ? resource.purchase_units[0]
+    : {};
+
+const getPayPalRelatedIds = (resource = {}) => resource?.supplementary_data?.related_ids || {};
+
+const isObjectIdLike = (value) => typeof value === 'string' && /^[a-f0-9]{24}$/i.test(value);
+
+const findPayPalOrderFromResourceReference = async (resource = {}) => {
+  const purchaseUnit = getPrimaryPayPalPurchaseUnit(resource);
+  const orderId = purchaseUnit.custom_id || resource.custom_id;
+  const orderNumber = purchaseUnit.invoice_id || resource.invoice_id;
+
+  if (isObjectIdLike(orderId)) {
+    const order = await Order.findById(orderId);
+    if (order) return order;
+  }
+
+  if (orderNumber) {
+    const order = await Order.findOne({ orderNumber });
+    if (order) return order;
+  }
+
+  return null;
+};
+
+const findPayPalOrderByProviderIds = async (event) => {
+  const resource = getPayPalResource(event);
+  const relatedIds = getPayPalRelatedIds(resource);
+  const eventType = String(event?.type || '').toUpperCase();
+  const sessionIds = [
+    eventType.startsWith('CHECKOUT.ORDER') ? resource.id : null,
+    relatedIds.order_id,
+  ].filter(Boolean);
+  const captureIds = [
+    eventType.startsWith('PAYMENT.CAPTURE') && !eventType.includes('REFUND') ? resource.id : null,
+    relatedIds.capture_id,
+  ].filter(Boolean);
+
+  for (const sessionId of sessionIds) {
+    const order = await Order.findOne({
+      paymentProvider: PAYPAL_PROVIDER,
+      paymentProviderSessionId: sessionId,
+    });
+    if (order) return order;
+  }
+
+  for (const captureId of captureIds) {
+    const order = await Order.findOne({
+      paymentProvider: PAYPAL_PROVIDER,
+      paymentProviderIntentId: captureId,
+    });
+    if (order) return order;
+  }
+
+  return null;
+};
+
+const resolvePayPalOrder = async (event) => {
+  const resource = getPayPalResource(event);
+  const byReference = await findPayPalOrderFromResourceReference(resource);
+
+  if (byReference) {
+    return byReference;
+  }
+
+  const byProviderId = await findPayPalOrderByProviderIds(event);
+
+  if (byProviderId) {
+    return byProviderId;
+  }
+
+  throw new WebhookReconciliationError('Webhook event could not be reconciled to a local order');
+};
+
+const getPayPalPayerId = (resource = {}) =>
+  resource?.payer?.payer_id ||
+  resource?.payment_source?.paypal?.account_id ||
+  resource?.payment_source?.paypal?.email_address ||
+  null;
+
+const syncPayPalProviderFields = async (order, event) => {
+  const resource = getPayPalResource(event);
+  const relatedIds = getPayPalRelatedIds(resource);
+  const eventType = String(event?.type || '').toUpperCase();
+  const updates = {};
+  const paypalOrderId = eventType.startsWith('CHECKOUT.ORDER') ? resource.id : relatedIds.order_id;
+  const captureId =
+    eventType.startsWith('PAYMENT.CAPTURE') && !eventType.includes('REFUND')
+      ? resource.id
+      : relatedIds.capture_id;
+  const payerId = getPayPalPayerId(resource);
+
+  if (paypalOrderId) {
+    updates.paymentProviderSessionId = paypalOrderId;
+  }
+
+  if (captureId) {
+    updates.paymentProviderIntentId = captureId;
+  }
+
+  if (payerId) {
+    updates.paymentProviderCustomerId = payerId;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await Order.updateOne({ _id: order._id }, { $set: updates });
+  }
+};
+
+const getPayPalCaptureId = (event, order) => {
+  const resource = getPayPalResource(event);
+  const relatedIds = getPayPalRelatedIds(resource);
+  const eventType = String(event?.type || '').toUpperCase();
+
+  if (eventType.startsWith('PAYMENT.CAPTURE') && !eventType.includes('REFUND')) {
+    return resource.id || order.paymentProviderIntentId;
+  }
+
+  return relatedIds.capture_id || order.paymentProviderIntentId;
+};
+
+const amountFromPayPalAmount = (amount) => Number(amount?.value || amount || 0);
+
+const mergePayPalRefundRecord = ({ order, event }) => {
+  const resource = getPayPalResource(event);
+  const refundId = resource.id || event.id;
+
+  if (!refundId) {
+    return null;
+  }
+
+  const existingRecords = Array.isArray(order.refundRecords) ? order.refundRecords : [];
+  const refundRecords = existingRecords.map((record) => ({
+    provider: record.provider || PAYPAL_PROVIDER,
+    providerRefundId: record.providerRefundId,
+    amount: Number(record.amount || 0),
+    status: record.status || null,
+    providerEventId: record.providerEventId || null,
+    updatedAt: record.updatedAt || new Date(),
+  }));
+  const nextRecord = {
+    provider: PAYPAL_PROVIDER,
+    providerRefundId: refundId,
+    amount: amountFromPayPalAmount(resource.amount),
+    status: resource.status || null,
+    providerEventId: event.id,
+    updatedAt: new Date(),
+  };
+  const existingIndex = refundRecords.findIndex(
+    (record) =>
+      record.provider === nextRecord.provider &&
+      record.providerRefundId === nextRecord.providerRefundId
+  );
+
+  if (existingIndex >= 0) {
+    refundRecords[existingIndex] = nextRecord;
+  } else {
+    refundRecords.push(nextRecord);
+  }
+
+  const recordsTotal = refundRecords.reduce((total, record) => total + Number(record.amount || 0), 0);
+  const baselineAmount = existingRecords.length > 0 ? 0 : Number(order.refundAmount || 0);
+  const refundAmount = Math.min(
+    order.total,
+    Math.max(Number(order.refundAmount || 0), baselineAmount + recordsTotal)
+  );
+
+  return { refundAmount, refundRecords };
+};
+
+const handlePayPalApproved = async (event) => {
+  const order = await resolvePayPalOrder(event);
+  await syncPayPalProviderFields(order, event);
+  return order;
+};
+
+const handlePayPalSuccess = async (event) => {
+  const order = await resolvePayPalOrder(event);
+  await syncPayPalProviderFields(order, event);
+
+  return transitionOrderPaymentState({
+    orderId: order._id,
+    targetStatus: 'paid',
+    providerIntentId: getPayPalCaptureId(event, order),
+  });
+};
+
+const handlePayPalFailure = async (event) => {
+  const resource = getPayPalResource(event);
+  const order = await resolvePayPalOrder(event);
+  await syncPayPalProviderFields(order, event);
+
+  return transitionOrderPaymentState({
+    orderId: order._id,
+    targetStatus: 'payment_failed',
+    providerIntentId: getPayPalCaptureId(event, order),
+    failureReason: resource.status_details?.reason || resource.status || event.type,
+  });
+};
+
+const handlePayPalCanceled = async (event) => {
+  const order = await resolvePayPalOrder(event);
+  await syncPayPalProviderFields(order, event);
+
+  return transitionOrderPaymentState({
+    orderId: order._id,
+    targetStatus: 'payment_canceled',
+    providerIntentId: getPayPalCaptureId(event, order),
+    failureReason: event.type,
+  });
+};
+
+const handlePayPalRefund = async (event) => {
+  const order = await resolvePayPalOrder(event);
+  await syncPayPalProviderFields(order, event);
+  const refundState = mergePayPalRefundRecord({ order, event });
+  const refundAmount = refundState?.refundAmount ?? order.refundAmount;
+
+  return transitionOrderPaymentState({
+    orderId: order._id,
+    targetStatus: refundAmount >= order.total ? 'refunded' : 'partially_refunded',
+    providerIntentId: getPayPalCaptureId(event, order),
+    refundAmount,
+    refundRecords: refundState?.refundRecords,
+  });
+};
+
+const dispatchPayPalEvent = async (event) => {
+  switch (String(event.type || '').toUpperCase()) {
+    case 'CHECKOUT.ORDER.APPROVED':
+      return handlePayPalApproved(event);
+    case 'PAYMENT.CAPTURE.COMPLETED':
+      return handlePayPalSuccess(event);
+    case 'PAYMENT.CAPTURE.DECLINED':
+    case 'PAYMENT.CAPTURE.DENIED':
+    case 'PAYMENT.CAPTURE.REVERSED':
+      return handlePayPalFailure(event);
+    case 'CHECKOUT.ORDER.VOIDED':
+      return handlePayPalCanceled(event);
+    case 'PAYMENT.CAPTURE.REFUNDED':
+    case 'PAYMENT.CAPTURE.PARTIALLY_REFUNDED':
+      return handlePayPalRefund(event);
+    default:
+      return null;
+  }
+};
+
 export const handleStripeWebhook = async (req, res) => {
   const signature = req.get('Stripe-Signature');
   let event;
@@ -424,6 +681,108 @@ export const handleStripeWebhook = async (req, res) => {
 
     logError(
       'stripe-webhook-processing-failed',
+      getWebhookLogMetadata({
+        req,
+        event,
+        status: 'failed',
+        error,
+      })
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: 'Webhook processing failed',
+    });
+  }
+};
+
+export const handlePayPalWebhook = async (req, res) => {
+  let event;
+
+  try {
+    event = normalizePayPalWebhookEvent(
+      await paymentProvider.verifyPayPalWebhookEvent({
+        payload: req.body,
+        headers: req.headers,
+      })
+    );
+
+    if (!event.id || !event.type) {
+      throw new Error('Invalid PayPal webhook event');
+    }
+  } catch {
+    logWarn(
+      'paypal-webhook-invalid-signature',
+      getWebhookLogMetadata({
+        req,
+        signaturePresent: Boolean(req.get('paypal-transmission-sig')),
+      })
+    );
+
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid PayPal webhook signature',
+    });
+  }
+
+  let eventRecord;
+
+  try {
+    const claim = await claimPaymentEvent(event, PAYPAL_PROVIDER);
+
+    if (claim.duplicate) {
+      logInfo(
+        'paypal-webhook-duplicate',
+        getWebhookLogMetadata({
+          req,
+          event,
+          duplicate: true,
+          status: claim.eventRecord?.status || 'unknown',
+        })
+      );
+
+      return res.json({
+        success: true,
+        message: 'Webhook event already accepted',
+        data: {
+          received: true,
+          duplicate: true,
+          status: claim.eventRecord?.status || 'unknown',
+        },
+      });
+    }
+
+    eventRecord = claim.eventRecord;
+    const order = await dispatchPayPalEvent(event);
+
+    await markPaymentEventProcessed({ eventRecord, order });
+
+    logInfo(
+      'paypal-webhook-accepted',
+      getWebhookLogMetadata({
+        req,
+        event,
+        duplicate: false,
+        status: 'processed',
+      })
+    );
+
+    return res.json({
+      success: true,
+      message: 'Webhook accepted',
+      data: {
+        received: true,
+        eventId: event.id,
+        eventType: event.type,
+      },
+    });
+  } catch (error) {
+    if (eventRecord) {
+      await markPaymentEventFailed({ eventRecord, error });
+    }
+
+    logError(
+      'paypal-webhook-processing-failed',
       getWebhookLogMetadata({
         req,
         event,

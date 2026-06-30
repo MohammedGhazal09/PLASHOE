@@ -34,6 +34,11 @@ export const ordersApi = {
     return data;
   },
 
+  capturePayPalPayment: async (id, token) => {
+    const { data } = await api.post(`/orders/${id}/payment/paypal/capture`, { token });
+    return data;
+  },
+
   reorder: async (id) => {
     const { data } = await api.post(`/orders/${id}/reorder`);
     return data;

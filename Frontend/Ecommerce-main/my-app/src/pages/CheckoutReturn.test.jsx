@@ -7,6 +7,7 @@ import CheckoutReturn from './CheckoutReturn';
 vi.mock('../api/ordersApi', () => ({
   ordersApi: {
     getById: vi.fn(),
+    capturePayPalPayment: vi.fn(),
   },
 }));
 
@@ -71,6 +72,61 @@ test('shows sandbox outcome notice for mock payment returns', async () => {
 
   expect(await screen.findByText(/sandbox outcome recorded/i)).toBeInTheDocument();
   expect(screen.getByText(/no real money was processed/i)).toBeInTheDocument();
+});
+
+test('captures PayPal sandbox approval before showing paid state', async () => {
+  ordersApi.getById.mockResolvedValue({
+    success: true,
+    data: {
+      _id: 'order-paypal',
+      orderNumber: 'PLS-PAYPAL',
+      paymentProvider: 'paypal',
+      paymentProviderSessionId: 'paypal-order-1',
+      paymentStatus: 'payment_pending',
+    },
+  });
+  ordersApi.capturePayPalPayment.mockResolvedValue({
+    success: true,
+    data: {
+      _id: 'order-paypal',
+      orderNumber: 'PLS-PAYPAL',
+      paymentProvider: 'paypal',
+      paymentStatus: 'paid',
+    },
+  });
+
+  renderReturnPage('/checkout/success?orderId=order-paypal&token=paypal-order-1');
+
+  await waitFor(() => {
+    expect(ordersApi.capturePayPalPayment).toHaveBeenCalledWith('order-paypal', 'paypal-order-1');
+  });
+  expect(await screen.findByText('Paid')).toBeInTheDocument();
+  expect(screen.getByText(/paypal sandbox approval was captured/i)).toBeInTheDocument();
+});
+
+test('shows PayPal capture failure without hiding the fetched order', async () => {
+  ordersApi.getById.mockResolvedValue({
+    success: true,
+    data: {
+      _id: 'order-paypal-failed',
+      orderNumber: 'PLS-PAYPAL-PENDING',
+      paymentProvider: 'paypal',
+      paymentProviderSessionId: 'paypal-order-2',
+      paymentStatus: 'payment_pending',
+    },
+  });
+  ordersApi.capturePayPalPayment.mockRejectedValue({
+    response: {
+      data: { message: 'PayPal payment has not been completed yet' },
+    },
+  });
+
+  renderReturnPage('/checkout/success?orderId=order-paypal-failed&token=paypal-order-2');
+
+  expect(await screen.findByText('Payment pending')).toBeInTheDocument();
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'PayPal payment has not been completed yet'
+  );
 });
 
 test('renders failed and canceled payment labels from authoritative order state', async () => {

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { PAYMENT_PROVIDER_MODES, resolvePaymentProviderMode } from '../config/env.js';
 import Order from '../models/Order.js';
 import {
   CheckoutError,
@@ -10,16 +11,18 @@ import {
 import { transitionOrderPaymentState } from './paymentState.js';
 import * as paymentProvider from './paymentProvider.js';
 
-const STRIPE_PAYMENT_PROVIDER = 'stripe';
-const MOCK_PAYMENT_PROVIDER = 'mock';
+const STRIPE_PAYMENT_PROVIDER = PAYMENT_PROVIDER_MODES.STRIPE;
+const PAYPAL_PAYMENT_PROVIDER = PAYMENT_PROVIDER_MODES.PAYPAL;
+const MOCK_PAYMENT_PROVIDER = PAYMENT_PROVIDER_MODES.MOCK;
 const PENDING_PAYMENT_STATUSES = new Set(['requires_payment', 'payment_pending']);
 
-const appendReturnParams = (baseUrl, orderId) => {
+const appendOrderIdParam = (baseUrl, orderId) => {
   const separator = baseUrl.includes('?') ? '&' : '?';
-  return `${baseUrl}${separator}orderId=${encodeURIComponent(
-    orderId.toString()
-  )}&session_id={CHECKOUT_SESSION_ID}`;
+  return `${baseUrl}${separator}orderId=${encodeURIComponent(orderId.toString())}`;
 };
+
+const appendStripeReturnParams = (baseUrl, orderId) =>
+  `${appendOrderIdParam(baseUrl, orderId)}&session_id={CHECKOUT_SESSION_ID}`;
 
 const deriveProviderIdempotencyKey = ({ userId, localIdempotencyKey, orderId }) =>
   `checkout-${createHash('sha256')
@@ -33,6 +36,27 @@ const getPaymentIntentId = (session) => {
     : session.payment_intent.id || null;
 };
 
+const getPayPalCapture = (paypalOrder) => {
+  const purchaseUnits = Array.isArray(paypalOrder?.purchase_units)
+    ? paypalOrder.purchase_units
+    : [];
+
+  for (const purchaseUnit of purchaseUnits) {
+    const captures = purchaseUnit?.payments?.captures;
+    if (Array.isArray(captures) && captures.length > 0) {
+      return captures[0];
+    }
+  }
+
+  return null;
+};
+
+const getPayPalPayerId = (paypalOrder) =>
+  paypalOrder?.payer?.payer_id ||
+  paypalOrder?.payment_source?.paypal?.account_id ||
+  paypalOrder?.payment_source?.paypal?.email_address ||
+  null;
+
 const toPaymentResponse = (order) => ({
   provider: order.paymentProvider || STRIPE_PAYMENT_PROVIDER,
   checkoutUrl: order.paymentCheckoutUrl,
@@ -42,27 +66,11 @@ const toPaymentResponse = (order) => ({
 });
 
 const isReusablePendingPayment = (order) =>
-  [STRIPE_PAYMENT_PROVIDER, MOCK_PAYMENT_PROVIDER].includes(order?.paymentProvider) &&
+  [STRIPE_PAYMENT_PROVIDER, PAYPAL_PAYMENT_PROVIDER, MOCK_PAYMENT_PROVIDER].includes(
+    order?.paymentProvider
+  ) &&
   order.paymentStatus === 'payment_pending' &&
   Boolean(order.paymentCheckoutUrl);
-
-const getTrimmedEnv = (env, key) => {
-  const value = env[key];
-  return typeof value === 'string' ? value.trim() : '';
-};
-
-const hasCompleteStripeConfig = (env = process.env) =>
-  Boolean(
-    getTrimmedEnv(env, 'STRIPE_SECRET_KEY') &&
-      getTrimmedEnv(env, 'STRIPE_WEBHOOK_SECRET') &&
-      getTrimmedEnv(env, 'PAYMENT_SUCCESS_URL') &&
-      getTrimmedEnv(env, 'PAYMENT_CANCEL_URL')
-  );
-
-const shouldUseMockPaymentProvider = (env = process.env) =>
-  (typeof env.PAYMENTS_ENABLED === 'string' &&
-    env.PAYMENTS_ENABLED.trim().toLowerCase() === 'false') ||
-  !hasCompleteStripeConfig(env);
 
 const buildMockCheckoutUrl = (orderId) =>
   `/checkout/mock?orderId=${encodeURIComponent(orderId.toString())}`;
@@ -103,9 +111,7 @@ export const startCheckoutPayment = async ({
   provider = paymentProvider,
 }) => {
   const localIdempotencyKey = validateIdempotencyKey(idempotencyKey);
-  const providerName = shouldUseMockPaymentProvider()
-    ? MOCK_PAYMENT_PROVIDER
-    : STRIPE_PAYMENT_PROVIDER;
+  const providerName = resolvePaymentProviderMode();
 
   const checkout = await createCheckoutFromCart({
     userId: user._id,
@@ -163,14 +169,25 @@ export const startCheckoutPayment = async ({
   let session;
 
   try {
-    session = await provider.createCheckoutSession({
-      order,
-      user,
-      successUrl: appendReturnParams(process.env.PAYMENT_SUCCESS_URL, order._id),
-      cancelUrl: appendReturnParams(process.env.PAYMENT_CANCEL_URL, order._id),
-      metadata,
-      idempotencyKey: providerIdempotencyKey,
-    });
+    if (providerName === PAYPAL_PAYMENT_PROVIDER) {
+      session = await provider.createPayPalOrder({
+        order,
+        user,
+        successUrl: appendOrderIdParam(process.env.PAYMENT_SUCCESS_URL, order._id),
+        cancelUrl: appendOrderIdParam(process.env.PAYMENT_CANCEL_URL, order._id),
+        metadata,
+        idempotencyKey: providerIdempotencyKey,
+      });
+    } else {
+      session = await provider.createCheckoutSession({
+        order,
+        user,
+        successUrl: appendStripeReturnParams(process.env.PAYMENT_SUCCESS_URL, order._id),
+        cancelUrl: appendStripeReturnParams(process.env.PAYMENT_CANCEL_URL, order._id),
+        metadata,
+        idempotencyKey: providerIdempotencyKey,
+      });
+    }
 
     if (!session?.url || !session?.id) {
       throw new Error('Payment provider did not return a checkout URL');
@@ -243,4 +260,71 @@ export const completeMockPayment = async ({ user, orderId, outcome }) => {
     providerIntentId,
     failureReason: 'mock checkout canceled',
   });
+};
+
+export const capturePayPalPayment = async ({ user, orderId, token, provider = paymentProvider }) => {
+  const order = await Order.findById(orderId);
+  const paypalOrderId = typeof token === 'string' ? token.trim() : '';
+
+  if (!order) {
+    throw new CheckoutError('Order not found', 404);
+  }
+
+  if (order.user.toString() !== user._id.toString()) {
+    throw new CheckoutError('Not authorized', 403);
+  }
+
+  if (order.paymentProvider !== PAYPAL_PAYMENT_PROVIDER) {
+    throw new CheckoutError('Order is not using the PayPal payment provider', 400);
+  }
+
+  if (!paypalOrderId) {
+    throw new CheckoutError('PayPal return token is required', 400);
+  }
+
+  if (order.paymentProviderSessionId !== paypalOrderId) {
+    throw new CheckoutError('PayPal return token does not match this order', 400);
+  }
+
+  if (order.paymentStatus === 'paid') {
+    return order;
+  }
+
+  if (!PENDING_PAYMENT_STATUSES.has(order.paymentStatus)) {
+    throw new CheckoutError('PayPal payment can only be captured for pending payment orders', 400);
+  }
+
+  const capture = await provider.capturePayPalOrder({
+    paypalOrderId,
+    idempotencyKey: `capture-${createHash('sha256')
+      .update(`${user._id.toString()}:${order._id.toString()}:${paypalOrderId}`)
+      .digest('hex')}`,
+  });
+  const captureRecord = getPayPalCapture(capture);
+  const captureStatus = (captureRecord?.status || capture?.status || '').toUpperCase();
+  const providerIntentId = captureRecord?.id || capture?.id || paypalOrderId;
+  const payerId = getPayPalPayerId(capture);
+
+  if (payerId) {
+    await Order.updateOne({ _id: order._id }, { $set: { paymentProviderCustomerId: payerId } });
+  }
+
+  if (captureStatus === 'COMPLETED') {
+    return transitionOrderPaymentState({
+      orderId,
+      targetStatus: 'paid',
+      providerIntentId,
+    });
+  }
+
+  if (['DECLINED', 'DENIED', 'FAILED'].includes(captureStatus)) {
+    return transitionOrderPaymentState({
+      orderId,
+      targetStatus: 'payment_failed',
+      providerIntentId,
+      failureReason: `paypal capture ${captureStatus.toLowerCase()}`,
+    });
+  }
+
+  throw new CheckoutError('PayPal payment has not been completed yet', 424);
 };

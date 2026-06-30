@@ -5,6 +5,7 @@ import {
   getOrders,
   getOrder,
   cancelOrder,
+  capturePayPalOrderPayment,
   completeMockOrderPayment,
   reorderOrder
 } from '../controllers/orderController.js';
@@ -14,6 +15,7 @@ import {
   createOrderSchema,
   mockPaymentOutcomeSchema,
   orderParamsSchema,
+  paypalCaptureSchema,
   shippingOptionsSchema,
 } from '../validators/order.js';
 
@@ -29,6 +31,11 @@ router.post(
   '/:id/payment/mock',
   validateRequest({ params: orderParamsSchema, body: mockPaymentOutcomeSchema }),
   completeMockOrderPayment
+);
+router.post(
+  '/:id/payment/paypal/capture',
+  validateRequest({ params: orderParamsSchema, body: paypalCaptureSchema }),
+  capturePayPalOrderPayment
 );
 router.post('/:id/reorder', validateRequest({ params: orderParamsSchema }), reorderOrder);
 router.get('/:id', validateRequest({ params: orderParamsSchema }), getOrder);

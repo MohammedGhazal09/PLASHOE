@@ -525,13 +525,16 @@ export default function Checkout() {
           <h2 className="text-xl font-semibold mt-10 mb-6">Payment Method</h2>
           <div className="bg-[#f1f1ef] p-6 rounded">
             <p className="text-gray-600">
-              Card payment opens in a secure hosted checkout.
+              Payment opens in a secure hosted checkout.
             </p>
             <p className="text-gray-500 text-sm mt-2">
-              Your order updates after payment confirmation.
+              When PayPal sandbox is configured, approval redirects back here for backend capture.
             </p>
             <p className="text-gray-500 text-sm mt-2">
-              Demo deployments may open a mock gateway with approve, decline, and cancel outcomes.
+              PLASHOE does not collect card details; hosted providers handle payment entry.
+            </p>
+            <p className="text-gray-500 text-sm mt-2">
+              Demo deployments fall back to the mock gateway when provider credentials are not configured.
             </p>
           </div>
         </div>

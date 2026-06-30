@@ -29,6 +29,32 @@ import {
 
 let idempotencySequence = 0;
 const nextIdempotencyKey = () => `checkout-key-${++idempotencySequence}`;
+const PAYMENT_ENV_KEYS = [
+  "PAYMENT_PROVIDER",
+  "PAYMENTS_ENABLED",
+  "PAYPAL_ENV",
+  "PAYPAL_CLIENT_ID",
+  "PAYPAL_CLIENT_SECRET",
+  "PAYPAL_WEBHOOK_ID",
+  "PAYMENT_SUCCESS_URL",
+  "PAYMENT_CANCEL_URL",
+];
+
+const snapshotEnv = (keys) =>
+  keys.reduce((snapshot, key) => {
+    snapshot[key] = process.env[key];
+    return snapshot;
+  }, {});
+
+const restoreEnv = (snapshot) => {
+  for (const [key, value] of Object.entries(snapshot)) {
+    if (typeof value === "undefined") {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+};
 
 const postCheckout = (user, idempotencyKey, body = {}) =>
   request(app)
@@ -52,6 +78,30 @@ const createFakePaymentProvider = () => ({
     url: `https://checkout.example.test/pay/${order._id}`,
     payment_intent: `intent-${order._id}`,
     customer: "customer-placeholder",
+  })),
+  createPayPalOrder: vi.fn(async ({ order }) => ({
+    id: `paypal-order-${order._id}`,
+    url: `https://www.sandbox.paypal.com/checkoutnow?token=paypal-order-${order._id}`,
+    status: "CREATED",
+  })),
+  capturePayPalOrder: vi.fn(async ({ paypalOrderId }) => ({
+    id: paypalOrderId,
+    status: "COMPLETED",
+    payer: {
+      payer_id: "paypal-payer-placeholder",
+    },
+    purchase_units: [
+      {
+        payments: {
+          captures: [
+            {
+              id: `capture-${paypalOrderId}`,
+              status: "COMPLETED",
+            },
+          ],
+        },
+      },
+    ],
   })),
 });
 
@@ -244,6 +294,130 @@ describe("order routes", () => {
     expect(cart.items).toHaveLength(0);
     expect(cart.couponCode).toBeUndefined();
     expect(cart.discount).toBe(0);
+  });
+
+  it("starts a PayPal sandbox hosted checkout when PayPal provider config is complete", async () => {
+    const previousEnv = snapshotEnv(PAYMENT_ENV_KEYS);
+    process.env.PAYMENT_PROVIDER = "paypal";
+    process.env.PAYMENTS_ENABLED = "true";
+    process.env.PAYPAL_ENV = "sandbox";
+    process.env.PAYPAL_CLIENT_ID = "paypal-client-id-placeholder";
+    process.env.PAYPAL_CLIENT_SECRET = "paypal-client-secret-placeholder";
+    process.env.PAYPAL_WEBHOOK_ID = "paypal-webhook-id-placeholder";
+    process.env.PAYMENT_SUCCESS_URL = "http://localhost:3000/checkout/success";
+    process.env.PAYMENT_CANCEL_URL = "http://localhost:3000/checkout/cancel";
+
+    try {
+      const user = await createUser();
+      const product = await createProduct({ stock: 10 });
+      await createCartForUser(user, [{ product, quantity: 1, size: 42 }]);
+
+      const response = await postCheckout(user, nextIdempotencyKey()).expect(201);
+      const orderId = responseOrder(response)._id;
+
+      expect(responseOrder(response)).toMatchObject({
+        paymentStatus: "payment_pending",
+        paymentProvider: "paypal",
+        paymentProviderSessionId: `paypal-order-${orderId}`,
+        paymentProviderIntentId: null,
+      });
+      expect(responsePayment(response)).toMatchObject({
+        provider: "paypal",
+        checkoutUrl: `https://www.sandbox.paypal.com/checkoutnow?token=paypal-order-${orderId}`,
+        sessionId: `paypal-order-${orderId}`,
+        paymentIntentId: null,
+      });
+      expect(fakePaymentProvider.createPayPalOrder).toHaveBeenCalledTimes(1);
+      expect(fakePaymentProvider.createCheckoutSession).not.toHaveBeenCalled();
+      const providerRequest = fakePaymentProvider.createPayPalOrder.mock.calls[0][0];
+      expect(providerRequest.successUrl).toBe(
+        `http://localhost:3000/checkout/success?orderId=${orderId}`
+      );
+      expect(providerRequest.successUrl).not.toContain("{CHECKOUT_SESSION_ID}");
+      expect(providerRequest.cancelUrl).toBe(
+        `http://localhost:3000/checkout/cancel?orderId=${orderId}`
+      );
+      expect(providerRequest.metadata).toMatchObject({
+        orderId,
+        userId: user._id.toString(),
+      });
+    } finally {
+      restoreEnv(previousEnv);
+    }
+  });
+
+  it("captures PayPal sandbox approvals through the protected capture endpoint", async () => {
+    const previousEnv = snapshotEnv(PAYMENT_ENV_KEYS);
+    process.env.PAYMENT_PROVIDER = "paypal";
+    process.env.PAYMENTS_ENABLED = "true";
+    process.env.PAYPAL_ENV = "sandbox";
+    process.env.PAYPAL_CLIENT_ID = "paypal-client-id-placeholder";
+    process.env.PAYPAL_CLIENT_SECRET = "paypal-client-secret-placeholder";
+    process.env.PAYPAL_WEBHOOK_ID = "paypal-webhook-id-placeholder";
+    process.env.PAYMENT_SUCCESS_URL = "http://localhost:3000/checkout/success";
+    process.env.PAYMENT_CANCEL_URL = "http://localhost:3000/checkout/cancel";
+
+    try {
+      const user = await createUser();
+      const product = await createProduct({ stock: 5 });
+      await createCartForUser(user, [{ product, quantity: 1, size: 42 }]);
+      const checkout = await postCheckout(user, nextIdempotencyKey()).expect(201);
+      const orderId = responseOrder(checkout)._id;
+      const paypalOrderId = `paypal-order-${orderId}`;
+
+      const response = await request(app)
+        .post(`/api/orders/${orderId}/payment/paypal/capture`)
+        .set(authHeader(user))
+        .send({ token: paypalOrderId })
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        success: true,
+        message: "PayPal payment captured",
+        data: {
+          paymentStatus: "paid",
+          status: "processing",
+          paymentProvider: "paypal",
+          paymentProviderSessionId: paypalOrderId,
+          paymentProviderIntentId: `capture-${paypalOrderId}`,
+          paymentProviderCustomerId: "paypal-payer-placeholder",
+        },
+      });
+      expect(fakePaymentProvider.capturePayPalOrder).toHaveBeenCalledWith({
+        paypalOrderId,
+        idempotencyKey: expect.stringMatching(/^capture-[a-f0-9]{64}$/),
+      });
+    } finally {
+      restoreEnv(previousEnv);
+    }
+  });
+
+  it("rejects PayPal capture for non-owners and mismatched return tokens", async () => {
+    const owner = await createUser();
+    const otherUser = await createUser();
+    const order = await createProviderBackedOrder(owner, {
+      paymentProvider: "paypal",
+      paymentProviderSessionId: "paypal-order-secure",
+      paymentProviderIntentId: null,
+    });
+
+    await request(app)
+      .post(`/api/orders/${order._id}/payment/paypal/capture`)
+      .set(authHeader(otherUser))
+      .send({ token: "paypal-order-secure" })
+      .expect(403);
+
+    const response = await request(app)
+      .post(`/api/orders/${order._id}/payment/paypal/capture`)
+      .set(authHeader(owner))
+      .send({ token: "paypal-order-other" })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "PayPal return token does not match this order",
+    });
+    expect(fakePaymentProvider.capturePayPalOrder).not.toHaveBeenCalled();
   });
 
   it("persists selected international shipping method and charges the shipping-inclusive total", async () => {

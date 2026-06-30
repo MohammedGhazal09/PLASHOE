@@ -59,12 +59,13 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | GET | `/api/wishlist` | Return the current user's saved products with bounded pagination and populated product summaries. | Bearer JWT | `wishlistApi.getWishlist(params)` |
 | POST | `/api/wishlist/items` | Save a product to the current user's wishlist. Duplicate saves are idempotent. | Bearer JWT | `wishlistApi.addItem(productId)` |
 | DELETE | `/api/wishlist/items/:productId` | Remove a saved product from the current user's wishlist. Missing saved items are treated as no-ops. | Bearer JWT | `wishlistApi.removeItem(productId)` |
-| POST | `/api/orders` | Start hosted Stripe Checkout from the current user's cart, returning an order plus payment redirect data. | Bearer JWT + `Idempotency-Key` | `ordersApi.create(orderData, idempotencyKey)` |
+| POST | `/api/orders` | Start hosted checkout from the current user's cart, returning an order plus payment redirect data for Stripe, PayPal sandbox, or the mock gateway. | Bearer JWT + `Idempotency-Key` | `ordersApi.create(orderData, idempotencyKey)` |
 | GET | `/api/orders` | List the current user's orders sorted newest first. | Bearer JWT | `ordersApi.getAll()` |
 | GET | `/api/orders/:id` | Return one order if owned by the user or requested by an admin. | Bearer JWT, owner or admin | `ordersApi.getById(id)` |
 | POST | `/api/orders/:id/reorder` | Move currently available items from a prior order into the current user's cart. | Bearer JWT, owner only | `ordersApi.reorder(id)` |
 | PUT | `/api/orders/:id/cancel` | Cancel an owned order unless it is shipped or delivered. | Bearer JWT, owner only | `ordersApi.cancel(id)` |
 | POST | `/api/orders/:id/payment/mock` | Record a mock sandbox payment outcome: `approve`, `decline`, or `cancel`. | Bearer JWT, owner only, mock provider order | `ordersApi.completeMockPayment(id, outcome)` |
+| POST | `/api/orders/:id/payment/paypal/capture` | Capture an approved PayPal sandbox order after the hosted PayPal redirect returns with a `token`. | Bearer JWT, owner only, PayPal provider order | `ordersApi.capturePayPalPayment(id, token)` |
 | GET | `/api/admin/orders` | List all orders for admins with bounded pagination and filters. | Admin bearer JWT | `adminApi.getOrders(params)` |
 | GET | `/api/admin/orders/:id` | Return full admin order detail with limited user identity. | Admin bearer JWT | `adminApi.getOrder(id)` |
 | PATCH | `/api/admin/orders/:id/fulfillment` | Advance fulfillment and update carrier/tracking fields. | Admin bearer JWT | `adminApi.updateOrderFulfillment(id, payload)` |
@@ -76,6 +77,7 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | PATCH | `/api/admin/returns/:id/status` | Approve, reject, receive, or resolve a return/exchange request with notes. | Admin bearer JWT | `adminApi.updateReturnStatus(id, payload)` |
 | POST | `/api/back-in-stock` | Capture explicit opt-in intent for an unavailable product and size. | No | `backInStockApi.createRequest(payload)` |
 | POST | `/api/webhooks/stripe` | Receive Stripe payment events through a raw-body signature-verified webhook. | Stripe signature | None |
+| POST | `/api/webhooks/paypal` | Receive PayPal checkout/capture/refund events through PayPal webhook signature verification. | PayPal webhook signature | None |
 | POST | `/api/coupons/validate` | Validate a coupon code and return discount details. | No | `couponApi.validate(code)` |
 | GET | `/api/coupons` | List coupons with bounded admin pagination and filters. | Admin bearer JWT | `adminApi.getCoupons(params)` |
 | POST | `/api/coupons` | Create a coupon. | Admin bearer JWT | `adminApi.createCoupon(payload)` |
@@ -514,7 +516,7 @@ Fulfillment conflicts return `409` with machine-readable codes:
 
 For exchanges, set `type` to `exchange` and include `exchangeSize` on each item. Request creation is strict and owner-only. The order must be `delivered`, have `deliveredAt`, be within `RETURN_WINDOW_DAYS` (default 30), and have `paymentStatus` of `paid` or `not_required`. Requested item quantity cannot exceed the original ordered quantity minus quantities already consumed by non-rejected/non-cancelled RMA requests.
 
-Successful requests persist a `requestNumber` beginning with `RMA-`, requested items, an eligibility snapshot, refund intent, and status history. Refund intent is an RMA audit field only; this endpoint does not call Stripe and does not update `Order.paymentStatus`, `refundAmount`, or `refundRecords`.
+Successful requests persist a `requestNumber` beginning with `RMA-`, requested items, an eligibility snapshot, refund intent, and status history. Refund intent is an RMA audit field only; this endpoint does not call the payment provider and does not update `Order.paymentStatus`, `refundAmount`, or `refundRecords`.
 
 Customer `GET /api/returns` accepts:
 
@@ -543,7 +545,7 @@ Admin `GET /api/admin/returns` accepts:
 }
 ```
 
-Allowed admin flow is `requested` -> `approved` or `rejected`, `approved` -> `received` or `rejected`, then `received` -> `resolved` or `rejected`. Each accepted update appends a server-timestamped status-history entry with the admin actor. Resolving a return may record a manual `refundAmount` on `refundIntent`, but Stripe-origin webhook state remains authoritative for order payment fields.
+Allowed admin flow is `requested` -> `approved` or `rejected`, `approved` -> `received` or `rejected`, then `received` -> `resolved` or `rejected`. Each accepted update appends a server-timestamped status-history entry with the admin actor. Resolving a return may record a manual `refundAmount` on `refundIntent`, but provider-origin webhook state remains authoritative for order payment fields.
 
 RMA conflicts return `409` with machine-readable codes:
 
@@ -794,7 +796,7 @@ Review create returns `201` with the created public review and the updated aggre
 
 Order checkout-start returns status `201`, `message: "Payment started"`, and `data.order` plus `data.payment`. An exact retry with the same `Idempotency-Key` returns status `200`, `message: "Payment already started"`, the same order, and the stored pending payment URL. Missing `Idempotency-Key` returns `400`. Reusing the key for a changed non-empty cart/request state returns `409`.
 
-The backend calculates order items, subtotal, discount, total, coupon usage, and stock decrement from the authenticated cart. Provider-backed orders start with fulfillment `status: "pending"` and payment state `payment_pending`. In Stripe mode, verified webhook success moves fulfillment to `processing` and `paymentStatus` to `paid`. In mock sandbox mode, `POST /api/orders/:id/payment/mock` records controlled demo outcomes without collecting card data. Order numbers are unique display identifiers beginning with `PLS-`; they are not strict sequences.
+The backend calculates order items, subtotal, discount, total, coupon usage, and stock decrement from the authenticated cart. Provider-backed orders start with fulfillment `status: "pending"` and payment state `payment_pending`. In Stripe or PayPal mode, verified capture/webhook success moves fulfillment to `processing` and `paymentStatus` to `paid`. In mock sandbox mode, `POST /api/orders/:id/payment/mock` records controlled demo outcomes without collecting card data. Order numbers are unique display identifiers beginning with `PLS-`; they are not strict sequences.
 
 ```json
 {
@@ -823,7 +825,31 @@ The backend calculates order items, subtotal, discount, total, coupon usage, and
 }
 ```
 
-When Stripe config is incomplete or `PAYMENTS_ENABLED=false`, checkout returns a mock gateway URL:
+When `PAYMENT_PROVIDER=paypal` and complete PayPal sandbox config is present, checkout returns a PayPal approval URL:
+
+```json
+{
+  "provider": "paypal",
+  "checkoutUrl": "https://www.sandbox.paypal.com/checkoutnow?token=paypal_order_id",
+  "sessionId": "paypal_order_id",
+  "paymentIntentId": null,
+  "demoMode": false
+}
+```
+
+After PayPal redirects to `PAYMENT_SUCCESS_URL` with `orderId` and `token`, the frontend calls:
+
+`POST /api/orders/:id/payment/paypal/capture`
+
+```json
+{
+  "token": "paypal_order_id"
+}
+```
+
+The backend requires the authenticated owner, verifies the token matches the stored PayPal order id, captures through PayPal Orders v2, and then updates the local order state. The browser never receives the PayPal client secret.
+
+When the selected provider config is incomplete or `PAYMENTS_ENABLED=false`, checkout returns a mock gateway URL:
 
 ```json
 {
@@ -893,6 +919,20 @@ Handled event types:
 - `charge.refunded` and `refund.updated`: update full or partial refund state and refund amount without adding a PLASHOE admin refund initiation endpoint.
 
 Duplicate provider event ids are successful no-ops. Invalid signatures return `400`. Events that cannot be safely reconciled to one local order return `500` so Stripe can retry, and they are not recorded as processed.
+
+### PayPal Webhooks
+
+`POST /api/webhooks/paypal` is public to PayPal but protected by PayPal webhook signature verification over the raw request body. It does not use JWT auth and must be mounted before JSON parsers mutate the body.
+
+Handled event types:
+
+- `CHECKOUT.ORDER.APPROVED`: stores/refreshes the PayPal order reference without marking payment paid.
+- `PAYMENT.CAPTURE.COMPLETED`: marks the order `paid`, sets `paidAt`, persists the PayPal capture id, and moves fulfillment status to `processing`.
+- `PAYMENT.CAPTURE.DECLINED`, `PAYMENT.CAPTURE.DENIED`, and `PAYMENT.CAPTURE.REVERSED`: mark the order `payment_failed`, store a failure reason when available, and restore inventory once.
+- `CHECKOUT.ORDER.VOIDED`: marks the order `payment_canceled` and restores inventory once.
+- `PAYMENT.CAPTURE.REFUNDED` and `PAYMENT.CAPTURE.PARTIALLY_REFUNDED`: update full or partial refund state and refund amount without adding a PLASHOE admin refund initiation endpoint.
+
+Duplicate PayPal event ids are successful no-ops under provider `paypal`, independent from Stripe event ids. Invalid verification returns `400`. Events that cannot be safely reconciled to one local order return `500` so PayPal can retry, and they are not recorded as processed.
 
 Delete and state-change responses may return only a message:
 
@@ -977,7 +1017,7 @@ The frontend wrappers are relative to the configured axios `baseURL`; with the d
 | `Frontend/Ecommerce-main/my-app/src/api/cartApi.js` | `cartApi` | `GET /api/cart`, `POST /api/cart/merge`, `POST /api/cart/items`, `PUT /api/cart/items/:itemId`, `DELETE /api/cart/items/:itemId`, `DELETE /api/cart`, `POST /api/cart/coupon`, `DELETE /api/cart/coupon` |
 | `Frontend/Ecommerce-main/my-app/src/api/wishlistApi.js` | `wishlistApi` | `GET /api/wishlist`, `POST /api/wishlist/items`, `DELETE /api/wishlist/items/:productId` |
 | `Frontend/Ecommerce-main/my-app/src/api/reviewsApi.js` | `reviewsApi` | `GET /api/products/:id/reviews`, `POST /api/products/:id/reviews` |
-| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `ordersApi` | `POST /api/orders` with optional `Idempotency-Key`, `GET /api/orders`, `GET /api/orders/:id`, `POST /api/orders/:id/payment/mock`, `POST /api/orders/:id/reorder`, `PUT /api/orders/:id/cancel` |
+| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `ordersApi` | `POST /api/orders` with optional `Idempotency-Key`, `GET /api/orders`, `GET /api/orders/:id`, `POST /api/orders/:id/payment/mock`, `POST /api/orders/:id/payment/paypal/capture`, `POST /api/orders/:id/reorder`, `PUT /api/orders/:id/cancel` |
 | `Frontend/Ecommerce-main/my-app/src/api/returnsApi.js` | `returnsApi` | `POST /api/returns`, `GET /api/returns`, `GET /api/returns/:id` |
 | `Frontend/Ecommerce-main/my-app/src/api/backInStockApi.js` | `backInStockApi` | `POST /api/back-in-stock` |
 | `Frontend/Ecommerce-main/my-app/src/api/contactApi.js` | `contactApi` | `POST /api/contact` |

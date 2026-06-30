@@ -5,7 +5,11 @@ import {
   cancelOrderWithStockRestore,
   getShippingOptionsForCart,
 } from '../services/checkoutService.js';
-import { completeMockPayment, startCheckoutPayment } from '../services/paymentService.js';
+import {
+  capturePayPalPayment,
+  completeMockPayment,
+  startCheckoutPayment,
+} from '../services/paymentService.js';
 
 const toIdString = (value) => {
   if (!value) return '';
@@ -148,6 +152,26 @@ export const completeMockOrderPayment = async (req, res, next) => {
     res.json({
       success: true,
       message: `Mock payment ${req.body.outcome} recorded`,
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Capture a PayPal sandbox payment after hosted approval
+// @route   POST /api/orders/:id/payment/paypal/capture
+export const capturePayPalOrderPayment = async (req, res, next) => {
+  try {
+    const order = await capturePayPalPayment({
+      user: req.user,
+      orderId: req.params.id,
+      token: req.body.token,
+    });
+
+    res.json({
+      success: true,
+      message: 'PayPal payment captured',
       data: order,
     });
   } catch (error) {

@@ -5,7 +5,7 @@ PLASHOE now has local automated coverage for the stabilized purchase-path, Phase
 
 - Backend API route tests run with Vitest, Supertest, and MongoMemoryReplSet.
 - Frontend behavior tests run through the existing Vitest setup.
-- Phase 5 payment tests use mocked provider seams and locally signed webhook payloads; they do not call live Stripe services.
+- Phase 5 and Phase 31 payment tests use mocked provider seams, locally signed Stripe webhook payloads, and mocked PayPal webhook verification; they do not call live Stripe or PayPal services.
 - Frontend build, backend/frontend suites, and the static checker are part of the Phase 5 gate.
 - The static core-flow contract checker remains as a root-level safety check.
 
@@ -75,6 +75,13 @@ cd Backend
 npm test -- order.test.js payment-state.test.js payment-webhook.test.js
 ```
 
+Run Phase 31 focused backend PayPal payment tests:
+
+```bash
+cd Backend
+npm test -- order.test.js payment-webhook.test.js security-config.test.js
+```
+
 Run Phase 4 focused frontend cart/checkout tests:
 
 ```bash
@@ -87,6 +94,13 @@ Run Phase 5 focused frontend payment tests:
 ```bash
 cd Frontend/Ecommerce-main/my-app
 npm test -- Checkout.test.jsx CheckoutReturn.test.jsx ordersApi.test.js
+```
+
+Run Phase 31 focused frontend PayPal return tests:
+
+```bash
+cd Frontend/Ecommerce-main/my-app
+npm test -- CheckoutReturn.test.jsx ordersApi.test.js
 ```
 
 Run Phase 14 focused backend wishlist tests:
@@ -434,7 +448,8 @@ Automated payment tests are deterministic:
 
 - Checkout-start tests inject a fake provider through `Backend/services/paymentProvider.js` and assert amount, metadata, retry, and compensation behavior.
 - Webhook tests sign JSON payloads locally with HMAC and exercise the real Express route at `/api/webhooks/stripe`.
-- Frontend payment tests mock `ordersApi` and browser navigation; no Stripe script, frontend Stripe key, live backend, or network call is required.
+- PayPal backend tests mock PayPal Orders v2 creation/capture and webhook verification through the same provider seam; no real PayPal network call is required.
+- Frontend payment tests mock `ordersApi` and browser navigation; no Stripe script, PayPal browser SDK, frontend payment key, live backend, or network call is required.
 
 Optional manual local webhook exploration can use the Stripe CLI to forward events to `/api/webhooks/stripe`, but that is not an automated gate for this project.
 

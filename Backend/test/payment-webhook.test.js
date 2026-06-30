@@ -44,6 +44,24 @@ const postEvent = (event, signatureOverride, options = {}) => {
   return webhookRequest.send(payload);
 };
 
+const postPayPalEvent = (event, options = {}) => {
+  const payload = JSON.stringify(event);
+  const webhookRequest = request(app)
+    .post("/api/webhooks/paypal")
+    .set("Content-Type", "application/json")
+    .set("paypal-auth-algo", "SHA256withRSA")
+    .set("paypal-cert-url", "https://api-m.sandbox.paypal.com/certs/test")
+    .set("paypal-transmission-id", "paypal-transmission-test")
+    .set("paypal-transmission-sig", "paypal-signature-test")
+    .set("paypal-transmission-time", new Date().toISOString());
+
+  if (options.rateLimitKey) {
+    webhookRequest.set("x-rate-limit-test", options.rateLimitKey);
+  }
+
+  return webhookRequest.send(payload);
+};
+
 const captureStructuredLogs = () => {
   const records = [];
   const capture = (line) => {
@@ -73,6 +91,13 @@ const stripeEvent = (overrides = {}) => ({
   },
 });
 
+const paypalEvent = (overrides = {}) => ({
+  id: overrides.id || `paypal-event-${Date.now()}-${Math.random()}`,
+  event_type: overrides.type || "PAYMENT.CAPTURE.COMPLETED",
+  resource_type: overrides.resourceType || "capture",
+  resource: overrides.resource || {},
+});
+
 const createInventoryBackedPaymentOrder = async () => {
   const user = await createUser();
   const product = await createProduct({ stock: 3 });
@@ -94,6 +119,40 @@ const createInventoryBackedPaymentOrder = async () => {
   });
 
   return { product, order };
+};
+
+const createInventoryBackedPayPalOrder = async (overrides = {}) => {
+  const user = await createUser();
+  const product = await createProduct({ stock: 3 });
+  const order = await createProviderBackedOrder(user, {
+    items: [
+      {
+        product: product._id,
+        name: product.name,
+        image: product.image,
+        quantity: 2,
+        size: 42,
+        price: product.price.current,
+      },
+    ],
+    subtotal: 200,
+    total: 200,
+    inventoryDecremented: true,
+    paymentProvider: "paypal",
+    paymentProviderSessionId: "paypal-order-existing",
+    paymentProviderIntentId: null,
+    ...overrides,
+  });
+
+  return { product, order };
+};
+
+const usePayPalWebhookVerifier = () => {
+  const verifyPayPalWebhookEvent = vi.fn(({ payload }) =>
+    JSON.parse(Buffer.isBuffer(payload) ? payload.toString("utf8") : payload)
+  );
+  setPaymentProviderOverride({ verifyPayPalWebhookEvent });
+  return verifyPayPalWebhookEvent;
 };
 
 afterEach(() => {
@@ -479,5 +538,138 @@ describe("Stripe webhook route", () => {
       providerEventId: "event-refund-repeat-2",
     });
     expect(await PaymentEvent.countDocuments({ providerEventId: /^event-refund-repeat-/ })).toBe(2);
+  });
+});
+
+describe("PayPal webhook route", () => {
+  it("rejects invalid PayPal verification without creating a payment event", async () => {
+    const verifyPayPalWebhookEvent = vi.fn(() => {
+      throw new Error("invalid paypal signature");
+    });
+    setPaymentProviderOverride({ verifyPayPalWebhookEvent });
+    const records = captureStructuredLogs();
+    const event = paypalEvent({
+      id: "paypal-event-invalid-signature",
+      type: "PAYMENT.CAPTURE.COMPLETED",
+      resource: {
+        id: "capture-invalid",
+      },
+    });
+
+    await postPayPalEvent(event).expect(400);
+
+    expect(await PaymentEvent.countDocuments()).toBe(0);
+    expect(findLogRecord(records, "paypal-webhook-invalid-signature")).toMatchObject({
+      level: "warn",
+      event: "paypal-webhook-invalid-signature",
+      requestId: expect.any(String),
+      signaturePresent: true,
+    });
+  });
+
+  it("marks completed PayPal captures as paid and records provider event idempotently", async () => {
+    usePayPalWebhookVerifier();
+    const { order } = await createInventoryBackedPayPalOrder();
+    const event = paypalEvent({
+      id: "paypal-event-capture-completed",
+      type: "PAYMENT.CAPTURE.COMPLETED",
+      resource: {
+        id: "paypal-capture-paid",
+        status: "COMPLETED",
+        amount: {
+          value: "200.00",
+          currency_code: "USD",
+        },
+        supplementary_data: {
+          related_ids: {
+            order_id: order.paymentProviderSessionId,
+          },
+        },
+      },
+    });
+
+    await postPayPalEvent(event).expect(200);
+    await postPayPalEvent(event).expect(200);
+
+    const updatedOrder = await Order.findById(order._id);
+    expect(updatedOrder.paymentStatus).toBe("paid");
+    expect(updatedOrder.status).toBe("processing");
+    expect(updatedOrder.paymentProvider).toBe("paypal");
+    expect(updatedOrder.paymentProviderIntentId).toBe("paypal-capture-paid");
+    expect(await PaymentEvent.countDocuments({
+      provider: "paypal",
+      providerEventId: "paypal-event-capture-completed",
+    })).toBe(1);
+  });
+
+  it("restores inventory when a PayPal capture is denied", async () => {
+    usePayPalWebhookVerifier();
+    const { product, order } = await createInventoryBackedPayPalOrder();
+    const event = paypalEvent({
+      id: "paypal-event-capture-denied",
+      type: "PAYMENT.CAPTURE.DENIED",
+      resource: {
+        id: "paypal-capture-denied",
+        status: "DENIED",
+        status_details: {
+          reason: "INSTRUMENT_DECLINED",
+        },
+        supplementary_data: {
+          related_ids: {
+            order_id: order.paymentProviderSessionId,
+          },
+        },
+      },
+    });
+
+    await postPayPalEvent(event).expect(200);
+
+    const updatedOrder = await Order.findById(order._id);
+    expect(updatedOrder.paymentStatus).toBe("payment_failed");
+    expect(updatedOrder.status).toBe("pending");
+    expect(updatedOrder.paymentFailureReason).toBe("INSTRUMENT_DECLINED");
+    expect(updatedOrder.inventoryDecremented).toBe(false);
+    expect((await Product.findById(product._id)).stock).toBe(5);
+  });
+
+  it("records PayPal capture refunds without double-counting repeats", async () => {
+    usePayPalWebhookVerifier();
+    const { order } = await createInventoryBackedPayPalOrder({
+      paymentStatus: "paid",
+      status: "processing",
+      inventoryDecremented: false,
+      paymentProviderIntentId: "paypal-capture-refundable",
+    });
+    const event = paypalEvent({
+      id: "paypal-event-refund-partial",
+      type: "PAYMENT.CAPTURE.REFUNDED",
+      resource: {
+        id: "paypal-refund-partial",
+        status: "COMPLETED",
+        amount: {
+          value: "50.00",
+          currency_code: "USD",
+        },
+        supplementary_data: {
+          related_ids: {
+            capture_id: "paypal-capture-refundable",
+          },
+        },
+      },
+    });
+
+    await postPayPalEvent(event).expect(200);
+    await postPayPalEvent(event).expect(200);
+
+    const updatedOrder = await Order.findById(order._id);
+    expect(updatedOrder.paymentStatus).toBe("partially_refunded");
+    expect(updatedOrder.refundAmount).toBe(50);
+    expect(updatedOrder.refundRecords).toHaveLength(1);
+    expect(updatedOrder.refundRecords[0]).toMatchObject({
+      provider: "paypal",
+      providerRefundId: "paypal-refund-partial",
+      amount: 50,
+      providerEventId: "paypal-event-refund-partial",
+    });
   });
 });

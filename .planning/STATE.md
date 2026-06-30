@@ -8,24 +8,24 @@ status: external_setup_blocked
 last_updated: "2026-06-30T08:45:00+03:00"
 last_activity: 2026-06-30
 progress:
-  total_phases: 30
-  completed_phases: 27
-  total_plans: 78
-  completed_plans: 78
+  total_phases: 31
+  completed_phases: 28
+  total_plans: 81
+  completed_plans: 81
   percent: 90
 ---
 
 # Project State: PLASHOE
 
 **Current Phase:** Phase 9 - Production Launch Setup and Staging Verification (blocked on external setup)
-**Status:** Feature and portfolio-demo phases 13-30 are complete; production launch, operational provider evidence, and release cutover remain blocked or not started.
+**Status:** Feature and portfolio-demo phases 13-31 are complete locally; production launch, operational provider evidence, and release cutover remain blocked or not started.
 **Current Plan:** None active locally
 **Next recommended run:** Resume `$gsd-execute-phase 9` when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler evidence are available.
 **Last Activity:** 2026-06-30
 
 ## Current Focus
 
-Phases 13-30 are complete with source-controlled admin, wishlist, product detail, discovery, checkout conversion, returns, sustainability, retention, shoppable lookbook, account self-service, admin dashboard, back-in-stock admin workflows, newsletter consent, review moderation, reusable admin product picker, server-owned shipping rules, restricted demo admin preview, and hybrid sandbox payment demo work verified by local tests, builds, and browser evidence. Remaining production-readiness focus still matters: Phase 9 is blocked on external staging/provider inputs, Phase 11 is blocked on live operations/provider proof, and Phase 12 remains an explicit production cutover approval step. No hosted, provider-delivery, or production success is claimed from the local feature sweep.
+Phases 13-31 are complete with source-controlled admin, wishlist, product detail, discovery, checkout conversion, returns, sustainability, retention, shoppable lookbook, account self-service, admin dashboard, back-in-stock admin workflows, newsletter consent, review moderation, reusable admin product picker, server-owned shipping rules, restricted demo admin preview, hybrid sandbox payment demo work, and PayPal sandbox checkout/capture/webhook support verified by local tests, builds, and browser evidence. Remaining production-readiness focus still matters: Phase 9 is blocked on external staging/provider inputs, Phase 11 is blocked on live operations/provider proof, and Phase 12 remains an explicit production cutover approval step. No hosted, provider-delivery, or production success is claimed from the local feature sweep.
 
 ## Accumulated Context
 
@@ -95,6 +95,9 @@ Phases 13-30 are complete with source-controlled admin, wishlist, product detail
 - 2026-06-30: Added Phase 30 for hybrid sandbox payment demo mode.
 - 2026-06-30: Completed Phase 29 with authenticated non-admin demo admin access, sanitized sample admin reads, read-only restriction notice, disabled admin controls, direct mutation wrapper guards, full frontend tests, production build, and Hercules/Playwright visual QA evidence.
 - 2026-06-30: Completed Phase 30 with Stripe-or-mock payment mode selection, mock checkout gateway approve/decline/cancel outcomes, payment-state reuse, docs, full backend/frontend tests, production build, and Hercules/Playwright visual QA evidence.
+- 2026-06-30: Phase 31 added: Implement PayPal sandbox checkout provider support.
+- 2026-06-30: Planned Phase 31 into PayPal provider config/checkout creation, capture/webhook reconciliation, and frontend/docs/verification work.
+- 2026-06-30: Completed Phase 31 with PayPal provider config, Orders v2 create/capture helpers, protected PayPal capture endpoint, verified PayPal webhook reconciliation, frontend return capture states, docs, full backend/frontend tests, production build, static checker, and Hercules/Playwright visual QA evidence.
 
 ### Decisions
 
@@ -104,9 +107,10 @@ Phases 13-30 are complete with source-controlled admin, wishlist, product detail
 - Keep Phase 3 dependency remediation bounded to patch/minor upgrades unless audit evidence requires a major migration.
 - Treat the completed phases 13-21 feature sweep as local/source-controlled evidence only; production readiness still depends on phases 9, 11, and 12.
 - Phase 13 was executed first because the admin console provided the management surface needed by later catalog, review, return, sustainability, retention, and lookbook work.
-- Product-growth and portfolio-demo phases 22-30 are complete; resume external launch inputs next unless a new portfolio feature is explicitly requested.
+- Product-growth and portfolio-demo phases 22-31 are complete; resume external launch inputs next unless a new portfolio feature is explicitly requested.
 - Phase 29 keeps admin capabilities visible for portfolio reviewers without granting real admin permissions, weakening backend authorization, or relying on disabled UI controls as the security boundary.
 - Phase 30 reuses the existing payment services and state model, with mock fallback only for sandbox demonstration when Stripe configuration is missing.
+- Phase 31 keeps PayPal sandbox checkout backend-owned with mock fallback when config is incomplete; hosted visibility still requires deployment env vars and redeploy.
 
 ### Known Open Risks
 
@@ -118,3 +122,4 @@ Phases 13-30 are complete with source-controlled admin, wishlist, product detail
 - Notification provider delivery remains intentionally deferred until consent, unsubscribe, suppression, audit, and rate-limit requirements are specified.
 - Demo admin preview uses sanitized sample data and must stay read-only for non-admin accounts.
 - Hybrid payment demo must never collect card numbers or imply real-money production readiness without Phase 9/12 provider evidence and explicit release approval.
+- PayPal checkout will not appear in production until this pushed code is redeployed with `PAYMENT_PROVIDER=paypal`, complete PayPal sandbox vars, and a PayPal webhook endpoint targeting `/api/webhooks/paypal`.

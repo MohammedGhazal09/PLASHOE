@@ -75,6 +75,17 @@ test('completeMockPayment posts the chosen sandbox outcome', async () => {
   expect(result.data).toEqual({ paymentStatus: 'paid' });
 });
 
+test('capturePayPalPayment posts the PayPal return token', async () => {
+  api.post.mockResolvedValue({ data: { success: true, data: { paymentStatus: 'paid' } } });
+
+  const result = await ordersApi.capturePayPalPayment('order-1', 'paypal-token-1');
+
+  expect(api.post).toHaveBeenCalledWith('/orders/order-1/payment/paypal/capture', {
+    token: 'paypal-token-1',
+  });
+  expect(result.data).toEqual({ paymentStatus: 'paid' });
+});
+
 test('reorder posts to the order reorder endpoint', async () => {
   api.post.mockResolvedValue({ data: { success: true, data: { added: 1 } } });
 

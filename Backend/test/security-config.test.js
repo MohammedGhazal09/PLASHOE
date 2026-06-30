@@ -33,6 +33,14 @@ const paymentEnv = {
   STRIPE_WEBHOOK_SECRET: "whsec_fake_secret_for_config_validation_only",
 };
 
+const paypalEnv = {
+  PAYMENT_PROVIDER: "paypal",
+  PAYPAL_ENV: "sandbox",
+  PAYPAL_CLIENT_ID: "paypal_client_id_for_config_validation_only",
+  PAYPAL_CLIENT_SECRET: "paypal_client_secret_for_config_validation_only",
+  PAYPAL_WEBHOOK_ID: "paypal_webhook_id_for_config_validation_only",
+};
+
 describe("runtime configuration validation", () => {
   it("accepts valid runtime configuration", () => {
     expect(validateRuntimeEnv({ ...baseEnv, PAYMENTS_ENABLED: "false" })).toMatchObject({
@@ -138,6 +146,63 @@ describe("runtime configuration validation", () => {
       paymentSuccessUrl: "http://localhost:3000/checkout/success",
       paymentCancelUrl: "http://localhost:3000/checkout/cancel",
     });
+  });
+
+  it("uses PayPal mode when PayPal is requested and full sandbox config is present", () => {
+    expect(
+      validateRuntimeEnv({
+        ...baseEnv,
+        PAYMENTS_ENABLED: "true",
+        ...paypalEnv,
+        PAYMENT_SUCCESS_URL: "http://localhost:3000/checkout/success",
+        PAYMENT_CANCEL_URL: "http://localhost:3000/checkout/cancel",
+      })
+    ).toMatchObject({
+      paymentsEnabled: true,
+      paymentProviderMode: "paypal",
+      paypalEnv: "sandbox",
+      paypalClientId: paypalEnv.PAYPAL_CLIENT_ID,
+      paypalWebhookId: paypalEnv.PAYPAL_WEBHOOK_ID,
+      paymentSuccessUrl: "http://localhost:3000/checkout/success",
+      paymentCancelUrl: "http://localhost:3000/checkout/cancel",
+    });
+  });
+
+  it("falls back to mock mode when PayPal is requested but sandbox config is incomplete", () => {
+    expect(
+      validateRuntimeEnv({
+        ...baseEnv,
+        PAYMENTS_ENABLED: "true",
+        PAYMENT_PROVIDER: "paypal",
+        PAYPAL_CLIENT_ID: paypalEnv.PAYPAL_CLIENT_ID,
+        PAYMENT_SUCCESS_URL: "http://localhost:3000/checkout/success",
+        PAYMENT_CANCEL_URL: "http://localhost:3000/checkout/cancel",
+      })
+    ).toMatchObject({
+      paymentsEnabled: false,
+      paymentProviderMode: "mock",
+    });
+  });
+
+  it("rejects unknown payment provider and PayPal environment values", () => {
+    expect(() =>
+      validateRuntimeEnv({
+        ...baseEnv,
+        PAYMENTS_ENABLED: "true",
+        PAYMENT_PROVIDER: "adyen",
+      })
+    ).toThrow(/PAYMENT_PROVIDER must be stripe, paypal, or mock/);
+
+    expect(() =>
+      validateRuntimeEnv({
+        ...baseEnv,
+        PAYMENTS_ENABLED: "true",
+        ...paypalEnv,
+        PAYPAL_ENV: "stage",
+        PAYMENT_SUCCESS_URL: "http://localhost:3000/checkout/success",
+        PAYMENT_CANCEL_URL: "http://localhost:3000/checkout/cancel",
+      })
+    ).toThrow(/PAYPAL_ENV must be sandbox or live/);
   });
 
   it("validates payment return URLs when payments are enabled", () => {

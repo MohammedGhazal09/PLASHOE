@@ -1,0 +1,6 @@
+{
+  "targetUrl": "http://127.0.0.1:5182",
+  "mode": "phase31-paypal",
+  "createdAt": "2026-06-30T23:06:32.6745220+03:00",
+  "artifactDir": ".planning\\phases\\31-implement-paypal-sandbox-checkout-provider-support\\artifacts\\20260630-230632-phase31-paypal-127.0.0.1-5182"
+}

@@ -36,3 +36,7 @@ export const shippingOptionsSchema = strictObject({
 export const mockPaymentOutcomeSchema = strictObject({
   outcome: z.enum(['approve', 'decline', 'cancel']),
 });
+
+export const paypalCaptureSchema = strictObject({
+  token: trimmedString('token', 200),
+});

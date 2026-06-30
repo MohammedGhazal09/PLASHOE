@@ -42,8 +42,13 @@ Required backend environment variables are documented in [CONFIGURATION.md](CONF
 - `FRONTEND_URL`
 - `PORT`
 - `PAYMENTS_ENABLED`
+- `PAYMENT_PROVIDER`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `PAYPAL_ENV`
+- `PAYPAL_CLIENT_ID`
+- `PAYPAL_CLIENT_SECRET`
+- `PAYPAL_WEBHOOK_ID`
 - `PAYMENT_SUCCESS_URL`
 - `PAYMENT_CANCEL_URL`
 
@@ -61,6 +66,19 @@ Build the frontend as a static Vite bundle.
 | Publish directory | `Frontend/Ecommerce-main/my-app/build` |
 
 Set public `REACT_APP_*` build-time values before running `npm run build`. Vite embeds those values into the static bundle, so staging and production must be rebuilt after changing `REACT_APP_API_URL` or any other `REACT_APP_*` value. At minimum, staging and production need `REACT_APP_API_URL` pointing to the matching deployed backend `/api` base URL. MapTiler keys are browser-visible public keys and should be domain-restricted.
+
+## Hosted Payment Setup
+
+For the current portfolio deployment, PayPal sandbox is the recommended hosted-provider setup because it shows a real off-site approval flow without live money movement:
+
+1. Set `PAYMENTS_ENABLED=true`.
+2. Set `PAYMENT_PROVIDER=paypal`.
+3. Add `PAYPAL_ENV=sandbox`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, and `PAYPAL_WEBHOOK_ID` to the backend host secret manager.
+4. Create a PayPal webhook endpoint that posts to `<backend-origin>/api/webhooks/paypal`.
+5. Subscribe the endpoint to checkout order, capture completed/denied/reversed, and capture refund events documented in [API.md](API.md).
+6. Set `PAYMENT_SUCCESS_URL` and `PAYMENT_CANCEL_URL` to frontend-hosted `/checkout/success` and `/checkout/cancel` URLs.
+
+No PayPal secret belongs in the frontend environment template.
 
 ## Stripe Setup
 
@@ -97,7 +115,7 @@ Start rollback when any of these happen after deploy:
 - Backend service is down or repeatedly restarting.
 - `/api/ready` returns `503` for a sustained period after the expected startup window.
 - 5xx responses spike on auth, product, cart, checkout, webhook, or admin order paths.
-- Stripe checkout or webhook reconciliation fails for real orders.
+- Hosted checkout or webhook reconciliation fails for real orders.
 - Checkout cannot create orders or redirects users to broken payment-return pages.
 - Severe performance degradation makes core flows unusable.
 
@@ -114,7 +132,7 @@ Operational signal routing, alert ownership, the minimal dashboard checklist, an
 | Window | What to Watch | Expected Result |
 | --- | --- | --- |
 | First 5 minutes | Process startup, `/api/health`, `/api/ready`, startup logs, MongoDB connection logs | Service is live and ready. |
-| First 15 minutes | API 4xx/5xx rate, request completion logs, checkout-start errors, Stripe webhook errors | No new sustained error pattern. |
+| First 15 minutes | API 4xx/5xx rate, request completion logs, checkout-start errors, payment webhook errors | No new sustained error pattern. |
 | First 60 minutes | Payment completion, admin fulfillment, product/cart/order flows, support reports | Core flows remain stable. |
 
 Structured backend logs are JSON records with `timestamp`, `level`, `event`, and safe metadata. Use `requestId` from client-facing error envelopes or response headers to locate related backend logs.

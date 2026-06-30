@@ -3,6 +3,14 @@ import { JWT_SECURITY } from './security.js';
 const DURATION_PATTERN = /^\d+\s*(ms|s|m|h|d|w|y)?$/i;
 const TEMPLATE_PLACEHOLDER_PATTERN =
   /^<[^>]+>$|(?:^|[-_\s])(replace(?:[-_\s]?me)?|change(?:[-_\s]?me)?|placeholder|example)(?:[-_\s]|$)|^your[-_\s]/i;
+const VALID_PAYMENT_PROVIDERS = new Set(['stripe', 'paypal', 'mock']);
+const VALID_PAYPAL_ENVS = new Set(['sandbox', 'live']);
+
+export const PAYMENT_PROVIDER_MODES = Object.freeze({
+  STRIPE: 'stripe',
+  PAYPAL: 'paypal',
+  MOCK: 'mock',
+});
 
 const getTrimmed = (env, key) => {
   const value = env[key];
@@ -61,6 +69,68 @@ const hasCompleteStripeConfig = ({
 }) =>
   Boolean(stripeSecretKey && stripeWebhookSecret && paymentSuccessUrl && paymentCancelUrl);
 
+const hasCompletePayPalConfig = ({
+  paypalClientId,
+  paypalClientSecret,
+  paypalWebhookId,
+  paymentSuccessUrl,
+  paymentCancelUrl,
+}) =>
+  Boolean(
+    paypalClientId &&
+      paypalClientSecret &&
+      paypalWebhookId &&
+      paymentSuccessUrl &&
+      paymentCancelUrl
+  );
+
+export const hasCompleteStripeRuntimeConfig = (env = process.env) =>
+  hasCompleteStripeConfig({
+    stripeSecretKey: getTrimmed(env, 'STRIPE_SECRET_KEY'),
+    stripeWebhookSecret: getTrimmed(env, 'STRIPE_WEBHOOK_SECRET'),
+    paymentSuccessUrl: getTrimmed(env, 'PAYMENT_SUCCESS_URL'),
+    paymentCancelUrl: getTrimmed(env, 'PAYMENT_CANCEL_URL'),
+  });
+
+export const hasCompletePayPalRuntimeConfig = (env = process.env) =>
+  hasCompletePayPalConfig({
+    paypalClientId: getTrimmed(env, 'PAYPAL_CLIENT_ID'),
+    paypalClientSecret: getTrimmed(env, 'PAYPAL_CLIENT_SECRET'),
+    paypalWebhookId: getTrimmed(env, 'PAYPAL_WEBHOOK_ID'),
+    paymentSuccessUrl: getTrimmed(env, 'PAYMENT_SUCCESS_URL'),
+    paymentCancelUrl: getTrimmed(env, 'PAYMENT_CANCEL_URL'),
+  });
+
+export const resolvePaymentProviderMode = (env = process.env) => {
+  if (!parsePaymentsEnabled(env)) {
+    return PAYMENT_PROVIDER_MODES.MOCK;
+  }
+
+  const requestedProvider = getTrimmed(env, 'PAYMENT_PROVIDER').toLowerCase();
+
+  if (requestedProvider === PAYMENT_PROVIDER_MODES.MOCK) {
+    return PAYMENT_PROVIDER_MODES.MOCK;
+  }
+
+  if (requestedProvider === PAYMENT_PROVIDER_MODES.PAYPAL) {
+    return hasCompletePayPalRuntimeConfig(env)
+      ? PAYMENT_PROVIDER_MODES.PAYPAL
+      : PAYMENT_PROVIDER_MODES.MOCK;
+  }
+
+  if (requestedProvider === PAYMENT_PROVIDER_MODES.STRIPE) {
+    return hasCompleteStripeRuntimeConfig(env)
+      ? PAYMENT_PROVIDER_MODES.STRIPE
+      : PAYMENT_PROVIDER_MODES.MOCK;
+  }
+
+  if (!requestedProvider && hasCompleteStripeRuntimeConfig(env)) {
+    return PAYMENT_PROVIDER_MODES.STRIPE;
+  }
+
+  return PAYMENT_PROVIDER_MODES.MOCK;
+};
+
 const rejectTemplatePlaceholder = (value, key, env, errors) => {
   if (env.NODE_ENV === 'test' || !value) {
     return;
@@ -78,22 +148,25 @@ export const validateRuntimeEnv = (env = process.env) => {
   const frontendUrl = getTrimmed(env, 'FRONTEND_URL');
   const jwtExpire = getTrimmed(env, 'JWT_EXPIRE') || JWT_SECURITY.defaultExpiresIn;
   const portValue = getTrimmed(env, 'PORT');
-  const paymentsRequested = parsePaymentsEnabled(env);
+  const paymentProviderPreference = getTrimmed(env, 'PAYMENT_PROVIDER').toLowerCase();
   const stripeSecretKey = getTrimmed(env, 'STRIPE_SECRET_KEY');
   const stripeWebhookSecret = getTrimmed(env, 'STRIPE_WEBHOOK_SECRET');
+  const paypalEnv = (getTrimmed(env, 'PAYPAL_ENV') || 'sandbox').toLowerCase();
+  const paypalClientId = getTrimmed(env, 'PAYPAL_CLIENT_ID');
+  const paypalClientSecret = getTrimmed(env, 'PAYPAL_CLIENT_SECRET');
+  const paypalWebhookId = getTrimmed(env, 'PAYPAL_WEBHOOK_ID');
   const paymentSuccessUrl = getTrimmed(env, 'PAYMENT_SUCCESS_URL');
   const paymentCancelUrl = getTrimmed(env, 'PAYMENT_CANCEL_URL');
-  const paymentProviderMode =
-    paymentsRequested &&
-    hasCompleteStripeConfig({
-      stripeSecretKey,
-      stripeWebhookSecret,
-      paymentSuccessUrl,
-      paymentCancelUrl,
-    })
-      ? 'stripe'
-      : 'mock';
-  const paymentsEnabled = paymentProviderMode === 'stripe';
+  const paymentProviderMode = resolvePaymentProviderMode(env);
+  const paymentsEnabled = paymentProviderMode !== PAYMENT_PROVIDER_MODES.MOCK;
+
+  if (paymentProviderPreference && !VALID_PAYMENT_PROVIDERS.has(paymentProviderPreference)) {
+    errors.push('PAYMENT_PROVIDER must be stripe, paypal, or mock');
+  }
+
+  if (paypalEnv && !VALID_PAYPAL_ENVS.has(paypalEnv)) {
+    errors.push('PAYPAL_ENV must be sandbox or live');
+  }
 
   if (!mongoUri) {
     errors.push('MONGO_URI is required');
@@ -125,9 +198,17 @@ export const validateRuntimeEnv = (env = process.env) => {
   let normalizedPaymentSuccessUrl = paymentSuccessUrl;
   let normalizedPaymentCancelUrl = paymentCancelUrl;
 
-  if (paymentProviderMode === 'stripe') {
+  if (paymentProviderMode === PAYMENT_PROVIDER_MODES.STRIPE) {
     rejectTemplatePlaceholder(stripeSecretKey, 'STRIPE_SECRET_KEY', env, errors);
     rejectTemplatePlaceholder(stripeWebhookSecret, 'STRIPE_WEBHOOK_SECRET', env, errors);
+    normalizedPaymentSuccessUrl = validateUrl(paymentSuccessUrl, 'PAYMENT_SUCCESS_URL', errors);
+    normalizedPaymentCancelUrl = validateUrl(paymentCancelUrl, 'PAYMENT_CANCEL_URL', errors);
+  }
+
+  if (paymentProviderMode === PAYMENT_PROVIDER_MODES.PAYPAL) {
+    rejectTemplatePlaceholder(paypalClientId, 'PAYPAL_CLIENT_ID', env, errors);
+    rejectTemplatePlaceholder(paypalClientSecret, 'PAYPAL_CLIENT_SECRET', env, errors);
+    rejectTemplatePlaceholder(paypalWebhookId, 'PAYPAL_WEBHOOK_ID', env, errors);
     normalizedPaymentSuccessUrl = validateUrl(paymentSuccessUrl, 'PAYMENT_SUCCESS_URL', errors);
     normalizedPaymentCancelUrl = validateUrl(paymentCancelUrl, 'PAYMENT_CANCEL_URL', errors);
   }
@@ -148,6 +229,10 @@ export const validateRuntimeEnv = (env = process.env) => {
     paymentProviderMode,
     stripeSecretKey,
     stripeWebhookSecret,
+    paypalEnv,
+    paypalClientId,
+    paypalClientSecret,
+    paypalWebhookId,
     paymentSuccessUrl: normalizedPaymentSuccessUrl,
     paymentCancelUrl: normalizedPaymentCancelUrl,
   };
