@@ -60,6 +60,11 @@ export const contactLimiter = createJsonRateLimit(
   'Too many contact requests, please try again later'
 );
 
+export const newsletterLimiter = createJsonRateLimit(
+  RATE_LIMITS.newsletter,
+  'Too many newsletter subscription requests, please try again later'
+);
+
 export const couponValidationLimiter = createJsonRateLimit(
   RATE_LIMITS.couponValidation,
   'Too many coupon validation requests, please try again later'

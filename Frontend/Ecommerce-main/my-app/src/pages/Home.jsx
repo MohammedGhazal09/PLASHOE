@@ -7,6 +7,7 @@ import Avatar from '@mui/material/Avatar';
 import Skeleton from '@mui/material/Skeleton';
 import ProductCard from '../components/ProductCard';
 import QuickViewModal from '../components/QuickViewModal';
+import { newsletterApi } from '../api/newsletterApi';
 import { config } from '../config/config';
 import { useCatalogProducts } from '../hooks/useCatalogProducts';
 
@@ -32,6 +33,10 @@ const MaleCustomer3 = `${config.external.unsplashBase}/photo-1500648767791-00dcc
 
 export default function Home() {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterConsent, setNewsletterConsent] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState({ type: '', message: '' });
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
   const { products, loading } = useCatalogProducts({ limit: 100 });
 
   // Bestsellers (rating >= 4.5)
@@ -42,6 +47,45 @@ export default function Home() {
 
   // New arrivals (rating === 0 indicates new)
   const newArrivals = products.filter((p) => p.rating === 0).slice(0, 4);
+
+  const handleNewsletterSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!newsletterConsent) {
+      setNewsletterStatus({
+        type: 'error',
+        message: 'Confirm newsletter consent before subscribing.',
+      });
+      return;
+    }
+
+    setNewsletterSubmitting(true);
+    setNewsletterStatus({ type: '', message: '' });
+
+    try {
+      const response = await newsletterApi.subscribe({
+        email: newsletterEmail,
+        consent: true,
+        source: 'home_newsletter',
+      });
+
+      if (response?.success) {
+        setNewsletterStatus({
+          type: 'success',
+          message: response.message || 'Newsletter subscription saved.',
+        });
+        setNewsletterEmail('');
+        setNewsletterConsent(false);
+      }
+    } catch (error) {
+      setNewsletterStatus({
+        type: 'error',
+        message: error.response?.data?.message || 'We could not save your newsletter subscription.',
+      });
+    } finally {
+      setNewsletterSubmitting(false);
+    }
+  };
 
   return (
     <div>
@@ -260,16 +304,49 @@ export default function Home() {
       <div className="bg-dark py-12 md:py-16 px-6 text-center">
         <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">Subscribe to Our Newsletter</h2>
         <p className="text-gray-400 mb-6">Get updates on new arrivals and exclusive offers</p>
-        <div className="flex flex-col sm:flex-row justify-center gap-3 max-w-md mx-auto">
-          <input
-            type="email"
-            placeholder="Enter your email"
-            className="flex-1 px-4 py-3 rounded-none border-0 focus:ring-2 focus:ring-primary"
-          />
-          <button className="button-control button-control--primary button-control--wide">
-            SUBSCRIBE
-          </button>
-        </div>
+        <form onSubmit={handleNewsletterSubmit} className="mx-auto max-w-xl text-left">
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
+            <label className="sr-only" htmlFor="newsletter-email">Email</label>
+            <input
+              id="newsletter-email"
+              type="email"
+              required
+              value={newsletterEmail}
+              onChange={(event) => setNewsletterEmail(event.target.value)}
+              placeholder="Enter your email"
+              aria-describedby="newsletter-consent newsletter-status"
+              aria-invalid={newsletterStatus.type === 'error' ? 'true' : undefined}
+              className="flex-1 rounded-none border-0 px-4 py-3 focus:ring-2 focus:ring-primary"
+            />
+            <button
+              type="submit"
+              disabled={newsletterSubmitting}
+              className="button-control button-control--primary button-control--wide"
+            >
+              {newsletterSubmitting ? 'SAVING...' : 'SUBSCRIBE'}
+            </button>
+          </div>
+          <label id="newsletter-consent" className="mt-3 flex items-start gap-2 text-sm text-gray-300">
+            <input
+              type="checkbox"
+              checked={newsletterConsent}
+              onChange={(event) => setNewsletterConsent(event.target.checked)}
+              className="mt-1"
+            />
+            Email me PLASHOE updates and offers. I can unsubscribe later.
+          </label>
+          {newsletterStatus.message && (
+            <p
+              id="newsletter-status"
+              role={newsletterStatus.type === 'error' ? 'alert' : 'status'}
+              className={`mt-3 text-sm font-semibold ${
+                newsletterStatus.type === 'error' ? 'text-red-200' : 'text-green-200'
+              }`}
+            >
+              {newsletterStatus.message}
+            </p>
+          )}
+        </form>
         <div className="flex justify-center gap-6 mt-8 text-white text-xl">
           <button className="button-control button-control--inverse-icon" aria-label="Instagram">
             <FontAwesomeIcon icon={faInstagram} />

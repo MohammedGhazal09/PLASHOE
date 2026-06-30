@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import toast from 'react-hot-toast';
@@ -38,6 +38,7 @@ vi.mock('../api/authApi', () => ({
     getMe: vi.fn(),
     updateProfile: vi.fn(),
     addAddress: vi.fn(),
+    setDefaultAddress: vi.fn(),
     deleteAddress: vi.fn(),
   },
 }));
@@ -69,9 +70,9 @@ const wishlistItem = {
   source: 'local',
 };
 
-const setAuthenticatedUser = () => {
+const setAuthenticatedUser = (overrides = {}) => {
   useAuthStore.setState({
-    user: { name: 'Test Buyer', email: 'buyer@example.com' },
+    user: { name: 'Test Buyer', email: 'buyer@example.com', ...overrides },
     token: 'token',
     isAuthenticated: true,
     isLoading: false,
@@ -329,4 +330,145 @@ test('routes checkout-intent shoppers to cart review when merge fails', async ()
       state: { checkoutReview: 'Some cart items need review before checkout' },
     });
   });
+});
+
+test('updates profile details from the account settings tab', async () => {
+  const user = userEvent.setup();
+  setAuthenticatedUser({ _id: 'user-1', phone: '1112223333', addresses: [] });
+  authApi.updateProfile.mockResolvedValue({
+    success: true,
+    data: {
+      _id: 'user-1',
+      name: 'Updated Buyer',
+      email: 'buyer@example.com',
+      phone: '5551234567',
+      addresses: [],
+    },
+  });
+
+  renderWithRouter(<Account />);
+
+  await user.click(screen.getByRole('button', { name: /settings/i }));
+  const profileForm = screen.getByRole('form', { name: /profile settings/i });
+  const nameInput = within(profileForm).getByLabelText(/full name/i);
+  const phoneInput = within(profileForm).getByLabelText(/^phone$/i);
+
+  await user.clear(nameInput);
+  await user.type(nameInput, 'Updated Buyer');
+  await user.clear(phoneInput);
+  await user.type(phoneInput, '5551234567');
+  await user.click(within(profileForm).getByRole('button', { name: /save profile/i }));
+
+  await waitFor(() => {
+    expect(authApi.updateProfile).toHaveBeenCalledWith({
+      name: 'Updated Buyer',
+      phone: '5551234567',
+    });
+  });
+  expect(toast.success).toHaveBeenCalledWith('Profile updated.');
+});
+
+test('adds a saved address from the account settings tab', async () => {
+  const user = userEvent.setup();
+  setAuthenticatedUser({ _id: 'user-1', phone: '5551234567', addresses: [] });
+  const savedAddress = {
+    _id: 'address-1',
+    firstName: 'Test',
+    lastName: 'Buyer',
+    street: '123 Test Street',
+    city: 'Testville',
+    state: 'CA',
+    zipCode: '90210',
+    country: 'United States',
+    phone: '5551234567',
+    isDefault: true,
+  };
+  authApi.addAddress.mockResolvedValue({ success: true, data: [savedAddress] });
+
+  renderWithRouter(<Account />, {
+    initialEntries: [{ pathname: '/account', state: { tab: 'settings' } }],
+  });
+
+  const addressForm = screen.getByRole('form', { name: /add saved address/i });
+  await user.type(within(addressForm).getByLabelText(/first name/i), 'Test');
+  await user.type(within(addressForm).getByLabelText(/last name/i), 'Buyer');
+  await user.clear(within(addressForm).getByLabelText(/country/i));
+  await user.type(within(addressForm).getByLabelText(/country/i), 'United States');
+  await user.type(within(addressForm).getByLabelText(/street address/i), '123 Test Street');
+  await user.type(within(addressForm).getByLabelText(/^city$/i), 'Testville');
+  await user.type(within(addressForm).getByLabelText(/^state$/i), 'CA');
+  await user.type(within(addressForm).getByLabelText(/zip or postal code/i), '90210');
+  await user.type(within(addressForm).getByLabelText(/delivery phone/i), '5551234567');
+  await user.click(within(addressForm).getByRole('button', { name: /add address/i }));
+
+  await waitFor(() => {
+    expect(authApi.addAddress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firstName: 'Test',
+        lastName: 'Buyer',
+        street: '123 Test Street',
+        city: 'Testville',
+        state: 'CA',
+        zipCode: '90210',
+        country: 'United States',
+        phone: '5551234567',
+        isDefault: true,
+      })
+    );
+  });
+  expect(await screen.findByText('123 Test Street')).toBeInTheDocument();
+  expect(screen.getByText('Default')).toBeInTheDocument();
+});
+
+test('sets an existing saved address as the default from settings', async () => {
+  const user = userEvent.setup();
+  setAuthenticatedUser({
+    _id: 'user-1',
+    addresses: [
+      {
+        _id: 'address-1',
+        firstName: 'Home',
+        lastName: 'Buyer',
+        street: '123 Test Street',
+        city: 'Testville',
+        state: 'CA',
+        zipCode: '90210',
+        country: 'United States',
+        phone: '5551234567',
+        isDefault: true,
+      },
+      {
+        _id: 'address-2',
+        firstName: 'Office',
+        lastName: 'Buyer',
+        street: '456 Work Street',
+        city: 'Workville',
+        state: 'NY',
+        zipCode: '10001',
+        country: 'United States',
+        phone: '5559876543',
+        isDefault: false,
+      },
+    ],
+  });
+  authApi.setDefaultAddress.mockResolvedValue({
+    success: true,
+    data: [
+      { _id: 'address-1', firstName: 'Home', lastName: 'Buyer', isDefault: false },
+      { _id: 'address-2', firstName: 'Office', lastName: 'Buyer', isDefault: true },
+    ],
+  });
+
+  renderWithRouter(<Account />, {
+    initialEntries: [{ pathname: '/account', state: { tab: 'settings' } }],
+  });
+
+  await user.click(
+    screen.getByRole('button', { name: /set default address for office buyer/i })
+  );
+
+  await waitFor(() => {
+    expect(authApi.setDefaultAddress).toHaveBeenCalledWith('address-2');
+  });
+  expect(toast.success).toHaveBeenCalledWith('Default address updated.');
 });

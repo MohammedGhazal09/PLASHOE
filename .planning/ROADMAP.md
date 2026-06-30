@@ -2,7 +2,7 @@
 
 ## Overview
 
-This roadmap turns the verified PLASHOE gaps into execution phases. The sequence starts with defects already proven by spike 001, then adds test coverage, security hardening, checkout integrity, payment readiness, admin fulfillment, catalog/frontend cleanup, deployment operations, production launch setup, frontend tooling modernization, operational monitoring, and final release cutover. Post-release phases then expand the store into richer admin operations, shopping intent, product confidence, discovery, checkout conversion, returns, sustainability content, retention, and shoppable merchandising.
+This roadmap turns the verified PLASHOE gaps into execution phases. The sequence starts with defects already proven by spike 001, then adds test coverage, security hardening, checkout integrity, payment readiness, admin fulfillment, catalog/frontend cleanup, deployment operations, production launch setup, frontend tooling modernization, operational monitoring, and final release cutover. Post-release phases then expand the store into richer admin operations, shopping intent, product confidence, discovery, checkout conversion, returns, sustainability content, retention, shoppable merchandising, account self-service, admin analytics, lifecycle operations, moderation, merchandising tooling, and shipping rules.
 
 ## Phases
 
@@ -32,6 +32,13 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 19: Sustainability Impact and Product Care Content** - Make product sustainability and care information first-class content. (completed 2026-06-20)
 - [x] **Phase 20: Retention Lifecycle Commerce and Personalization** - Add back-in-stock, reorder, cart recovery, and recommendation workflows. (completed 2026-06-21)
 - [x] **Phase 21: Shoppable Lookbook and Outfit Bundles** - Turn lookbook content into tagged, bundle-ready merchandising. (completed 2026-06-21)
+- [x] **Phase 22: Account Settings and Address Management** - Complete account self-service for profile and saved addresses. (completed 2026-06-30)
+- [x] **Phase 23: Admin Metrics Dashboard and Store Health Snapshot** - Give operators a compact business and operations dashboard. (completed 2026-06-30)
+- [x] **Phase 24: Back-in-Stock Admin Workflow and Notification Readiness** - Let admins manage restock demand before provider delivery is selected. (completed 2026-06-30)
+- [x] **Phase 25: Newsletter Subscription Capture and Consent Management** - Turn the newsletter UI into a consent-backed subscription workflow. (completed 2026-06-30)
+- [x] **Phase 26: Review Moderation and Customer Trust Controls** - Add admin moderation for public review quality and trust. (completed 2026-06-30)
+- [x] **Phase 27: Searchable Admin Product Picker for Merchandising Workflows** - Replace manual product-id entry with reusable admin product selection. (completed 2026-06-30)
+- [x] **Phase 28: Shipping Rates and International Checkout Rules** - Add server-owned shipping methods, country rules, and checkout totals. (completed 2026-06-30)
 
 ## Phase Details
 
@@ -670,9 +677,191 @@ Plan candidates:
 - D-03: Do all work inline and do not use subagents.
 - D-65: Bundle add-to-cart must respect stock, size selection, and cart normalization rules.
 
+### Phase 22: Account Settings and Address Management
+
+**Goal**: Customers can maintain profile details and saved addresses from the account settings area, and checkout can keep using the same default-address contract.
+**Depends on**: Phase 21
+**Requirements**: V3-ACC-01, V3-ACC-02, V3-ACC-03
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/pages/Account.jsx`, `Frontend/Ecommerce-main/my-app/src/api/authApi.js`, `Backend/controllers/authController.js`, `Backend/validators/auth.js`
+**Success Criteria** (what must be TRUE):
+
+  1. The Account settings tab replaces placeholder copy with editable profile and address-management controls.
+  2. Customers can add, delete, and choose a default saved address without breaking checkout address prefill.
+  3. Password or credential-management behavior is explicit and protected; no weak unauthenticated mutation path is introduced.
+  4. Frontend and backend tests cover success, validation, authorization, and default-address edge cases.
+
+**Plans**: 3 plans
+
+Plans:
+
+- [x] 22-01: Complete profile/settings UI on existing auth APIs.
+- [x] 22-02: Add address book default-address management and checkout reuse coverage.
+- [x] 22-03: Add credential-management boundary, tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-66: Reuse the existing auth/address API boundary before adding new account infrastructure.
+
+### Phase 23: Admin Metrics Dashboard and Store Health Snapshot
+
+**Goal**: Operators can see the store's current health, revenue, fulfillment, inventory, returns, and message workload from the admin console.
+**Depends on**: Phase 22
+**Requirements**: V3-ADMSTAT-01, V3-ADMSTAT-02, V3-ADMSTAT-03
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/pages/AdminConsole.jsx`, `Frontend/Ecommerce-main/my-app/src/api/adminApi.js`, `Backend/models/Order.js`, `Backend/models/Product.js`, `Backend/models/ReturnRequest.js`, `Backend/models/ContactMessage.js`
+**Success Criteria** (what must be TRUE):
+
+  1. A protected admin summary API returns bounded metrics for paid revenue, order status, low stock, open returns, unread messages, and coupon usage.
+  2. The admin console shows a dashboard section with loading, error, empty, and populated states that fit desktop and mobile layouts.
+  3. Metrics are computed server-side through admin-protected queries and do not expose customer-sensitive detail beyond existing admin policy.
+  4. Backend aggregation tests and frontend admin dashboard tests cover the displayed metrics.
+
+**Plans**: 3 plans
+
+Plans:
+
+- [x] 23-01: Add admin summary API and model aggregation tests.
+- [x] 23-02: Add dashboard section to the admin console.
+- [x] 23-03: Add UI tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-67: Keep dashboard metrics compact and query-bounded; do not add a general analytics framework.
+
+### Phase 24: Back-in-Stock Admin Workflow and Notification Readiness
+
+**Goal**: Admins can inspect and manage back-in-stock demand by product, size, and email before any notification provider is connected.
+**Depends on**: Phase 23
+**Requirements**: V3-BIS-01, V3-BIS-02, V3-BIS-03
+**Canonical refs**: `Backend/models/BackInStockRequest.js`, `Backend/controllers/backInStockController.js`, `Backend/routes/backInStockRoutes.js`, `Frontend/Ecommerce-main/my-app/src/pages/ProductDetail.jsx`
+**Success Criteria** (what must be TRUE):
+
+  1. Admin APIs can list, filter, and summarize pending back-in-stock requests by product, size, email, and status.
+  2. Admins can mark requests notified or cancelled without sending provider messages or exporting contact lists.
+  3. Product/admin views make restock demand visible enough to guide inventory decisions.
+  4. Tests cover duplicate pending requests, status transitions, filtering, and authorization.
+
+**Plans**: 3 plans
+
+Plans:
+
+- [x] 24-01: Add admin back-in-stock list, summary, and status APIs.
+- [x] 24-02: Add admin retention-demand UI.
+- [x] 24-03: Add tests, docs, and provider-boundary verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-68: Do not add email/SMS delivery, provider secrets, or contact-list export in this phase.
+
+### Phase 25: Newsletter Subscription Capture and Consent Management
+
+**Goal**: The storefront newsletter form becomes a real consent-backed subscription workflow with safe admin visibility and unsubscribe handling.
+**Depends on**: Phase 24
+**Requirements**: V3-NEWS-01, V3-NEWS-02, V3-NEWS-03, V3-NEWS-04
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/pages/Home.jsx`, `Backend/app.js`, `Backend/middleware/validate.js`, `Backend/config/security.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Public newsletter subscription captures email, consent, source, duplicate-safe status, and unsubscribe token.
+  2. Duplicate subscriptions are idempotent and do not create repeated active records for the same email.
+  3. Admins can list or summarize subscription records through protected APIs without exposing unnecessary personal data.
+  4. Unsubscribe or suppression behavior is implemented before any provider-delivery integration.
+
+**Plans**: 3 plans
+
+Plans:
+
+- [x] 25-01: Add newsletter model, validators, public subscribe, and unsubscribe APIs.
+- [x] 25-02: Wire the Home newsletter UI and admin subscription visibility.
+- [x] 25-03: Add consent, duplicate, unsubscribe, tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-69: Lifecycle messaging remains opt-in; no provider delivery secrets or bulk contact export in this phase.
+
+### Phase 26: Review Moderation and Customer Trust Controls
+
+**Goal**: Admins can moderate product reviews so public review content remains useful, approved, and consistent with rating aggregates.
+**Depends on**: Phase 25
+**Requirements**: V3-REV-MOD-01, V3-REV-MOD-02, V3-REV-MOD-03
+**Canonical refs**: `Backend/models/Review.js`, `Backend/controllers/reviewController.js`, `Frontend/Ecommerce-main/my-app/src/pages/ProductDetail.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/AdminConsole.jsx`
+**Success Criteria** (what must be TRUE):
+
+  1. Admin APIs can list reviews by approval state, inspect review detail, and approve or hide reviews.
+  2. Public review listing and product rating summaries only reflect approved reviews after moderation changes.
+  3. Admin UI exposes moderation actions with clear states and no accidental destructive default.
+  4. Tests cover moderation transitions, aggregate recalculation, public visibility, and authorization.
+
+**Plans**: 3 plans
+
+Plans:
+
+- [x] 26-01: Add admin review moderation APIs and aggregate-safe status changes.
+- [x] 26-02: Add admin moderation UI and customer-facing trust states.
+- [x] 26-03: Add tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-70: Review moderation must not publish unapproved content or desynchronize product rating summaries.
+
+### Phase 27: Searchable Admin Product Picker for Merchandising Workflows
+
+**Goal**: Admin merchandising screens can select products through a reusable searchable picker instead of manual MongoDB id entry.
+**Depends on**: Phase 26
+**Requirements**: V3-PICK-01, V3-PICK-02, V3-PICK-03
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/pages/admin/AdminLookbook.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/admin/AdminProducts.jsx`, `Frontend/Ecommerce-main/my-app/src/api/adminApi.js`, `Backend/controllers/productController.js`
+**Success Criteria** (what must be TRUE):
+
+  1. A reusable admin product picker searches existing bounded product APIs and returns id, name, image, category, stock, and price context.
+  2. Lookbook hotspot and bundle forms can select products without typing raw IDs.
+  3. Picker states cover loading, no results, selected product, deleted/stale product, and low/out-of-stock context.
+  4. Frontend tests cover picker behavior and lookbook/admin integration.
+
+**Plans**: 3 plans
+
+Plan candidates:
+
+- [x] 27-01: Add reusable admin product picker component on existing product APIs.
+- [x] 27-02: Integrate picker into lookbook hotspot and bundle forms.
+- [x] 27-03: Add tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-71: Reuse existing bounded product search before adding any new admin search endpoint.
+
+### Phase 28: Shipping Rates and International Checkout Rules
+
+**Goal**: Checkout totals and order records include server-owned shipping methods, shipping rates, and country availability rules.
+**Depends on**: Phase 27
+**Requirements**: V3-SHIP-01, V3-SHIP-02, V3-SHIP-03, V3-SHIP-04
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx`, `Backend/services/checkoutService.js`, `Backend/models/Order.js`, `Backend/validators/order.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Backend checkout computes shipping availability, shipping price, and final total from server-owned country/method rules.
+  2. Checkout UI shows eligible shipping methods and blocks unsupported countries before payment handoff.
+  3. Orders persist selected shipping method, shipping price, country, and total in a way compatible with payment and fulfillment state.
+  4. Tests cover supported/unsupported countries, method selection, total calculation, Stripe amount inputs, and order persistence.
+
+**Plans**: 3 plans
+
+Plan candidates:
+
+- [x] 28-01: Add shipping rule model/config, validation, and checkout total calculation.
+- [x] 28-02: Add checkout shipping-method UI and order persistence.
+- [x] 28-03: Add payment amount, fulfillment, tests, docs, and verification.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-72: Checkout totals remain backend-owned; do not trust frontend-submitted shipping prices.
+
 ## Progress
 
-**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21
+**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24 -> Phase 25 -> Phase 26 -> Phase 27 -> Phase 28
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -697,11 +886,18 @@ Plan candidates:
 | 19. Sustainability Impact and Product Care Content | 3/3 | Complete    | 2026-06-20 |
 | 20. Retention Lifecycle Commerce and Personalization | 4/4 | Complete    | 2026-06-21 |
 | 21. Shoppable Lookbook and Outfit Bundles | 3/3 | Complete    | 2026-06-21 |
+| 22. Account Settings and Address Management | 3/3 | Complete | 2026-06-30 |
+| 23. Admin Metrics Dashboard and Store Health Snapshot | 3/3 | Complete | 2026-06-30 |
+| 24. Back-in-Stock Admin Workflow and Notification Readiness | 3/3 | Complete | 2026-06-30 |
+| 25. Newsletter Subscription Capture and Consent Management | 3/3 | Complete | 2026-06-30 |
+| 26. Review Moderation and Customer Trust Controls | 3/3 | Complete | 2026-06-30 |
+| 27. Searchable Admin Product Picker for Merchandising Workflows | 3/3 | Complete | 2026-06-30 |
+| 28. Shipping Rates and International Checkout Rules | 3/3 | Complete | 2026-06-30 |
 
 ## Recommendations
 
 - Resume Phase 9 evidence capture when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler inputs are available.
 - Keep Phase 11 focused on live monitoring, alerting, backup/restore, and incident-readiness evidence once the provider setup exists.
 - Treat Phase 12 as the only production cutover phase; local completion of phases 13-21 does not imply hosted release approval.
-- For future product work after the current sweep, prioritize searchable product pickers in admin/lookbook flows before adding more merchandising complexity.
+- Product-growth phases 22-28 are complete; return to Phase 9 production launch evidence when external setup is available.
 - Preserve the no-subagent constraint for GSD execution unless the repository instruction changes.

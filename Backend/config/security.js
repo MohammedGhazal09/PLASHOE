@@ -16,6 +16,10 @@ export const RATE_LIMITS = {
     windowMs: 60 * 60 * 1000,
     max: 5,
   },
+  newsletter: {
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+  },
   couponValidation: {
     windowMs: 15 * 60 * 1000,
     max: 30,

@@ -27,6 +27,64 @@ test('getProducts calls the product list endpoint with params', async () => {
   expect(result).toBe(response);
 });
 
+test('getSummary calls the admin summary endpoint', async () => {
+  const response = { success: true, data: { orders: { total: 0 } } };
+  api.get.mockResolvedValue({ data: response });
+
+  const result = await adminApi.getSummary();
+
+  expect(api.get).toHaveBeenCalledWith('/admin/summary');
+  expect(result).toBe(response);
+});
+
+test('back-in-stock admin wrappers call retention endpoints', async () => {
+  const response = { success: true, data: [] };
+  const params = { status: 'pending', size: 42, email: 'customer@example.com' };
+  api.get.mockResolvedValue({ data: response });
+  api.patch.mockResolvedValue({ data: response });
+
+  await expect(adminApi.getBackInStockSummary()).resolves.toBe(response);
+  expect(api.get).toHaveBeenCalledWith('/back-in-stock/admin/summary');
+
+  await expect(adminApi.getBackInStockRequests(params)).resolves.toBe(response);
+  expect(api.get).toHaveBeenCalledWith('/back-in-stock/admin', { params });
+
+  await expect(adminApi.updateBackInStockStatus('request-1', { status: 'notified' })).resolves.toBe(response);
+  expect(api.patch).toHaveBeenCalledWith('/back-in-stock/admin/request-1/status', {
+    status: 'notified',
+  });
+});
+
+test('newsletter admin wrappers call subscription endpoints', async () => {
+  const response = { success: true, data: [] };
+  const params = { status: 'active', source: 'home_newsletter' };
+  api.get.mockResolvedValue({ data: response });
+
+  await expect(adminApi.getNewsletterSummary()).resolves.toBe(response);
+  expect(api.get).toHaveBeenCalledWith('/newsletter/admin/summary');
+
+  await expect(adminApi.getNewsletterSubscriptions(params)).resolves.toBe(response);
+  expect(api.get).toHaveBeenCalledWith('/newsletter/admin', { params });
+});
+
+test('review moderation wrappers call admin review endpoints', async () => {
+  const response = { success: true, data: [] };
+  const params = { isApproved: false, productId: 'product-1' };
+  api.get.mockResolvedValue({ data: response });
+  api.patch.mockResolvedValue({ data: response });
+
+  await expect(adminApi.getAdminReviews(params)).resolves.toBe(response);
+  expect(api.get).toHaveBeenCalledWith('/admin/reviews', { params });
+
+  await expect(adminApi.getAdminReview('review-1')).resolves.toBe(response);
+  expect(api.get).toHaveBeenCalledWith('/admin/reviews/review-1');
+
+  await expect(adminApi.updateReviewModeration('review-1', { isApproved: true })).resolves.toBe(response);
+  expect(api.patch).toHaveBeenCalledWith('/admin/reviews/review-1/moderation', {
+    isApproved: true,
+  });
+});
+
 test('createProduct calls the product create endpoint with payload', async () => {
   const response = { success: true, data: { _id: 'product-1' } };
   const payload = {

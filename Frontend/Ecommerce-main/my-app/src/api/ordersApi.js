@@ -9,6 +9,11 @@ export const ordersApi = {
     return data;
   },
 
+  getShippingOptions: async (country) => {
+    const { data } = await api.post('/orders/shipping-options', { country });
+    return data;
+  },
+
   getAll: async () => {
     const { data } = await api.get('/orders');
     return data;

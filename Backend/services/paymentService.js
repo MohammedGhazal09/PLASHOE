@@ -47,6 +47,7 @@ const arePaymentsExplicitlyDisabled = (env = process.env) =>
 export const startCheckoutPayment = async ({
   user,
   shippingAddress,
+  shippingMethodId,
   notes,
   idempotencyKey,
   provider = paymentProvider,
@@ -67,6 +68,7 @@ export const startCheckoutPayment = async ({
   const checkout = await createCheckoutFromCart({
     userId: user._id,
     shippingAddress,
+    shippingMethodId,
     notes,
     idempotencyKey: localIdempotencyKey,
     orderStatus: 'pending',

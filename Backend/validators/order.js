@@ -24,5 +24,10 @@ export const shippingAddressSchema = strictObject({
 
 export const createOrderSchema = strictObject({
   shippingAddress: shippingAddressSchema,
+  shippingMethodId: optionalTrimmedString(50),
   notes: optionalTrimmedString(500),
+});
+
+export const shippingOptionsSchema = strictObject({
+  country: trimmedString('country', 80),
 });

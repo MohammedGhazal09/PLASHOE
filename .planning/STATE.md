@@ -5,27 +5,27 @@ milestone_name: milestone
 current_phase: 9
 current_plan: Blocked on external setup
 status: external_setup_blocked
-last_updated: "2026-06-21T04:06:03.0196549+03:00"
-last_activity: 2026-06-21
+last_updated: "2026-06-30T06:52:00+03:00"
+last_activity: 2026-06-30
 progress:
-  total_phases: 21
-  completed_phases: 18
-  total_plans: 51
-  completed_plans: 51
-  percent: 86
+  total_phases: 28
+  completed_phases: 25
+  total_plans: 72
+  completed_plans: 72
+  percent: 89
 ---
 
 # Project State: PLASHOE
 
 **Current Phase:** Phase 9 - Production Launch Setup and Staging Verification (blocked on external setup)
-**Status:** Feature phases 13-21 are complete; production launch, operational provider evidence, and release cutover remain blocked or not started.
+**Status:** Feature phases 13-28 are complete; production launch, operational provider evidence, and release cutover remain blocked or not started.
 **Current Plan:** None active locally
 **Next recommended run:** Resume `$gsd-execute-phase 9` when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler evidence are available. Then complete Phase 11 provider evidence and Phase 12 release approval/cutover.
-**Last Activity:** 2026-06-21
+**Last Activity:** 2026-06-30
 
 ## Current Focus
 
-Phases 13-21 are complete with source-controlled admin, wishlist, product detail, discovery, checkout conversion, returns, sustainability, retention, and shoppable lookbook work verified by local tests, builds, and browser-smoke evidence. Remaining roadmap focus is production readiness: Phase 9 is blocked on external staging/provider inputs, Phase 11 is blocked on live operations/provider proof, and Phase 12 remains an explicit production cutover approval step. No hosted, provider-delivery, or production success is claimed from the local feature sweep.
+Phases 13-28 are complete with source-controlled admin, wishlist, product detail, discovery, checkout conversion, returns, sustainability, retention, shoppable lookbook, account self-service, admin dashboard, back-in-stock admin workflows, newsletter consent, review moderation, reusable admin product picker, and server-owned shipping rules work verified by local tests, builds, and browser evidence. Remaining production-readiness focus still matters: Phase 9 is blocked on external staging/provider inputs, Phase 11 is blocked on live operations/provider proof, and Phase 12 remains an explicit production cutover approval step. No hosted, provider-delivery, or production success is claimed from the local feature sweep.
 
 ## Accumulated Context
 
@@ -77,6 +77,20 @@ Phases 13-21 are complete with source-controlled admin, wishlist, product detail
 - 2026-06-21: Completed Phase 19 with source-backed sustainability and care content, admin/product/story UI coverage, docs, full backend/frontend test suites, production build, and local browser-smoke evidence.
 - 2026-06-21: Completed Phase 20 with back-in-stock intent capture, deterministic recommendations, reorder flow, docs, full backend/frontend test suites, production build, and local browser-smoke evidence; notification provider delivery remains intentionally out of scope.
 - 2026-06-21: Completed Phase 21 with lookbook model/API/admin management, storefront hotspots, bundle add-to-cart, docs, full backend/frontend test suites, production build, and local browser-smoke evidence.
+- 2026-06-30: Added Phase 22 for account settings and address management.
+- 2026-06-30: Added Phase 23 for an admin metrics dashboard and store health snapshot.
+- 2026-06-30: Added Phase 24 for back-in-stock admin workflow and notification readiness.
+- 2026-06-30: Added Phase 25 for newsletter subscription capture and consent management.
+- 2026-06-30: Added Phase 26 for review moderation and customer trust controls.
+- 2026-06-30: Added Phase 27 for searchable admin product picker workflows.
+- 2026-06-30: Added Phase 28 for shipping rates and international checkout rules.
+- 2026-06-30: Completed Phase 22 with account settings profile editing, address add/delete/default management, explicit credential boundary, focused backend/frontend tests, production build, and Hercules/Playwright visual QA evidence.
+- 2026-06-30: Completed Phase 23 with protected admin summary metrics, dashboard UI, bounded low-stock detail, focused backend/frontend tests, production build, and Hercules/Playwright visual QA evidence.
+- 2026-06-30: Completed Phase 24 with protected back-in-stock admin summary/list/status APIs, Restock admin UI, focused backend/frontend tests, production build, and Hercules/Playwright visual QA evidence; notification provider delivery remains intentionally out of scope.
+- 2026-06-30: Completed Phase 25 with consent-backed newsletter subscribe/unsubscribe APIs, protected admin newsletter visibility, Home newsletter form, focused backend/frontend tests, production build, and Hercules/Playwright visual QA evidence; provider delivery remains intentionally out of scope.
+- 2026-06-30: Completed Phase 26 with protected review moderation APIs, aggregate-safe approve/hide transitions, Reviews admin UI, focused backend/frontend tests, production build, and Hercules/Playwright visual QA evidence.
+- 2026-06-30: Completed Phase 27 with reusable admin product picker UI, lookbook hotspot and bundle picker integration, focused frontend tests, production build, and Hercules/Playwright visual QA evidence.
+- 2026-06-30: Completed Phase 28 with server-owned shipping rules, protected shipping-options quote endpoint, shipping-inclusive checkout totals and order persistence, checkout shipping method UI, focused backend/frontend tests, production build, and Hercules/Playwright visual QA evidence.
 
 ### Decisions
 
@@ -86,6 +100,7 @@ Phases 13-21 are complete with source-controlled admin, wishlist, product detail
 - Keep Phase 3 dependency remediation bounded to patch/minor upgrades unless audit evidence requires a major migration.
 - Treat the completed phases 13-21 feature sweep as local/source-controlled evidence only; production readiness still depends on phases 9, 11, and 12.
 - Phase 13 was executed first because the admin console provided the management surface needed by later catalog, review, return, sustainability, retention, and lookbook work.
+- Product-growth phases 22-28 are complete; resume Phase 9 production launch evidence when external launch inputs become available.
 
 ### Known Open Risks
 

@@ -142,7 +142,7 @@ test('uses stable defaults when optional fields are missing', () => {
     image: '',
     price: { original: 80, current: 80 },
     rating: 0,
-    stock: 0,
+    stock: 10,
     isOnSale: false,
     description: '',
     materials: [],
@@ -177,6 +177,16 @@ test('uses stable defaults when optional fields are missing', () => {
   });
   expect(product.gallery).toEqual([]);
   expect(product.sizes).toContain(40);
+});
+
+test('keeps missing backend stock unavailable by default', () => {
+  const product = normalizeProduct({
+    _id: 'backend-missing-stock',
+    name: 'Backend Shoe',
+    price: { current: 80 },
+  });
+
+  expect(product.stock).toBe(0);
 });
 
 test('normalizes relative image paths against a non-root Vite base URL', () => {

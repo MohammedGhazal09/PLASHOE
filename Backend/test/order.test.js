@@ -40,6 +40,12 @@ const postCheckout = (user, idempotencyKey, body = {}) =>
       ...body,
     });
 
+const postShippingOptions = (user, body = {}) =>
+  request(app)
+    .post("/api/orders/shipping-options")
+    .set(authHeader(user))
+    .send(body);
+
 const createFakePaymentProvider = () => ({
   createCheckoutSession: vi.fn(async ({ order }) => ({
     id: `session-${order._id}`,
@@ -127,6 +133,45 @@ describe("order routes", () => {
     });
   });
 
+  it("returns server-owned shipping options for a supported country from the current cart", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 10 });
+    const coupon = await createCoupon({ code: "SHIP20", discountPercentage: 20 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }], {
+      couponCode: coupon.code,
+      discount: coupon.discountPercentage,
+    });
+
+    const response = await postShippingOptions(user, { country: "Canada" }).expect(200);
+
+    expect(response.body).toMatchObject({
+      success: true,
+      data: {
+        country: "Canada",
+        countryCode: "CA",
+        defaultMethodId: "standard",
+        subtotal: 200,
+        discount: 20,
+        discountAmount: 40,
+        merchandiseTotal: 160,
+        methods: [
+          {
+            id: "standard",
+            name: "Standard",
+            price: 12,
+            orderTotal: 172,
+          },
+          {
+            id: "express",
+            name: "Express",
+            price: 28,
+            orderTotal: 188,
+          },
+        ],
+      },
+    });
+  });
+
   it("starts payment from the cart, applies coupon totals, decrements stock, and clears the cart", async () => {
     const user = await createUser();
     const product = await createProduct({ stock: 10 });
@@ -147,6 +192,10 @@ describe("order routes", () => {
     expect(responseOrder(response)).toMatchObject({
       subtotal: 200,
       discount: 20,
+      shippingMethod: "standard",
+      shippingMethodName: "Standard",
+      shippingPrice: 0,
+      shippingCountryCode: "US",
       total: 160,
       couponCode: "SAVE20",
       status: "pending",
@@ -195,6 +244,92 @@ describe("order routes", () => {
     expect(cart.items).toHaveLength(0);
     expect(cart.couponCode).toBeUndefined();
     expect(cart.discount).toBe(0);
+  });
+
+  it("persists selected international shipping method and charges the shipping-inclusive total", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 10 });
+    const coupon = await createCoupon({ code: "CANADA20", discountPercentage: 20 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }], {
+      couponCode: coupon.code,
+      discount: coupon.discountPercentage,
+    });
+
+    const response = await postCheckout(user, nextIdempotencyKey(), {
+      shippingAddress: validShippingAddress({ country: "Canada" }),
+      shippingMethodId: "express",
+    }).expect(201);
+
+    expect(responseOrder(response)).toMatchObject({
+      subtotal: 200,
+      discount: 20,
+      shippingAddress: {
+        country: "Canada",
+      },
+      shippingMethod: "express",
+      shippingMethodName: "Express",
+      shippingPrice: 28,
+      shippingCountryCode: "CA",
+      total: 188,
+      paymentStatus: "payment_pending",
+    });
+
+    expect(fakePaymentProvider.createCheckoutSession).toHaveBeenCalledTimes(1);
+    const providerRequest = fakePaymentProvider.createCheckoutSession.mock.calls[0][0];
+    expect(providerRequest.order.total).toBe(188);
+  });
+
+  it("rejects unsupported shipping countries before checkout side effects", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 10 });
+    await createCartForUser(user, [{ product, quantity: 2, size: 42 }]);
+
+    const response = await postCheckout(user, nextIdempotencyKey(), {
+      shippingAddress: validShippingAddress({ country: "Australia" }),
+    }).expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "We do not ship to Australia yet.",
+      errors: [
+        {
+          code: "SHIPPING_COUNTRY_UNSUPPORTED",
+          resource: "shipping",
+          country: "Australia",
+        },
+      ],
+    });
+    expect(fakePaymentProvider.createCheckoutSession).not.toHaveBeenCalled();
+    expect(await Order.countDocuments({ user: user._id })).toBe(0);
+    expect((await Product.findById(product._id)).stock).toBe(10);
+    expect((await Cart.findOne({ user: user._id })).items).toHaveLength(1);
+  });
+
+  it("rejects shipping methods that are not available for the destination country", async () => {
+    const user = await createUser();
+    const product = await createProduct({ stock: 10 });
+    await createCartForUser(user, [{ product, quantity: 1, size: 42 }]);
+
+    const response = await postCheckout(user, nextIdempotencyKey(), {
+      shippingAddress: validShippingAddress({ country: "Canada" }),
+      shippingMethodId: "overnight",
+    }).expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Selected shipping method is not available for this country",
+      errors: [
+        {
+          code: "SHIPPING_METHOD_UNAVAILABLE",
+          resource: "shipping",
+          country: "Canada",
+          shippingMethodId: "overnight",
+        },
+      ],
+    });
+    expect(fakePaymentProvider.createCheckoutSession).not.toHaveBeenCalled();
+    expect(await Order.countDocuments({ user: user._id })).toBe(0);
+    expect((await Product.findById(product._id)).stock).toBe(10);
   });
 
   it("returns the existing order on exact retry without duplicate side effects", async () => {
@@ -327,6 +462,7 @@ describe("order routes", () => {
 
     const response = await postCheckout(user, nextIdempotencyKey(), {
       total: 1,
+      shippingPrice: 999,
       items: [],
       paymentStatus: "paid",
       paymentProviderSessionId: "client-session",

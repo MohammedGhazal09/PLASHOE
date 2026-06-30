@@ -26,6 +26,11 @@ export const authApi = {
     return data;
   },
 
+  setDefaultAddress: async (addressId) => {
+    const { data } = await api.put(`/auth/addresses/${addressId}/default`);
+    return data;
+  },
+
   deleteAddress: async (addressId) => {
     const { data } = await api.delete(`/auth/addresses/${addressId}`);
     return data;

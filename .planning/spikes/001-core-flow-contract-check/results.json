@@ -1,10 +1,9 @@
 {
-  "generated_at": "2026-06-12T19:25:51.466Z",
+  "generated_at": "2026-06-28T17:52:08.061Z",
   "spike": "001-core-flow-contract-check",
   "verdict": "VALIDATED",
   "counts": {
-    "PASS": 8,
-    "WARN": 1
+    "PASS": 9
   },
   "checks": [
     {
@@ -66,8 +65,8 @@
     {
       "id": "inventory-enforcement",
       "title": "Stock is enforced during cart and order workflows",
-      "status": "WARN",
-      "evidence": "Product stock exists in Backend/models/Product.js:36, but cart/order controllers do not consistently validate or decrement it.",
+      "status": "PASS",
+      "evidence": "Stock model and workflow enforcement appear aligned.",
       "recommendation": "Validate stock in cart add/update and atomically decrement or reserve stock during order creation."
     }
   ]

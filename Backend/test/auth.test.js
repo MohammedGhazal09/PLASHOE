@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { describe, expect, it } from "vitest";
 import app from "../app.js";
 import { authHeader } from "./helpers/auth.js";
-import { createUser } from "./helpers/factories.js";
+import { createUser, validShippingAddress } from "./helpers/factories.js";
 
 describe("auth routes", () => {
   it("registers a new user and returns an auth token", async () => {
@@ -145,6 +145,24 @@ describe("auth routes", () => {
     });
   });
 
+  it("clears optional profile phone when an empty value is submitted", async () => {
+    const user = await createUser({
+      email: "profile-clear-phone@example.com",
+      phone: "5551234567",
+    });
+
+    const response = await request(app)
+      .put("/api/auth/profile")
+      .set(authHeader(user))
+      .send({
+        phone: "",
+      })
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.phone).toBe("");
+  });
+
   it("rejects profile email changes without a verified email-change flow", async () => {
     const user = await createUser({ email: "profile-email@example.com" });
 
@@ -251,6 +269,71 @@ describe("auth routes", () => {
     expect(response.body).toMatchObject({
       success: false,
       message: "Invalid request",
+    });
+  });
+
+  it("sets an existing address as the default address", async () => {
+    const user = await createUser({
+      email: "address-default@example.com",
+      addresses: [
+        validShippingAddress({ firstName: "Primary", isDefault: true }),
+        validShippingAddress({ firstName: "Work", street: "456 Work Street", isDefault: false }),
+      ],
+    });
+    const workAddressId = user.addresses[1]._id.toString();
+
+    const response = await request(app)
+      .put(`/api/auth/addresses/${workAddressId}/default`)
+      .set(authHeader(user))
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveLength(2);
+    expect(response.body.data.find((address) => address.firstName === "Primary")).toMatchObject({
+      isDefault: false,
+    });
+    expect(response.body.data.find((address) => address.firstName === "Work")).toMatchObject({
+      isDefault: true,
+    });
+  });
+
+  it("promotes another address when deleting the default address", async () => {
+    const user = await createUser({
+      email: "address-delete-default@example.com",
+      addresses: [
+        validShippingAddress({ firstName: "Home", isDefault: true }),
+        validShippingAddress({ firstName: "Office", street: "789 Office Street", isDefault: false }),
+      ],
+    });
+    const defaultAddressId = user.addresses[0]._id.toString();
+
+    const response = await request(app)
+      .delete(`/api/auth/addresses/${defaultAddressId}`)
+      .set(authHeader(user))
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]).toMatchObject({
+      firstName: "Office",
+      isDefault: true,
+    });
+  });
+
+  it("rejects default selection for an address outside the account", async () => {
+    const user = await createUser({
+      email: "address-missing-default@example.com",
+      addresses: [validShippingAddress({ isDefault: true })],
+    });
+
+    const response = await request(app)
+      .put("/api/auth/addresses/64f000000000000000000001/default")
+      .set(authHeader(user))
+      .expect(404);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Address not found",
     });
   });
 

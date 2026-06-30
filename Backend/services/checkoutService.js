@@ -5,6 +5,10 @@ import Coupon from '../models/Coupon.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { CHECKOUT_HOLDS } from '../config/security.js';
+import {
+  DEFAULT_SHIPPING_METHOD_ID,
+  findShippingRuleForCountry,
+} from '../config/shippingRules.js';
 import { releaseOrderReservationsOnce } from './paymentState.js';
 
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{8,200}$/;
@@ -95,7 +99,9 @@ const getCart = (userId, session) =>
     .populate('items.product', 'name image price stock')
     .session(session);
 
-const buildCheckoutFingerprint = (cart, { shippingAddress, notes }) => {
+const roundMoney = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
+
+const buildCheckoutFingerprint = (cart, { shippingAddress, shippingMethodId, notes }) => {
   const lines = cart.items
     .map((item) => ({
       cartItemId: toIdString(item._id),
@@ -115,6 +121,7 @@ const buildCheckoutFingerprint = (cart, { shippingAddress, notes }) => {
     couponCode: cart.couponCode || null,
     discount: cart.discount || 0,
     shippingAddress,
+    shippingMethodId: shippingMethodId || DEFAULT_SHIPPING_METHOD_ID,
     notes: notes || '',
   });
 };
@@ -135,11 +142,100 @@ const calculateTotals = (cart) => {
     0
   );
   const discount = cart.discount || 0;
+  const discountAmount = roundMoney((subtotal * discount) / 100);
+  const merchandiseTotal = roundMoney(subtotal - discountAmount);
 
   return {
     subtotal,
     discount,
-    total: subtotal - (subtotal * discount) / 100,
+    discountAmount,
+    merchandiseTotal,
+    total: merchandiseTotal,
+  };
+};
+
+const createShippingCountryError = (country) =>
+  new CheckoutError(`We do not ship to ${country || 'that country'} yet.`, 400, [
+    {
+      code: 'SHIPPING_COUNTRY_UNSUPPORTED',
+      resource: 'shipping',
+      country: country || null,
+    },
+  ]);
+
+const createShippingMethodError = ({ country, shippingMethodId }) =>
+  new CheckoutError('Selected shipping method is not available for this country', 400, [
+    {
+      code: 'SHIPPING_METHOD_UNAVAILABLE',
+      resource: 'shipping',
+      country,
+      shippingMethodId,
+    },
+  ]);
+
+const resolveShippingQuote = ({ country, shippingMethodId }) => {
+  const requestedCountry = typeof country === 'string' ? country.trim() : '';
+  const rule = findShippingRuleForCountry(requestedCountry);
+
+  if (!rule) {
+    throw createShippingCountryError(requestedCountry);
+  }
+
+  const selectedMethodId = shippingMethodId || DEFAULT_SHIPPING_METHOD_ID;
+  const method = rule.methods.find((candidate) => candidate.id === selectedMethodId);
+
+  if (!method) {
+    throw createShippingMethodError({
+      country: rule.country,
+      shippingMethodId: selectedMethodId,
+    });
+  }
+
+  return {
+    ...method,
+    price: roundMoney(method.price),
+    country: rule.country,
+    countryCode: rule.countryCode,
+  };
+};
+
+const addShippingTotalsToMethods = ({ methods, merchandiseTotal }) =>
+  methods.map((method) => ({
+    ...method,
+    price: roundMoney(method.price),
+    orderTotal: roundMoney(merchandiseTotal + method.price),
+  }));
+
+export const getShippingOptionsForCart = async ({ userId, country }) => {
+  const requestedCountry = typeof country === 'string' ? country.trim() : '';
+  const rule = findShippingRuleForCountry(requestedCountry);
+
+  if (!rule) {
+    throw createShippingCountryError(requestedCountry);
+  }
+
+  const cart = await Cart.findOne({ user: userId });
+  const totals = cart
+    ? calculateTotals(cart)
+    : {
+        subtotal: 0,
+        discount: 0,
+        discountAmount: 0,
+        merchandiseTotal: 0,
+      };
+
+  return {
+    country: rule.country,
+    countryCode: rule.countryCode,
+    defaultMethodId: DEFAULT_SHIPPING_METHOD_ID,
+    subtotal: totals.subtotal,
+    discount: totals.discount,
+    discountAmount: totals.discountAmount,
+    merchandiseTotal: totals.merchandiseTotal,
+    methods: addShippingTotalsToMethods({
+      methods: rule.methods,
+      merchandiseTotal: totals.merchandiseTotal,
+    }),
   };
 };
 
@@ -293,6 +389,7 @@ const resolveExistingOrder = async ({
   idempotencyKey,
   cart,
   shippingAddress,
+  shippingMethodId,
   notes,
   session,
 }) => {
@@ -313,6 +410,7 @@ const resolveExistingOrder = async ({
 
   const currentFingerprint = buildCheckoutFingerprint(cart, {
     shippingAddress,
+    shippingMethodId,
     notes,
   });
 
@@ -381,6 +479,7 @@ const enforceActiveCheckoutHoldLimit = async ({ userId, session, now }) => {
 export const createCheckoutFromCart = async ({
   userId,
   shippingAddress,
+  shippingMethodId,
   notes,
   idempotencyKey,
   orderStatus = 'processing',
@@ -393,6 +492,14 @@ export const createCheckoutFromCart = async ({
   return mongoose.connection.transaction(async (session) => {
     const now = new Date();
     const checkoutHoldExpiresAt = new Date(now.getTime() + CHECKOUT_HOLDS.ttlMs);
+    const shippingQuote = resolveShippingQuote({
+      country: shippingAddress?.country,
+      shippingMethodId,
+    });
+    const normalizedShippingAddress = {
+      ...shippingAddress,
+      country: shippingQuote.country,
+    };
 
     await releaseExpiredCheckoutHolds({ session, now });
 
@@ -401,7 +508,8 @@ export const createCheckoutFromCart = async ({
       userId,
       idempotencyKey: key,
       cart,
-      shippingAddress,
+      shippingAddress: normalizedShippingAddress,
+      shippingMethodId: shippingQuote.id,
       notes,
       session,
     });
@@ -417,10 +525,12 @@ export const createCheckoutFromCart = async ({
     }
 
     const cartFingerprint = buildCheckoutFingerprint(cart, {
-      shippingAddress,
+      shippingAddress: normalizedShippingAddress,
+      shippingMethodId: shippingQuote.id,
       notes,
     });
-    const { subtotal, discount, total } = calculateTotals(cart);
+    const { subtotal, discount, merchandiseTotal } = calculateTotals(cart);
+    const total = roundMoney(merchandiseTotal + shippingQuote.price);
 
     await decrementStock(cart, session);
     await runHook(hooks, 'afterStockDecrement');
@@ -433,7 +543,11 @@ export const createCheckoutFromCart = async ({
         {
           user: userId,
           items: buildOrderItems(cart),
-          shippingAddress,
+          shippingAddress: normalizedShippingAddress,
+          shippingMethod: shippingQuote.id,
+          shippingMethodName: shippingQuote.name,
+          shippingPrice: shippingQuote.price,
+          shippingCountryCode: shippingQuote.countryCode,
           subtotal,
           discount,
           total,

@@ -1,6 +1,51 @@
 import api from './axios';
 
 export const adminApi = {
+  getSummary: async () => {
+    const { data } = await api.get('/admin/summary');
+    return data;
+  },
+
+  getBackInStockSummary: async () => {
+    const { data } = await api.get('/back-in-stock/admin/summary');
+    return data;
+  },
+
+  getBackInStockRequests: async (params) => {
+    const { data } = await api.get('/back-in-stock/admin', { params });
+    return data;
+  },
+
+  updateBackInStockStatus: async (id, payload) => {
+    const { data } = await api.patch(`/back-in-stock/admin/${id}/status`, payload);
+    return data;
+  },
+
+  getNewsletterSummary: async () => {
+    const { data } = await api.get('/newsletter/admin/summary');
+    return data;
+  },
+
+  getNewsletterSubscriptions: async (params) => {
+    const { data } = await api.get('/newsletter/admin', { params });
+    return data;
+  },
+
+  getAdminReviews: async (params) => {
+    const { data } = await api.get('/admin/reviews', { params });
+    return data;
+  },
+
+  getAdminReview: async (id) => {
+    const { data } = await api.get(`/admin/reviews/${id}`);
+    return data;
+  },
+
+  updateReviewModeration: async (id, payload) => {
+    const { data } = await api.patch(`/admin/reviews/${id}/moderation`, payload);
+    return data;
+  },
+
   getProducts: async (params) => {
     const { data } = await api.get('/products', { params });
     return data;

@@ -62,25 +62,23 @@ test('creates a lookbook entry through the admin form', async () => {
       {
         _id: '64f000000000000000000021',
         name: 'City Runner',
+        category: 'Running',
+        sizes: [42],
+        stock: 4,
+        price: { current: 99 },
       },
     ],
   });
   renderWithRouter(<AdminLookbook />);
 
-  expect(await screen.findByText(/product reference ids/i)).toBeInTheDocument();
+  expect(await screen.findByText(/hotspot product/i)).toBeInTheDocument();
   await user.type(screen.getByLabelText(/^title$/i), 'City Commute');
   await user.type(screen.getByLabelText(/image url/i), '/images/lookbook-city.jpg');
   await user.type(screen.getByLabelText(/^description$/i), 'Tagged commute scene');
-  await user.clear(screen.getByLabelText(/hotspots/i));
-  await user.type(
-    screen.getByLabelText(/hotspots/i),
-    '64f000000000000000000021 | 35 | 62 | Daily runner'
-  );
+  const selectButtons = await screen.findAllByRole('button', { name: /select city runner/i });
+  await user.click(selectButtons[0]);
   await user.type(screen.getByLabelText(/bundle title/i), 'Commute Set');
-  await user.type(
-    screen.getByLabelText(/bundle items/i),
-    '64f000000000000000000021 | 42 | 1'
-  );
+  await user.click(selectButtons[1]);
   await user.click(screen.getByRole('button', { name: /save lookbook entry/i }));
 
   await waitFor(() => {
@@ -92,9 +90,9 @@ test('creates a lookbook entry through the admin form', async () => {
         hotspots: [
           {
             productId: '64f000000000000000000021',
-            x: 35,
-            y: 62,
-            label: 'Daily runner',
+            x: 50,
+            y: 50,
+            label: 'City Runner',
           },
         ],
         bundle: {

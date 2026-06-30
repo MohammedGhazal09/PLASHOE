@@ -3,6 +3,7 @@ import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import {
   cancelOrderWithStockRestore,
+  getShippingOptionsForCart,
 } from '../services/checkoutService.js';
 import { startCheckoutPayment } from '../services/paymentService.js';
 
@@ -26,12 +27,13 @@ const reorderConflict = ({ code, productId, orderItemId, requested, available, m
 // @route   POST /api/orders
 export const createOrder = async (req, res, next) => {
   try {
-    const { shippingAddress, notes } = req.body;
+    const { shippingAddress, shippingMethodId, notes } = req.body;
     const idempotencyKey = req.get('Idempotency-Key');
 
     const result = await startCheckoutPayment({
       user: req.user,
       shippingAddress,
+      shippingMethodId,
       notes,
       idempotencyKey
     });
@@ -43,6 +45,24 @@ export const createOrder = async (req, res, next) => {
         order: result.order,
         payment: result.payment
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get eligible shipping options for the current checkout cart
+// @route   POST /api/orders/shipping-options
+export const getShippingOptions = async (req, res, next) => {
+  try {
+    const options = await getShippingOptionsForCart({
+      userId: req.user._id,
+      country: req.body.country,
+    });
+
+    res.json({
+      success: true,
+      data: options,
     });
   } catch (error) {
     next(error);

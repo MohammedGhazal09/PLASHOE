@@ -28,6 +28,11 @@ const splitName = (name = '') => {
 const getPreferredAddress = (addresses = []) =>
   addresses.find((address) => address.isDefault) || addresses[0] || null;
 
+const formatCurrency = (amount = 0) => `$${Number(amount || 0).toFixed(2)}`;
+
+const formatShippingPrice = (amount = 0) =>
+  Number(amount || 0) === 0 ? 'Free' : formatCurrency(amount);
+
 const buildFormDataFromUser = (user) => {
   const preferredAddress = getPreferredAddress(user?.addresses || []);
   const name = splitName(user?.name || '');
@@ -57,8 +62,13 @@ export default function Checkout() {
   const [syncing, setSyncing] = useState(true);
   const [cartReviewMessage, setCartReviewMessage] = useState('');
   const [saveAddress, setSaveAddress] = useState(false);
+  const [shippingOptions, setShippingOptions] = useState(null);
+  const [selectedShippingMethodId, setSelectedShippingMethodId] = useState('');
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState('');
   const checkoutAttemptKeyRef = useRef(null);
   const [formData, setFormData] = useState(() => buildFormDataFromUser(user));
+  const hasUnresolvedLocalItems = isAuthenticated && hasLocalCartItems(items);
 
   useEffect(() => {
     const nextFormData = buildFormDataFromUser(user);
@@ -98,6 +108,72 @@ export default function Checkout() {
     };
   }, [isAuthenticated, mergeLocalCart]);
 
+  useEffect(() => {
+    if (
+      syncing ||
+      !isAuthenticated ||
+      items.length === 0 ||
+      hasUnresolvedLocalItems ||
+      !formData.country
+    ) {
+      setShippingOptions(null);
+      setSelectedShippingMethodId('');
+      setShippingError('');
+      setShippingLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadShippingOptions = async () => {
+      setShippingLoading(true);
+      setShippingError('');
+
+      try {
+        const response = await ordersApi.getShippingOptions(formData.country);
+        const options = response.data;
+        const defaultMethodId =
+          options.defaultMethodId || options.methods?.[0]?.id || '';
+
+        if (!cancelled) {
+          setShippingOptions(options);
+          setSelectedShippingMethodId((current) =>
+            options.methods?.some((method) => method.id === current)
+              ? current
+              : defaultMethodId
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setShippingOptions(null);
+          setSelectedShippingMethodId('');
+          setShippingError(
+            error.response?.data?.message ||
+              `Shipping is unavailable for ${formData.country}. Choose another country.`
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setShippingLoading(false);
+        }
+      }
+    };
+
+    loadShippingOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    discount,
+    formData.country,
+    hasUnresolvedLocalItems,
+    isAuthenticated,
+    items.length,
+    subtotal,
+    syncing,
+  ]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -132,8 +208,22 @@ export default function Checkout() {
       return;
     }
 
+    if (shippingLoading) {
+      toast.error('Shipping rates are still loading');
+      return;
+    }
+
+    const selectedShippingMethod = shippingOptions?.methods?.find(
+      (method) => method.id === selectedShippingMethodId
+    );
+
+    if (shippingError || !selectedShippingMethod) {
+      toast.error(shippingError || 'Choose an available shipping method');
+      return;
+    }
+
     // Validate form
-    const required = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
+    const required = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'country'];
     for (const field of required) {
       if (!formData[field]) {
         toast.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
@@ -169,6 +259,7 @@ export default function Checkout() {
       // Prepare order data - backend uses server-side cart, we just send shipping info
       const orderData = {
         shippingAddress,
+        shippingMethodId: selectedShippingMethod.id,
         notes: undefined,
       };
 
@@ -224,7 +315,25 @@ export default function Checkout() {
   }
 
   const discountAmount = subtotal * discount / 100;
-  const hasUnresolvedLocalItems = isAuthenticated && hasLocalCartItems(items);
+  const selectedShippingMethod = shippingOptions?.methods?.find(
+    (method) => method.id === selectedShippingMethodId
+  );
+  const shippingPrice = selectedShippingMethod?.price ?? 0;
+  const checkoutTotal = total + shippingPrice;
+  const shippingBlocked =
+    isAuthenticated &&
+    !hasUnresolvedLocalItems &&
+    (shippingLoading || Boolean(shippingError) || !selectedShippingMethod);
+  const paymentDisabled = loading || hasUnresolvedLocalItems || shippingBlocked;
+  const paymentButtonText = hasUnresolvedLocalItems
+    ? 'REVIEW CART BEFORE PAYMENT'
+    : shippingError
+      ? 'SHIPPING UNAVAILABLE'
+      : shippingLoading
+        ? 'CHECKING SHIPPING'
+        : loading
+          ? 'PROCESSING...'
+          : 'CONTINUE TO PAYMENT';
 
   return (
     <div className="min-h-screen py-10 px-[5%] lg:px-[10%]">
@@ -243,8 +352,9 @@ export default function Checkout() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-600 mb-1">First Name *</label>
+              <label htmlFor="checkout-first-name" className="block text-gray-600 mb-1">First Name *</label>
               <input
+                id="checkout-first-name"
                 type="text"
                 name="firstName"
                 value={formData.firstName}
@@ -254,8 +364,9 @@ export default function Checkout() {
               />
             </div>
             <div>
-              <label className="block text-gray-600 mb-1">Last Name *</label>
+              <label htmlFor="checkout-last-name" className="block text-gray-600 mb-1">Last Name *</label>
               <input
+                id="checkout-last-name"
                 type="text"
                 name="lastName"
                 value={formData.lastName}
@@ -265,8 +376,9 @@ export default function Checkout() {
               />
             </div>
             <div>
-              <label className="block text-gray-600 mb-1">Email *</label>
+              <label htmlFor="checkout-email" className="block text-gray-600 mb-1">Email *</label>
               <input
+                id="checkout-email"
                 type="email"
                 name="email"
                 value={formData.email}
@@ -276,8 +388,9 @@ export default function Checkout() {
               />
             </div>
             <div>
-              <label className="block text-gray-600 mb-1">Phone *</label>
+              <label htmlFor="checkout-phone" className="block text-gray-600 mb-1">Phone *</label>
               <input
+                id="checkout-phone"
                 type="tel"
                 name="phone"
                 value={formData.phone}
@@ -287,8 +400,9 @@ export default function Checkout() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-gray-600 mb-1">Address *</label>
+              <label htmlFor="checkout-address" className="block text-gray-600 mb-1">Address *</label>
               <input
+                id="checkout-address"
                 type="text"
                 name="address"
                 value={formData.address}
@@ -298,8 +412,9 @@ export default function Checkout() {
               />
             </div>
             <div>
-              <label className="block text-gray-600 mb-1">City *</label>
+              <label htmlFor="checkout-city" className="block text-gray-600 mb-1">City *</label>
               <input
+                id="checkout-city"
                 type="text"
                 name="city"
                 value={formData.city}
@@ -309,8 +424,9 @@ export default function Checkout() {
               />
             </div>
             <div>
-              <label className="block text-gray-600 mb-1">State *</label>
+              <label htmlFor="checkout-state" className="block text-gray-600 mb-1">State *</label>
               <input
+                id="checkout-state"
                 type="text"
                 name="state"
                 value={formData.state}
@@ -320,8 +436,9 @@ export default function Checkout() {
               />
             </div>
             <div>
-              <label className="block text-gray-600 mb-1">ZIP Code *</label>
+              <label htmlFor="checkout-zip-code" className="block text-gray-600 mb-1">ZIP Code *</label>
               <input
+                id="checkout-zip-code"
                 type="text"
                 name="zipCode"
                 value={formData.zipCode}
@@ -331,8 +448,9 @@ export default function Checkout() {
               />
             </div>
             <div>
-              <label className="block text-gray-600 mb-1">Country</label>
+              <label htmlFor="checkout-country" className="block text-gray-600 mb-1">Country *</label>
               <select
+                id="checkout-country"
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
@@ -343,6 +461,7 @@ export default function Checkout() {
                 <option>United Kingdom</option>
                 <option>Germany</option>
                 <option>France</option>
+                <option>Australia</option>
               </select>
             </div>
             <label className="md:col-span-2 flex items-center gap-3 text-sm text-gray-600">
@@ -354,6 +473,52 @@ export default function Checkout() {
               />
               Save this address for next time
             </label>
+          </div>
+
+          <h2 className="text-xl font-semibold mt-10 mb-6">Shipping Method</h2>
+          <div className="space-y-3">
+            {shippingLoading && (
+              <div className="border border-gray-200 bg-white p-4 text-sm text-gray-600">
+                Checking shipping rates...
+              </div>
+            )}
+
+            {shippingError && (
+              <div role="alert" className="border border-[#b42318] bg-red-50 p-4 text-sm text-[#b42318]">
+                {shippingError}
+              </div>
+            )}
+
+            {!shippingLoading && !shippingError && shippingOptions?.methods?.length > 0 && (
+              <div role="radiogroup" aria-label="Shipping method" className="space-y-3">
+                {shippingOptions.methods.map((method) => (
+                  <label
+                    key={method.id}
+                    className={`flex cursor-pointer items-start gap-3 border bg-white p-4 ${
+                      selectedShippingMethodId === method.id
+                        ? 'border-black'
+                        : 'border-gray-200'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="shippingMethodId"
+                      value={method.id}
+                      checked={selectedShippingMethodId === method.id}
+                      onChange={() => setSelectedShippingMethodId(method.id)}
+                      className="mt-1 h-4 w-4"
+                    />
+                    <span className="flex flex-1 flex-col gap-1">
+                      <span className="flex items-center justify-between gap-4">
+                        <span className="font-medium">{method.name}</span>
+                        <span className="font-medium">{formatShippingPrice(method.price)}</span>
+                      </span>
+                      <span className="text-sm text-gray-500">{method.estimatedDelivery}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Payment Info */}
@@ -398,6 +563,7 @@ export default function Checkout() {
               <div className="flex gap-2">
                 <input
                   type="text"
+                  aria-label="Coupon code"
                   placeholder="Coupon code"
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
@@ -420,32 +586,40 @@ export default function Checkout() {
             <div className="space-y-3 border-t pt-4">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{formatCurrency(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount ({discount}% off)</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>-{formatCurrency(discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span className="text-green-600">Free</span>
+                <span className={shippingError ? 'text-[#b42318]' : 'text-green-600'}>
+                  {shippingLoading
+                    ? 'Checking'
+                    : shippingError
+                      ? 'Unavailable'
+                      : selectedShippingMethod
+                        ? formatShippingPrice(shippingPrice)
+                        : 'Pending'}
+                </span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{selectedShippingMethod ? formatCurrency(checkoutTotal) : formatCurrency(total)}</span>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading || hasUnresolvedLocalItems}
+              disabled={paymentDisabled}
               className={`button-control button-control--dark button-control--full checkout-payment-button ${
-                loading || hasUnresolvedLocalItems ? 'button-control--disabled checkout-payment-button--disabled' : ''
+                paymentDisabled ? 'button-control--disabled checkout-payment-button--disabled' : ''
               }`}
             >
-              {hasUnresolvedLocalItems ? 'REVIEW CART BEFORE PAYMENT' : loading ? 'PROCESSING...' : 'CONTINUE TO PAYMENT'}
+              {paymentButtonText}
             </button>
           </div>
         </div>

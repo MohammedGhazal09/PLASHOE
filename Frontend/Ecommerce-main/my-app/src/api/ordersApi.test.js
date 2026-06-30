@@ -30,6 +30,15 @@ test('create keeps the existing request shape when no key is provided', async ()
   expect(api.post).toHaveBeenCalledWith('/orders', orderData, undefined);
 });
 
+test('getShippingOptions posts the selected country', async () => {
+  api.post.mockResolvedValue({ data: { success: true, data: { methods: [] } } });
+
+  const result = await ordersApi.getShippingOptions('Canada');
+
+  expect(api.post).toHaveBeenCalledWith('/orders/shipping-options', { country: 'Canada' });
+  expect(result).toEqual({ success: true, data: { methods: [] } });
+});
+
 test('getAll returns unwrapped order list response data', async () => {
   api.get.mockResolvedValue({ data: { success: true, data: [] } });
 

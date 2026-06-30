@@ -52,6 +52,7 @@ vi.mock('../api/cartApi', () => ({
 vi.mock('../api/ordersApi', () => ({
   ordersApi: {
     create: vi.fn(),
+    getShippingOptions: vi.fn(),
   },
 }));
 
@@ -86,11 +87,42 @@ const cartData = (overrides = {}) => ({
   ...overrides,
 });
 
+const shippingOptionsData = (overrides = {}) => ({
+  country: 'United States',
+  countryCode: 'US',
+  defaultMethodId: 'standard',
+  subtotal: 200,
+  discount: 0,
+  discountAmount: 0,
+  merchandiseTotal: 200,
+  methods: [
+    {
+      id: 'standard',
+      name: 'Standard',
+      price: 0,
+      estimatedDelivery: '3-5 business days',
+      orderTotal: 200,
+    },
+    {
+      id: 'express',
+      name: 'Express',
+      price: 15,
+      estimatedDelivery: '1-2 business days',
+      orderTotal: 215,
+    },
+  ],
+  ...overrides,
+});
+
 const resetStores = ({ authenticated = true, cart = cartData(), user } = {}) => {
   localStorage.clear();
   vi.clearAllMocks();
   mockNavigate.mockClear();
   cartApi.getCart.mockResolvedValue({ success: true, data: cart });
+  ordersApi.getShippingOptions.mockResolvedValue({
+    success: true,
+    data: shippingOptionsData(),
+  });
   authApi.addAddress.mockResolvedValue({ success: true, data: [] });
   useAuthStore.setState({
     user: authenticated
@@ -116,6 +148,13 @@ const renderCheckout = async () => {
 
   await screen.findByRole('heading', { name: /checkout/i });
   return result;
+};
+
+const waitForShippingReady = async () => {
+  await screen.findByRole('radio', { name: /standard/i });
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: /continue to payment/i })).not.toBeDisabled();
+  });
 };
 
 const fillShippingForm = async (container, user) => {
@@ -204,6 +243,7 @@ test('submits authenticated checkout-start and redirects to hosted payment', asy
   const user = userEvent.setup();
 
   await fillShippingForm(container, user);
+  await waitForShippingReady();
   expect(screen.queryByText(new RegExp('no real payment will be ' + 'processed', 'i'))).not.toBeInTheDocument();
   expect(screen.queryByText(new RegExp('automatically ' + 'confirmed', 'i'))).not.toBeInTheDocument();
   const paymentButton = screen.getByRole('button', { name: /continue to payment/i });
@@ -224,6 +264,7 @@ test('submits authenticated checkout-start and redirects to hosted payment', asy
           country: 'United States',
           phone: '5551234567',
         },
+        shippingMethodId: 'standard',
         notes: undefined,
       },
       expect.any(String)
@@ -233,6 +274,94 @@ test('submits authenticated checkout-start and redirects to hosted payment', asy
   expect(toast.success).not.toHaveBeenCalled();
   expect(cartApi.clearCart).not.toHaveBeenCalled();
   expect(mockNavigate).not.toHaveBeenCalledWith('/account', { state: { tab: 'orders' } });
+});
+
+test('updates checkout total and request method when express international shipping is selected', async () => {
+  const canadaOptions = shippingOptionsData({
+    country: 'Canada',
+    countryCode: 'CA',
+    methods: [
+      {
+        id: 'standard',
+        name: 'Standard',
+        price: 12,
+        estimatedDelivery: '5-8 business days',
+        orderTotal: 212,
+      },
+      {
+        id: 'express',
+        name: 'Express',
+        price: 28,
+        estimatedDelivery: '2-4 business days',
+        orderTotal: 228,
+      },
+    ],
+  });
+  ordersApi.getShippingOptions.mockImplementation((country) =>
+    Promise.resolve({
+      success: true,
+      data: country === 'Canada' ? canadaOptions : shippingOptionsData(),
+    })
+  );
+  ordersApi.create.mockResolvedValue({
+    success: true,
+    data: {
+      payment: {
+        checkoutUrl: 'https://checkout.example.test/pay/session-canada',
+      },
+    },
+  });
+  const { container } = await renderCheckout();
+  const user = userEvent.setup();
+
+  await fillShippingForm(container, user);
+  await user.selectOptions(screen.getByLabelText(/country/i), 'Canada');
+  await screen.findByRole('radio', { name: /express/i });
+  await user.click(screen.getByRole('radio', { name: /express/i }));
+
+  expect(screen.getAllByText('$28.00').length).toBeGreaterThan(0);
+  expect(screen.getByText('$228.00')).toBeInTheDocument();
+
+  await user.click(screen.getByRole('button', { name: /continue to payment/i }));
+
+  await waitFor(() => {
+    expect(ordersApi.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        shippingAddress: expect.objectContaining({
+          country: 'Canada',
+        }),
+        shippingMethodId: 'express',
+      }),
+      expect.any(String)
+    );
+  });
+  expect(assignMock).toHaveBeenCalledWith('https://checkout.example.test/pay/session-canada');
+});
+
+test('blocks payment when the selected country is unsupported', async () => {
+  ordersApi.getShippingOptions.mockImplementation((country) => {
+    if (country === 'Australia') {
+      return Promise.reject({
+        response: {
+          data: { message: 'We do not ship to Australia yet.' },
+        },
+      });
+    }
+
+    return Promise.resolve({
+      success: true,
+      data: shippingOptionsData(),
+    });
+  });
+  const { container } = await renderCheckout();
+  const user = userEvent.setup();
+
+  await fillShippingForm(container, user);
+  await user.selectOptions(screen.getByLabelText(/country/i), 'Australia');
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('We do not ship to Australia yet.');
+  expect(screen.getByRole('button', { name: /shipping unavailable/i })).toBeDisabled();
+  expect(ordersApi.create).not.toHaveBeenCalled();
 });
 
 test('prefills checkout from the default saved address', async () => {
@@ -289,6 +418,7 @@ test('saves the checkout address when requested before payment redirect', async 
   const user = userEvent.setup();
 
   await fillShippingForm(container, user);
+  await waitForShippingReady();
   await user.click(screen.getByLabelText(/save this address/i));
   await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
@@ -314,6 +444,7 @@ test('shows an error when checkout-start succeeds without a payment URL', async 
   const user = userEvent.setup();
 
   await fillShippingForm(container, user);
+  await waitForShippingReady();
   await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
   await waitFor(() => {
@@ -335,6 +466,7 @@ test('keeps cart state and syncs after checkout conflict responses', async () =>
     const user = userEvent.setup();
 
     await fillShippingForm(container, user);
+    await waitForShippingReady();
     await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
     await waitFor(() => {

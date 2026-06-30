@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   emailSchema,
+  objectIdSchema,
   optionalTrimmedString,
   strictObject,
   trimmedString,
@@ -19,7 +20,7 @@ export const loginSchema = strictObject({
 
 export const profileSchema = strictObject({
   name: optionalTrimmedString(100),
-  phone: optionalTrimmedString(40),
+  phone: z.string().trim().max(40).optional(),
 }).refine((value) => Object.values(value).some((entry) => entry !== undefined), {
   message: 'At least one profile field is required',
 });
@@ -36,4 +37,8 @@ export const addressSchema = strictObject({
   zipCode: trimmedString('zipCode', 30),
   phone: trimmedString('phone', 40),
   isDefault: z.boolean().optional().default(false),
+});
+
+export const addressParamsSchema = strictObject({
+  id: objectIdSchema,
 });

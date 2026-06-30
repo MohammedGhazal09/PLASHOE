@@ -12,6 +12,7 @@ vi.mock('../api/authApi', () => ({
     getMe: vi.fn(),
     updateProfile: vi.fn(),
     addAddress: vi.fn(),
+    setDefaultAddress: vi.fn(),
     deleteAddress: vi.fn(),
   },
 }));
@@ -112,6 +113,63 @@ test('addAddress stores returned addresses on the authenticated user', async () 
     result = await useAuthStore.getState().addAddress(addresses[0]);
   });
 
+  expect(result).toEqual({ success: true, data: addresses });
+  expect(useAuthStore.getState().user.addresses).toEqual(addresses);
+});
+
+test('setDefaultAddress stores returned addresses on the authenticated user', async () => {
+  useAuthStore.setState({
+    user: {
+      _id: 'user-1',
+      name: 'Session User',
+      email: 'session@example.com',
+      addresses: [
+        { _id: 'address-1', firstName: 'Home', isDefault: true },
+        { _id: 'address-2', firstName: 'Office', isDefault: false },
+      ],
+    },
+    token: 'session-token',
+    isAuthenticated: true,
+  });
+  const addresses = [
+    { _id: 'address-1', firstName: 'Home', isDefault: false },
+    { _id: 'address-2', firstName: 'Office', isDefault: true },
+  ];
+  authApi.setDefaultAddress.mockResolvedValue({ success: true, data: addresses });
+
+  let result;
+  await act(async () => {
+    result = await useAuthStore.getState().setDefaultAddress('address-2');
+  });
+
+  expect(authApi.setDefaultAddress).toHaveBeenCalledWith('address-2');
+  expect(result).toEqual({ success: true, data: addresses });
+  expect(useAuthStore.getState().user.addresses).toEqual(addresses);
+});
+
+test('deleteAddress stores returned addresses on the authenticated user', async () => {
+  useAuthStore.setState({
+    user: {
+      _id: 'user-1',
+      name: 'Session User',
+      email: 'session@example.com',
+      addresses: [
+        { _id: 'address-1', firstName: 'Home', isDefault: true },
+        { _id: 'address-2', firstName: 'Office', isDefault: false },
+      ],
+    },
+    token: 'session-token',
+    isAuthenticated: true,
+  });
+  const addresses = [{ _id: 'address-2', firstName: 'Office', isDefault: true }];
+  authApi.deleteAddress.mockResolvedValue({ success: true, data: addresses });
+
+  let result;
+  await act(async () => {
+    result = await useAuthStore.getState().deleteAddress('address-1');
+  });
+
+  expect(authApi.deleteAddress).toHaveBeenCalledWith('address-1');
   expect(result).toEqual({ success: true, data: addresses });
   expect(useAuthStore.getState().user.addresses).toEqual(addresses);
 });

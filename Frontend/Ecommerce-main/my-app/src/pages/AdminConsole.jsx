@@ -1,16 +1,24 @@
 import { useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowsRotate, faBoxOpen, faClipboardList, faEnvelope, faImages, faTags } from '@fortawesome/free-solid-svg-icons';
+import { faArrowsRotate, faBell, faBoxOpen, faChartLine, faClipboardList, faEnvelope, faImages, faNewspaper, faStar, faTags } from '@fortawesome/free-solid-svg-icons';
+import AdminDashboard from './admin/AdminDashboard';
 import AdminOrders from './admin/AdminOrders';
 import AdminReturns from './admin/AdminReturns';
 import AdminProducts from './admin/AdminProducts';
 import AdminLookbook from './admin/AdminLookbook';
 import AdminCoupons from './admin/AdminCoupons';
 import AdminMessages from './admin/AdminMessages';
+import AdminBackInStock from './admin/AdminBackInStock';
+import AdminNewsletter from './admin/AdminNewsletter';
+import AdminReviews from './admin/AdminReviews';
 
 const sections = [
+  { id: 'dashboard', label: 'Dashboard', icon: faChartLine, Component: AdminDashboard },
   { id: 'orders', label: 'Orders', icon: faClipboardList, Component: AdminOrders },
   { id: 'returns', label: 'Returns', icon: faArrowsRotate, Component: AdminReturns },
+  { id: 'backInStock', label: 'Restock', icon: faBell, Component: AdminBackInStock },
+  { id: 'newsletter', label: 'Newsletter', icon: faNewspaper, Component: AdminNewsletter },
+  { id: 'reviews', label: 'Reviews', icon: faStar, Component: AdminReviews },
   { id: 'products', label: 'Products', icon: faBoxOpen, Component: AdminProducts },
   { id: 'lookbook', label: 'Lookbook', icon: faImages, Component: AdminLookbook },
   { id: 'coupons', label: 'Coupons', icon: faTags, Component: AdminCoupons },
@@ -18,7 +26,7 @@ const sections = [
 ];
 
 export default function AdminConsole() {
-  const [activeSection, setActiveSection] = useState('orders');
+  const [activeSection, setActiveSection] = useState('dashboard');
   const active = useMemo(
     () => sections.find((section) => section.id === activeSection) || sections[0],
     [activeSection]

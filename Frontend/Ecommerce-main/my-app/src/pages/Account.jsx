@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faBox, faHeart, faSignOutAlt, faCog, faChevronRight, faFilter } from '@fortawesome/free-solid-svg-icons';
+import {
+  faUser,
+  faBox,
+  faHeart,
+  faSignOutAlt,
+  faCog,
+  faChevronRight,
+  faFilter,
+  faSave,
+  faPlus,
+  faStar,
+  faTrash,
+} from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { hasLocalCartItems, useCartStore } from '../store/cartStore';
@@ -11,10 +23,32 @@ import { config } from '../config/config';
 import { getPaymentStatusLabel } from '../utils/paymentStatus';
 import { joinPublicPath } from '../utils/publicPath';
 
+const emptyAddressForm = {
+  firstName: '',
+  lastName: '',
+  company: '',
+  country: 'United States',
+  street: '',
+  apartment: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  phone: '',
+  isDefault: false,
+};
+
 export default function Account() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const {
+    user,
+    isAuthenticated,
+    logout,
+    updateProfile,
+    addAddress,
+    deleteAddress,
+    setDefaultAddress,
+  } = useAuthStore();
   const wishlistItems = useWishlistStore((state) => state.items);
   const wishlistLoading = useWishlistStore((state) => state.isLoading);
   const wishlistError = useWishlistStore((state) => state.error);
@@ -31,6 +65,11 @@ export default function Account() {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [wishlistSizes, setWishlistSizes] = useState({});
+  const [profileForm, setProfileForm] = useState({ name: '', phone: '' });
+  const [addressForm, setAddressForm] = useState(emptyAddressForm);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [addressActionId, setAddressActionId] = useState(null);
 
   // Login/Register form states
   const [isLogin, setIsLogin] = useState(true);
@@ -60,6 +99,15 @@ export default function Account() {
   }, [activeTab, isAuthenticated, syncWishlist]);
 
   useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    setProfileForm({
+      name: user.name || '',
+      phone: user.phone || '',
+    });
+  }, [isAuthenticated, user?._id, user?.name, user?.phone]);
+
+  useEffect(() => {
     setWishlistSizes((current) => {
       const next = { ...current };
       wishlistItems.forEach((item) => {
@@ -87,6 +135,86 @@ export default function Account() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleProfileChange = (e) => {
+    setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
+  };
+
+  const handleAddressChange = (e) => {
+    const { checked, name, type, value } = e.target;
+
+    setAddressForm({
+      ...addressForm,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!profileForm.name.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
+
+    setSavingProfile(true);
+    const result = await updateProfile({
+      name: profileForm.name,
+      phone: profileForm.phone,
+    });
+    setSavingProfile(false);
+
+    if (result.success) {
+      toast.success('Profile updated.');
+    } else {
+      toast.error(result.message || 'We could not update your profile.');
+    }
+  };
+
+  const handleAddressSubmit = async (e) => {
+    e.preventDefault();
+
+    setSavingAddress(true);
+    const result = await addAddress({
+      ...addressForm,
+      isDefault: addressForm.isDefault || (user?.addresses || []).length === 0,
+    });
+    setSavingAddress(false);
+
+    if (result.success) {
+      setAddressForm(emptyAddressForm);
+      toast.success('Address saved.');
+    } else {
+      toast.error(result.message || 'We could not save this address.');
+    }
+  };
+
+  const handleSetDefaultAddress = async (addressId) => {
+    setAddressActionId(addressId);
+    const result = await setDefaultAddress(addressId);
+    setAddressActionId(null);
+
+    if (result.success) {
+      toast.success('Default address updated.');
+    } else {
+      toast.error(result.message || 'We could not update your default address.');
+    }
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    const confirmed = window.confirm('Delete this saved address?');
+    if (!confirmed) return;
+
+    setAddressActionId(addressId);
+    const result = await deleteAddress(addressId);
+    setAddressActionId(null);
+
+    if (result.success) {
+      toast.success('Address deleted.');
+    } else {
+      toast.error(result.message || 'We could not delete this address.');
+    }
   };
 
   const reconcileAfterAuth = async ({ hadLocalWishlist, hadLocalCart }) => {
@@ -209,6 +337,8 @@ export default function Account() {
       toast.error(result.message || 'We could not move this item to your cart. It is still saved.');
     }
   };
+
+  const addresses = user?.addresses || [];
 
   // Not authenticated - show login/register
   if (!isAuthenticated) {
@@ -590,9 +720,306 @@ export default function Account() {
 
           {/* Settings Tab */}
           {activeTab === 'settings' && (
-            <div>
-              <h2 className="text-xl font-semibold mb-6">Account Settings</h2>
-              <p className="text-gray-500">Settings coming soon...</p>
+            <div className="space-y-10">
+              <h2 className="text-xl font-semibold">Account Settings</h2>
+
+              <section aria-labelledby="profile-settings-heading" className="border-b border-[#d9d9d2] pb-8">
+                <div className="mb-5">
+                  <h3 id="profile-settings-heading" className="text-lg font-semibold text-[#262b2c]">
+                    Profile details
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Keep your checkout contact details current.
+                  </p>
+                </div>
+
+                <form aria-label="Profile settings" onSubmit={handleProfileSubmit} className="grid gap-4 md:grid-cols-2">
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    Full name
+                    <input
+                      type="text"
+                      name="name"
+                      value={profileForm.name}
+                      onChange={handleProfileChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    Phone
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={profileForm.phone}
+                      onChange={handleProfileChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c] md:col-span-2">
+                    Email
+                    <input
+                      type="email"
+                      value={user?.email || ''}
+                      className="mt-1 w-full border border-gray-300 bg-gray-50 px-4 py-3 font-normal text-gray-500"
+                      aria-describedby="account-email-help"
+                      readOnly
+                    />
+                  </label>
+                  <p id="account-email-help" className="text-sm text-gray-500 md:col-span-2">
+                    Email changes require a verified account flow and are not available here.
+                  </p>
+
+                  <div className="md:col-span-2">
+                    <button
+                      type="submit"
+                      disabled={savingProfile}
+                      className="button-control button-control--primary"
+                    >
+                      <FontAwesomeIcon icon={faSave} aria-hidden="true" />
+                      {savingProfile ? 'Saving...' : 'Save profile'}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <section aria-labelledby="address-book-heading" className="border-b border-[#d9d9d2] pb-8">
+                <div className="mb-5">
+                  <h3 id="address-book-heading" className="text-lg font-semibold text-[#262b2c]">
+                    Address book
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Your default address is used first during checkout.
+                  </p>
+                </div>
+
+                <form aria-label="Add saved address" onSubmit={handleAddressSubmit} className="grid gap-4 md:grid-cols-2">
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    First name
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={addressForm.firstName}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    Last name
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={addressForm.lastName}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    Company
+                    <input
+                      type="text"
+                      name="company"
+                      value={addressForm.company}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    Country
+                    <input
+                      type="text"
+                      name="country"
+                      value={addressForm.country}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c] md:col-span-2">
+                    Street address
+                    <input
+                      type="text"
+                      name="street"
+                      value={addressForm.street}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    Apartment, suite, etc.
+                    <input
+                      type="text"
+                      name="apartment"
+                      value={addressForm.apartment}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    City
+                    <input
+                      type="text"
+                      name="city"
+                      value={addressForm.city}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    State
+                    <input
+                      type="text"
+                      name="state"
+                      value={addressForm.state}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    ZIP or postal code
+                    <input
+                      type="text"
+                      name="zipCode"
+                      value={addressForm.zipCode}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="block text-sm font-semibold text-[#262b2c]">
+                    Delivery phone
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={addressForm.phone}
+                      onChange={handleAddressChange}
+                      className="mt-1 w-full border border-gray-300 px-4 py-3 font-normal"
+                      required
+                    />
+                  </label>
+
+                  <label className="flex items-center gap-3 text-sm font-semibold text-[#262b2c] md:col-span-2">
+                    <input
+                      type="checkbox"
+                      name="isDefault"
+                      checked={addressForm.isDefault}
+                      onChange={handleAddressChange}
+                      className="h-5 w-5 accent-[#6e7051]"
+                    />
+                    Use as default shipping address
+                  </label>
+
+                  <div className="md:col-span-2">
+                    <button
+                      type="submit"
+                      disabled={savingAddress}
+                      className="button-control button-control--primary"
+                    >
+                      <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+                      {savingAddress ? 'Saving...' : 'Add address'}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="mt-8">
+                  {addresses.length === 0 ? (
+                    <p role="status" className="text-sm text-gray-500">
+                      No saved addresses yet.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {addresses.map((address, index) => {
+                        const addressId = address._id || `${index}`;
+                        const label = `${address.firstName || 'Saved'} ${address.lastName || 'address'}`.trim();
+                        const actionInProgress = addressActionId === addressId;
+
+                        return (
+                          <li key={addressId} className="border border-[#d9d9d2] p-4">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold text-[#262b2c]">{label}</p>
+                                  {address.isDefault && (
+                                    <span className="inline-flex items-center gap-1 border border-[#6e7051] px-2 py-1 text-xs font-semibold text-[#4f513c]">
+                                      <FontAwesomeIcon icon={faStar} aria-hidden="true" />
+                                      Default
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="mt-2 text-sm text-gray-600">{address.street}</p>
+                                {address.apartment && (
+                                  <p className="text-sm text-gray-600">{address.apartment}</p>
+                                )}
+                                <p className="text-sm text-gray-600">
+                                  {[address.city, address.state, address.zipCode].filter(Boolean).join(', ')}
+                                </p>
+                                <p className="text-sm text-gray-600">{address.country}</p>
+                                <p className="mt-2 text-sm text-gray-600">{address.phone}</p>
+                              </div>
+                              <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
+                                {!address.isDefault && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetDefaultAddress(addressId)}
+                                    disabled={actionInProgress || !address._id}
+                                    aria-label={`Set default address for ${label}`}
+                                    className="button-control button-control--secondary button-control--compact"
+                                  >
+                                    <FontAwesomeIcon icon={faStar} aria-hidden="true" />
+                                    Set default
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAddress(addressId)}
+                                  disabled={actionInProgress || !address._id}
+                                  aria-label={`Delete address for ${label}`}
+                                  className="button-control button-control--danger button-control--compact"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </section>
+
+              <section aria-labelledby="security-settings-heading">
+                <h3 id="security-settings-heading" className="text-lg font-semibold text-[#262b2c]">
+                  Sign-in security
+                </h3>
+                <p id="credential-help" className="mt-2 text-sm text-gray-500">
+                  Password changes require current-password verification or a reset-token flow and are not available in this settings workflow.
+                </p>
+                <button
+                  type="button"
+                  disabled
+                  aria-describedby="credential-help"
+                  className="button-control button-control--secondary button-control--disabled mt-4"
+                >
+                  Password change unavailable
+                </button>
+              </section>
             </div>
           )}
         </div>

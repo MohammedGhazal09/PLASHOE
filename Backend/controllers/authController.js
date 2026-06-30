@@ -20,6 +20,12 @@ const toAuthUser = (user) => ({
   token: generateToken(user._id)
 });
 
+const ensureDefaultAddress = (addresses) => {
+  if (addresses.length > 0 && !addresses.some((address) => address.isDefault)) {
+    addresses[0].isDefault = true;
+  }
+};
+
 // @desc    Register user
 // @route   POST /api/auth/register
 export const register = async (req, res, next) => {
@@ -97,8 +103,8 @@ export const updateProfile = async (req, res, next) => {
     
     const user = await User.findById(req.user._id);
     
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
+    if (name !== undefined) user.name = name;
+    if (phone !== undefined) user.phone = phone;
     
     await user.save();
 
@@ -136,15 +142,55 @@ export const addAddress = async (req, res, next) => {
   }
 };
 
+// @desc    Set default address
+// @route   PUT /api/auth/addresses/:id/default
+export const setDefaultAddress = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const address = user.addresses.id(req.params.id);
+
+    if (!address) {
+      return res.status(404).json({
+        success: false,
+        message: 'Address not found'
+      });
+    }
+
+    user.addresses.forEach((savedAddress) => {
+      savedAddress.isDefault = savedAddress._id.toString() === req.params.id;
+    });
+
+    await user.save();
+
+    res.json({
+      success: true,
+      data: user.addresses
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Delete address
 // @route   DELETE /api/auth/addresses/:id
 export const deleteAddress = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
-    
-    user.addresses = user.addresses.filter(
-      addr => addr._id.toString() !== req.params.id
-    );
+    const address = user.addresses.id(req.params.id);
+
+    if (!address) {
+      return res.status(404).json({
+        success: false,
+        message: 'Address not found'
+      });
+    }
+
+    const wasDefault = address.isDefault;
+    user.addresses.pull(req.params.id);
+
+    if (wasDefault) {
+      ensureDefaultAddress(user.addresses);
+    }
     
     await user.save();
 

@@ -84,7 +84,11 @@ export const useAuthStore = create(
         try {
           const response = await authApi.updateProfile(profileData);
           if (response.success) {
-            set({ user: response.data, isLoading: false });
+            set((state) => ({
+              user: state.user ? { ...state.user, ...response.data } : response.data,
+              isLoading: false,
+              error: null,
+            }));
             return { success: true };
           }
         } catch (error) {
@@ -111,6 +115,50 @@ export const useAuthStore = create(
           return { success: false, message: response.message || 'Address save failed' };
         } catch (error) {
           const message = error.response?.data?.message || 'Address save failed';
+          set({ error: message, isLoading: false });
+          return { success: false, message };
+        }
+      },
+
+      setDefaultAddress: async (addressId) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.setDefaultAddress(addressId);
+          if (response.success) {
+            set((state) => ({
+              user: state.user ? { ...state.user, addresses: response.data } : state.user,
+              isLoading: false,
+              error: null,
+            }));
+            return { success: true, data: response.data };
+          }
+
+          set({ isLoading: false });
+          return { success: false, message: response.message || 'Default address update failed' };
+        } catch (error) {
+          const message = error.response?.data?.message || 'Default address update failed';
+          set({ error: message, isLoading: false });
+          return { success: false, message };
+        }
+      },
+
+      deleteAddress: async (addressId) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.deleteAddress(addressId);
+          if (response.success) {
+            set((state) => ({
+              user: state.user ? { ...state.user, addresses: response.data } : state.user,
+              isLoading: false,
+              error: null,
+            }));
+            return { success: true, data: response.data };
+          }
+
+          set({ isLoading: false });
+          return { success: false, message: response.message || 'Address delete failed' };
+        } catch (error) {
+          const message = error.response?.data?.message || 'Address delete failed';
           set({ error: message, isLoading: false });
           return { success: false, message };
         }

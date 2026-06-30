@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
+import AdminProductPicker from './AdminProductPicker';
 
 const blankLookbookEntry = {
   title: '',
@@ -54,8 +55,6 @@ const parseBundleRows = (value) =>
       });
     })
     .filter(Boolean);
-
-const productLabel = (product = {}) => `${product.name || 'Product'} (${product._id})`;
 
 const stringifyHotspots = (hotspots = []) =>
   hotspots
@@ -121,7 +120,6 @@ const toLookbookPayload = (form) => {
 
 export default function AdminLookbook() {
   const [entries, setEntries] = useState([]);
-  const [products, setProducts] = useState([]);
   const [form, setForm] = useState(blankLookbookEntry);
   const [editingId, setEditingId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -133,12 +131,8 @@ export default function AdminLookbook() {
     setLoading(true);
     setError('');
     try {
-      const [lookbookResponse, productsResponse] = await Promise.all([
-        adminApi.getLookbookEntries(),
-        adminApi.getProducts({ limit: 100, sort: 'newest' }),
-      ]);
+      const lookbookResponse = await adminApi.getLookbookEntries();
       setEntries(lookbookResponse.data || []);
-      setProducts(productsResponse.data || []);
     } catch (err) {
       setError(getErrorMessage(err, 'We could not load lookbook data.'));
     } finally {
@@ -151,6 +145,23 @@ export default function AdminLookbook() {
   }, []);
 
   const setField = (field, value) => setForm((current) => ({ ...current, [field]: value }));
+
+  const appendLine = (field, line) =>
+    setForm((current) => ({
+      ...current,
+      [field]: [current[field], line].filter(Boolean).join('\n'),
+    }));
+
+  const addHotspotProduct = (product) => {
+    appendLine('hotspots', `${product._id} | 50 | 50 | ${product.name}`);
+  };
+
+  const addBundleProduct = (product) => {
+    appendLine('bundleItems', `${product._id} | ${product.sizes?.[0] || ''} | 1`);
+    if (!form.bundleTitle) {
+      setField('bundleTitle', 'Selected products');
+    }
+  };
 
   const resetForm = () => {
     setForm(blankLookbookEntry);
@@ -210,21 +221,6 @@ export default function AdminLookbook() {
       {error && <p className="border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {notice && <p className="border border-green-200 bg-green-50 p-3 text-sm text-green-700">{notice}</p>}
 
-      <section className="border border-gray-200 bg-white p-4">
-        <h3 className="text-lg font-semibold text-dark">Product reference IDs</h3>
-        {products.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-600">No products loaded yet.</p>
-        ) : (
-          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-            {products.slice(0, 8).map((product) => (
-              <p key={product._id} className="border border-gray-200 p-2 text-gray-700">
-                {productLabel(product)}
-              </p>
-            ))}
-          </div>
-        )}
-      </section>
-
       <form onSubmit={handleSubmit} className="grid gap-3 border border-gray-200 bg-white p-4 md:grid-cols-2">
         <h3 className="md:col-span-2 text-lg font-semibold text-dark">
           {editingId ? 'Edit lookbook entry' : 'Save lookbook entry'}
@@ -252,6 +248,12 @@ export default function AdminLookbook() {
           Description
           <textarea value={form.description} onChange={(event) => setField('description', event.target.value)} className="mt-1 min-h-24 w-full border border-gray-300 px-3 py-2 text-sm" />
         </label>
+        <div className="md:col-span-2">
+          <AdminProductPicker
+            label="Hotspot product"
+            onSelect={addHotspotProduct}
+          />
+        </div>
         <label className="md:col-span-2 text-sm font-semibold text-dark">
           Hotspots
           <textarea
@@ -269,6 +271,12 @@ export default function AdminLookbook() {
           Bundle description
           <input value={form.bundleDescription} onChange={(event) => setField('bundleDescription', event.target.value)} className="mt-1 w-full border border-gray-300 px-3 py-2 text-sm" />
         </label>
+        <div className="md:col-span-2">
+          <AdminProductPicker
+            label="Bundle product"
+            onSelect={addBundleProduct}
+          />
+        </div>
         <label className="md:col-span-2 text-sm font-semibold text-dark">
           Bundle items
           <textarea

@@ -1,6 +1,11 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Review from '../models/Review.js';
+import {
+  buildPagination,
+  buildPaginationEnvelope,
+  escapeRegex,
+} from '../utils/adminListQuery.js';
 
 const emptyRatingDistribution = () => ({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
 
@@ -57,6 +62,25 @@ const toPublicReview = (review) => ({
     name: review.user?.name || 'PLASHOE customer',
   },
 });
+
+const buildAdminReviewFilter = (query) => {
+  const filter = {};
+
+  if (query.isApproved !== undefined) {
+    filter.isApproved = query.isApproved;
+  }
+
+  if (query.productId) {
+    filter.product = query.productId;
+  }
+
+  if (query.q) {
+    const pattern = new RegExp(escapeRegex(query.q), 'i');
+    filter.$or = [{ title: pattern }, { comment: pattern }];
+  }
+
+  return filter;
+};
 
 export const updateProductReviewAggregates = async (productId) => {
   const reviews = await Review.find({ product: productId, isApproved: true });
@@ -190,6 +214,87 @@ export const createProductReview = async (req, res, next) => {
         message: 'You have already reviewed this product',
       });
     }
+    next(error);
+  }
+};
+
+// @desc    List reviews for admin moderation
+// @route   GET /api/admin/reviews
+export const getAdminReviews = async (req, res, next) => {
+  try {
+    const query = req.validated?.query || req.query;
+    const { page, limit, skip } = buildPagination(query);
+    const filter = buildAdminReviewFilter(query);
+
+    const [total, reviews] = await Promise.all([
+      Review.countDocuments(filter),
+      Review.find(filter)
+        .populate('product', 'name category image rating reviewCount')
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    res.json(buildPaginationEnvelope({ total, page, limit, data: reviews }));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get review detail for admin moderation
+// @route   GET /api/admin/reviews/:id
+export const getAdminReview = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.id)
+      .populate('product', 'name category image rating reviewCount')
+      .populate('user', 'name email')
+      .lean();
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: 'Review not found',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: review,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Approve or hide a review and recalculate product review aggregates
+// @route   PATCH /api/admin/reviews/:id/moderation
+export const updateAdminReviewModeration = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.id);
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: 'Review not found',
+      });
+    }
+
+    review.isApproved = req.body.isApproved;
+    await review.save();
+
+    const updatedProduct = await updateProductReviewAggregates(review.product);
+    await review.populate('product', 'name category image rating reviewCount');
+    await review.populate('user', 'name email');
+
+    res.json({
+      success: true,
+      message: review.isApproved ? 'Review approved' : 'Review hidden',
+      summary: reviewSummaryFromProduct(updatedProduct),
+      data: review,
+    });
+  } catch (error) {
     next(error);
   }
 };

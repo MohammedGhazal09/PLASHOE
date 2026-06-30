@@ -151,11 +151,57 @@
 - [x] **V2-LOOK-02**: Shoppers can inspect tagged products and add individual items or available bundle items to cart.
 - [x] **V2-LOOK-03**: Admin maintenance, responsive behavior, accessibility, and focused tests cover shoppable lookbook interactions.
 
+## v3 Requirements
+
+### Account Settings and Addresses
+
+- [x] **V3-ACC-01**: Customers can edit profile settings from the Account settings tab.
+- [x] **V3-ACC-02**: Customers can manage saved addresses and choose a default address.
+- [x] **V3-ACC-03**: Credential-management behavior is explicit, protected, and tested.
+
+### Admin Metrics Dashboard
+
+- [x] **V3-ADMSTAT-01**: Admins can view compact revenue, order, inventory, returns, message, and coupon metrics.
+- [x] **V3-ADMSTAT-02**: Dashboard metrics are served by protected, bounded backend aggregation APIs.
+- [x] **V3-ADMSTAT-03**: Admin dashboard loading, error, empty, and populated states are covered by tests.
+
+### Back-in-Stock Administration
+
+- [x] **V3-BIS-01**: Admins can list and filter back-in-stock requests by product, size, email, and status.
+- [x] **V3-BIS-02**: Admins can mark requests notified or cancelled without sending provider messages.
+- [x] **V3-BIS-03**: Restock-demand summaries help guide inventory decisions.
+
+### Newsletter Subscriptions
+
+- [x] **V3-NEWS-01**: Newsletter subscription captures email, consent, source, duplicate-safe status, and unsubscribe token.
+- [x] **V3-NEWS-02**: Duplicate subscriptions are idempotent.
+- [x] **V3-NEWS-03**: Admins can view subscription summaries through protected APIs.
+- [x] **V3-NEWS-04**: Unsubscribe or suppression behavior exists before provider delivery.
+
+### Review Moderation
+
+- [x] **V3-REV-MOD-01**: Admins can list, approve, and hide product reviews.
+- [x] **V3-REV-MOD-02**: Public review listings and rating summaries only reflect approved reviews.
+- [x] **V3-REV-MOD-03**: Moderation transitions and aggregate recalculation are tested.
+
+### Admin Product Picker
+
+- [x] **V3-PICK-01**: Admin screens can search and select products without manual raw ID entry.
+- [x] **V3-PICK-02**: Lookbook hotspot and bundle forms use the reusable product picker.
+- [x] **V3-PICK-03**: Picker loading, no-results, selected, stale, and stock-context states are tested.
+
+### Shipping Rules
+
+- [x] **V3-SHIP-01**: Backend checkout computes shipping availability, price, and totals from server-owned rules.
+- [x] **V3-SHIP-02**: Checkout UI shows eligible shipping methods and blocks unsupported countries.
+- [x] **V3-SHIP-03**: Orders persist selected shipping method, shipping price, country, and final total.
+- [x] **V3-SHIP-04**: Payment amount and order persistence tests cover shipping-rate behavior.
+
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Pre-release storefront marketing expansion | Current v1 risk is reliability and production readiness; post-release growth features are tracked in phases 13-21. |
+| Pre-release storefront marketing expansion | Current v1 risk is reliability and production readiness; post-release growth features are tracked in phases 13-28. |
 | Mobile app | Web checkout must be reliable first. |
 | Multi-vendor marketplace | Not supported by current data model or admin workflow. |
 
@@ -244,12 +290,36 @@
 | V2-LOOK-01 | Phase 21 | Backlog |
 | V2-LOOK-02 | Phase 21 | Backlog |
 | V2-LOOK-03 | Phase 21 | Backlog |
+| V3-ACC-01 | Phase 22 | Complete |
+| V3-ACC-02 | Phase 22 | Complete |
+| V3-ACC-03 | Phase 22 | Complete |
+| V3-ADMSTAT-01 | Phase 23 | Complete |
+| V3-ADMSTAT-02 | Phase 23 | Complete |
+| V3-ADMSTAT-03 | Phase 23 | Complete |
+| V3-BIS-01 | Phase 24 | Complete |
+| V3-BIS-02 | Phase 24 | Complete |
+| V3-BIS-03 | Phase 24 | Complete |
+| V3-NEWS-01 | Phase 25 | Complete |
+| V3-NEWS-02 | Phase 25 | Complete |
+| V3-NEWS-03 | Phase 25 | Complete |
+| V3-NEWS-04 | Phase 25 | Complete |
+| V3-REV-MOD-01 | Phase 26 | Complete |
+| V3-REV-MOD-02 | Phase 26 | Complete |
+| V3-REV-MOD-03 | Phase 26 | Complete |
+| V3-PICK-01 | Phase 27 | Complete |
+| V3-PICK-02 | Phase 27 | Complete |
+| V3-PICK-03 | Phase 27 | Complete |
+| V3-SHIP-01 | Phase 28 | Complete |
+| V3-SHIP-02 | Phase 28 | Complete |
+| V3-SHIP-03 | Phase 28 | Complete |
+| V3-SHIP-04 | Phase 28 | Complete |
 
 **Coverage:**
 
 - v1 requirements: 50 total
 - v2 requirements: 31 total
-- Mapped to phases: 81
+- v3 requirements: 23 total
+- Mapped to phases: 104
 - Unmapped: 0
 
 ---

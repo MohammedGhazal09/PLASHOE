@@ -490,12 +490,14 @@ code {
   position: relative;
   isolate: isolate;
   display: flex;
-  min-height: clamp(360px, 44vw, 560px);
+  min-height: 260px;
+  height: 40vh;
   align-items: center;
+  justify-content: center;
   overflow: hidden;
   background-position: center;
   background-size: cover;
-  padding: clamp(3.5rem, 7vw, 6rem) clamp(1.5rem, 6vw, 5.5rem);
+  padding: 0 1.5rem;
 }
 
 .lookbook-hero::before {
@@ -503,20 +505,18 @@ code {
   inset: 0;
   z-index: -1;
   content: '';
-  background:
-    linear-gradient(90deg, rgba(16, 18, 17, 0.82) 0%, rgba(16, 18, 17, 0.56) 38%, rgba(16, 18, 17, 0.14) 72%),
-    linear-gradient(0deg, rgba(16, 18, 17, 0.36) 0%, rgba(16, 18, 17, 0.02) 58%);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .lookbook-hero__content {
   width: min(100%, 720px);
-  color: #ffffff;
-  text-align: left;
+  color: #262b2c;
+  text-align: center;
 }
 
 .lookbook-hero__eyebrow {
   margin: 0 0 1rem;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(38, 43, 44, 0.7);
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -527,19 +527,18 @@ code {
   display: grid;
   gap: 0.15em;
   margin: 0;
-  color: #ffffff;
-  font-size: clamp(3.75rem, 9vw, 8rem);
+  color: #262b2c;
+  font-size: clamp(3rem, 8vw, 6rem);
   font-weight: 800;
   letter-spacing: 0;
-  line-height: 0.88;
+  line-height: 0.95;
   text-wrap: balance;
-  text-shadow: 0 14px 40px rgba(0, 0, 0, 0.32);
 }
 
 .lookbook-hero__copy {
   max-width: 42rem;
-  margin: 1.35rem 0 0;
-  color: rgba(255, 255, 255, 0.88);
+  margin: 1.35rem auto 0;
+  color: rgba(38, 43, 44, 0.7);
   font-size: clamp(1rem, 1.5vw, 1.25rem);
   line-height: 1.6;
 }
@@ -550,8 +549,8 @@ code {
   align-items: center;
   justify-content: center;
   margin-top: 1.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  color: #ffffff;
+  border: 1px solid rgba(38, 43, 44, 0.72);
+  color: #262b2c;
   padding: 0.75rem 1.15rem;
   font-size: 0.875rem;
   font-weight: 800;
@@ -564,23 +563,29 @@ code {
 }
 
 .lookbook-hero__link:hover {
-  border-color: #ffffff;
-  background-color: #ffffff;
-  color: #262b2c;
+  border-color: #262b2c;
+  background-color: #262b2c;
+  color: #ffffff;
 }
 
 .lookbook-hero__link:focus-visible {
-  outline: 3px solid rgba(255, 255, 255, 0.48);
+  outline: 3px solid rgba(38, 43, 44, 0.28);
   outline-offset: 3px;
+}
+
+@media (min-width: 768px) {
+  .lookbook-hero {
+    height: 50vh;
+  }
 }
 
 @media (max-width: 640px) {
   .lookbook-hero {
-    min-height: 420px;
+    min-height: 260px;
     background-position: 58% center;
   }
 
   .lookbook-hero__title {
-    font-size: clamp(3.25rem, 18vw, 4.75rem);
+    font-size: clamp(2.75rem, 16vw, 4.25rem);
   }
 }

@@ -107,7 +107,7 @@ export const normalizeProduct = (
     },
     rating: toNumber(product.rating, 0),
     sizes: Array.isArray(product.sizes) && product.sizes.length > 0 ? product.sizes : DEFAULT_SIZES,
-    stock: toNumber(product.stock, 0),
+    stock: toNumber(product.stock, source === 'fallback' ? 10 : 0),
     isOnSale: Boolean(product.isOnSale || originalPrice > currentPrice),
     description: product.description || '',
     materials: Array.isArray(product.materials) ? product.materials : [],

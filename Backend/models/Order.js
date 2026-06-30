@@ -174,6 +174,20 @@ const orderSchema = new mongoose.Schema({
     enum: ['standard', 'express'],
     default: 'standard'
   },
+  shippingMethodName: {
+    type: String,
+    default: 'Standard'
+  },
+  shippingPrice: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  shippingCountryCode: {
+    type: String,
+    default: null,
+    trim: true
+  },
   estimatedDeliveryDate: {
     type: Date,
     default: null
