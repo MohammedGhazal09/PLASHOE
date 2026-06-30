@@ -57,6 +57,22 @@ test('shows cancel return with pending payment state from fetched order', async 
   expect(screen.getByText('Payment pending')).toBeInTheDocument();
 });
 
+test('shows sandbox outcome notice for mock payment returns', async () => {
+  ordersApi.getById.mockResolvedValue({
+    success: true,
+    data: {
+      _id: 'order-mock',
+      orderNumber: 'PLS-MOCK',
+      paymentStatus: 'paid',
+    },
+  });
+
+  renderReturnPage('/checkout/success?orderId=order-mock&mock=approve');
+
+  expect(await screen.findByText(/sandbox outcome recorded/i)).toBeInTheDocument();
+  expect(screen.getByText(/no real money was processed/i)).toBeInTheDocument();
+});
+
 test('renders failed and canceled payment labels from authoritative order state', async () => {
   ordersApi.getById.mockResolvedValueOnce({
     success: true,

@@ -530,6 +530,9 @@ export default function Checkout() {
             <p className="text-gray-500 text-sm mt-2">
               Your order updates after payment confirmation.
             </p>
+            <p className="text-gray-500 text-sm mt-2">
+              Demo deployments may open a mock gateway with approve, decline, and cancel outcomes.
+            </p>
           </div>
         </div>
 

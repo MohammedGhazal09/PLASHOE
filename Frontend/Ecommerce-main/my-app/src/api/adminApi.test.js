@@ -14,6 +14,7 @@ vi.mock('./axios', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  adminApi.setDemoMode(false);
 });
 
 test('getProducts calls the product list endpoint with params', async () => {
@@ -273,4 +274,31 @@ test('deleteContactMessage calls the contact delete endpoint', async () => {
 
   expect(api.delete).toHaveBeenCalledWith('/contact/message-1');
   expect(result).toBe(response);
+});
+
+test('demo mode returns sample admin reads without calling protected endpoints', async () => {
+  adminApi.setDemoMode(true);
+
+  const summary = await adminApi.getSummary();
+  const orders = await adminApi.getOrders({ page: 1, limit: 10 });
+
+  expect(summary.data.orders.total).toBeGreaterThan(0);
+  expect(orders.data[0]).toMatchObject({
+    orderNumber: expect.stringMatching(/^PLS-DEMO-/),
+  });
+  expect(api.get).not.toHaveBeenCalled();
+});
+
+test('demo mode rejects mutations before sending HTTP requests', async () => {
+  adminApi.setDemoMode(true);
+
+  await expect(adminApi.updateOrderFulfillment('order-1', { status: 'shipped' })).rejects.toMatchObject({
+    response: {
+      status: 403,
+      data: {
+        code: 'DEMO_ADMIN_READ_ONLY',
+      },
+    },
+  });
+  expect(api.patch).not.toHaveBeenCalled();
 });

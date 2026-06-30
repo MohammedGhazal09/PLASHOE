@@ -386,7 +386,7 @@ describe("order routes", () => {
     expect(cart.discount).toBe(coupon.discountPercentage);
   });
 
-  it("returns a feature-disabled response before checkout side effects when payments are disabled", async () => {
+  it("starts a mock sandbox payment when payments are disabled", async () => {
     const previousPaymentsEnabled = process.env.PAYMENTS_ENABLED;
     const previousSuccessUrl = process.env.PAYMENT_SUCCESS_URL;
     const previousCancelUrl = process.env.PAYMENT_CANCEL_URL;
@@ -399,27 +399,153 @@ describe("order routes", () => {
       const product = await createProduct({ stock: 10 });
       await createCartForUser(user, [{ product, quantity: 2, size: 42 }]);
 
-      const response = await postCheckout(user, nextIdempotencyKey()).expect(503);
+      const response = await postCheckout(user, nextIdempotencyKey()).expect(201);
 
       expect(response.body).toMatchObject({
-        success: false,
-        message: "Payments are currently disabled",
-        errors: [
-          {
-            code: "PAYMENTS_DISABLED",
-            resource: "payment",
-          },
-        ],
+        success: true,
+        message: "Payment started",
+      });
+      expect(responseOrder(response)).toMatchObject({
+        status: "pending",
+        paymentStatus: "payment_pending",
+        paymentProvider: "mock",
+        inventoryDecremented: true,
+      });
+      expect(responsePayment(response)).toMatchObject({
+        provider: "mock",
+        checkoutUrl: `http://localhost:3000/checkout/mock?orderId=${responseOrder(response)._id}`,
+        sessionId: `mock-session-${responseOrder(response)._id}`,
+        demoMode: true,
       });
       expect(fakePaymentProvider.createCheckoutSession).not.toHaveBeenCalled();
-      expect(await Order.countDocuments({ user: user._id })).toBe(0);
-      expect((await Product.findById(product._id)).stock).toBe(10);
-      expect((await Cart.findOne({ user: user._id })).items).toHaveLength(1);
+      expect(await Order.countDocuments({ user: user._id })).toBe(1);
+      expect((await Product.findById(product._id)).stock).toBe(8);
+      expect((await Cart.findOne({ user: user._id })).items).toHaveLength(0);
     } finally {
       process.env.PAYMENTS_ENABLED = previousPaymentsEnabled;
       process.env.PAYMENT_SUCCESS_URL = previousSuccessUrl;
       process.env.PAYMENT_CANCEL_URL = previousCancelUrl;
     }
+  });
+
+  it("falls back to mock sandbox payment when Stripe config is incomplete", async () => {
+    const previousPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+    const previousSecretKey = process.env.STRIPE_SECRET_KEY;
+    process.env.PAYMENTS_ENABLED = "true";
+    delete process.env.STRIPE_SECRET_KEY;
+
+    try {
+      const user = await createUser();
+      const product = await createProduct({ stock: 6 });
+      await createCartForUser(user, [{ product, quantity: 1, size: 42 }]);
+
+      const response = await postCheckout(user, nextIdempotencyKey()).expect(201);
+
+      expect(responseOrder(response)).toMatchObject({
+        paymentStatus: "payment_pending",
+        paymentProvider: "mock",
+      });
+      expect(responsePayment(response)).toMatchObject({
+        provider: "mock",
+        demoMode: true,
+      });
+      expect(fakePaymentProvider.createCheckoutSession).not.toHaveBeenCalled();
+    } finally {
+      process.env.PAYMENTS_ENABLED = previousPaymentsEnabled;
+      process.env.STRIPE_SECRET_KEY = previousSecretKey;
+    }
+  });
+
+  it("records mock approve, decline, and cancel outcomes through payment states", async () => {
+    const previousPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+    process.env.PAYMENTS_ENABLED = "false";
+
+    try {
+      const paidUser = await createUser();
+      const paidProduct = await createProduct({ stock: 5 });
+      await createCartForUser(paidUser, [{ product: paidProduct, quantity: 1, size: 42 }]);
+      const paidCheckout = await postCheckout(paidUser, nextIdempotencyKey()).expect(201);
+      const paidOrderId = responseOrder(paidCheckout)._id;
+
+      const paidResponse = await request(app)
+        .post(`/api/orders/${paidOrderId}/payment/mock`)
+        .set(authHeader(paidUser))
+        .send({ outcome: "approve" })
+        .expect(200);
+
+      expect(paidResponse.body.data).toMatchObject({
+        paymentStatus: "paid",
+        status: "processing",
+        paymentProviderIntentId: `mock-approve-${paidOrderId}`,
+      });
+      expect(paidResponse.body.data.paidAt).toBeTruthy();
+      expect((await Product.findById(paidProduct._id)).stock).toBe(4);
+
+      const failedUser = await createUser();
+      const failedProduct = await createProduct({ stock: 5 });
+      await createCartForUser(failedUser, [{ product: failedProduct, quantity: 2, size: 42 }]);
+      const failedCheckout = await postCheckout(failedUser, nextIdempotencyKey()).expect(201);
+      const failedOrderId = responseOrder(failedCheckout)._id;
+
+      const failedResponse = await request(app)
+        .post(`/api/orders/${failedOrderId}/payment/mock`)
+        .set(authHeader(failedUser))
+        .send({ outcome: "decline" })
+        .expect(200);
+
+      expect(failedResponse.body.data).toMatchObject({
+        paymentStatus: "payment_failed",
+        status: "pending",
+        paymentFailureReason: "mock payment declined",
+        inventoryDecremented: false,
+      });
+      expect((await Product.findById(failedProduct._id)).stock).toBe(5);
+
+      const canceledUser = await createUser();
+      const canceledProduct = await createProduct({ stock: 5 });
+      await createCartForUser(canceledUser, [{ product: canceledProduct, quantity: 1, size: 42 }]);
+      const canceledCheckout = await postCheckout(canceledUser, nextIdempotencyKey()).expect(201);
+      const canceledOrderId = responseOrder(canceledCheckout)._id;
+
+      const canceledResponse = await request(app)
+        .post(`/api/orders/${canceledOrderId}/payment/mock`)
+        .set(authHeader(canceledUser))
+        .send({ outcome: "cancel" })
+        .expect(200);
+
+      expect(canceledResponse.body.data).toMatchObject({
+        paymentStatus: "payment_canceled",
+        status: "cancelled",
+        paymentFailureReason: "mock checkout canceled",
+        inventoryDecremented: false,
+      });
+      expect((await Product.findById(canceledProduct._id)).stock).toBe(5);
+    } finally {
+      process.env.PAYMENTS_ENABLED = previousPaymentsEnabled;
+    }
+  });
+
+  it("rejects mock outcomes for non-owner and non-mock orders", async () => {
+    const owner = await createUser();
+    const otherUser = await createUser();
+    const order = await createProviderBackedOrder(owner);
+
+    await request(app)
+      .post(`/api/orders/${order._id}/payment/mock`)
+      .set(authHeader(otherUser))
+      .send({ outcome: "approve" })
+      .expect(403);
+
+    const response = await request(app)
+      .post(`/api/orders/${order._id}/payment/mock`)
+      .set(authHeader(owner))
+      .send({ outcome: "approve" })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      success: false,
+      message: "Order is not using the mock payment provider",
+    });
   });
 
   it("rejects stale idempotency-key reuse for a changed non-empty cart", async () => {

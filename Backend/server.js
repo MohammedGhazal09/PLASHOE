@@ -16,6 +16,7 @@ export const startServer = async () => {
     logInfo("runtime-config-validated", {
       environment: process.env.NODE_ENV || "development",
       paymentsEnabled: config.paymentsEnabled,
+      paymentProviderMode: config.paymentProviderMode,
     });
   } catch (error) {
     logError("runtime-config-validation-failed", {

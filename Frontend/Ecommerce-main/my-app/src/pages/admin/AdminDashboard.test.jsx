@@ -2,12 +2,14 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { adminApi } from '../../api/adminApi';
+import { AdminDemoModeProvider } from '../../context/adminDemoMode';
 import { renderWithRouter } from '../../test/routerTestUtils';
 import AdminConsole from '../AdminConsole';
 import AdminDashboard from './AdminDashboard';
 
 vi.mock('../../api/adminApi', () => ({
   adminApi: {
+    setDemoMode: vi.fn(),
     getSummary: vi.fn(),
   },
 }));
@@ -124,4 +126,18 @@ test('admin console opens on the dashboard section', async () => {
 
   expect(await screen.findByRole('heading', { name: /dashboard/i })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /dashboard/i })).toHaveAttribute('aria-current', 'page');
+});
+
+test('admin console shows read-only demo notice and disables section controls for demo admins', async () => {
+  adminApi.getSummary.mockResolvedValue({ success: true, data: populatedSummary });
+
+  renderWithRouter(
+    <AdminDemoModeProvider value>
+      <AdminConsole />
+    </AdminDemoModeProvider>
+  );
+
+  expect(await screen.findByText(/demo admin preview/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /refresh/i })).toBeDisabled();
+  expect(adminApi.setDemoMode).toHaveBeenCalledWith(true);
 });

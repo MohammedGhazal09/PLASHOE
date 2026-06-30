@@ -15,6 +15,7 @@ import {
   Sale,
   Cart,
   Checkout,
+  CheckoutMockPayment,
   CheckoutReturn,
   Account,
   AdminConsole,
@@ -94,6 +95,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Checkout />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="checkout/mock"
+              element={
+                <ProtectedRoute>
+                  <CheckoutMockPayment />
                 </ProtectedRoute>
               }
             />

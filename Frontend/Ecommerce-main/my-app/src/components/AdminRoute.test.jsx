@@ -44,7 +44,7 @@ test('redirects unauthenticated users to account', () => {
   expect(screen.queryByRole('heading', { name: /store admin/i })).not.toBeInTheDocument();
 });
 
-test('blocks authenticated non-admin users', () => {
+test('renders admin children in demo mode for authenticated non-admin users', () => {
   useAuthStore.setState({
     user: { name: 'Customer', email: 'customer@example.com', isAdmin: false },
     token: 'token',
@@ -53,8 +53,8 @@ test('blocks authenticated non-admin users', () => {
 
   renderAdminRoute();
 
-  expect(screen.getByText(/you need an admin account/i)).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: /store admin/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /store admin/i })).toBeInTheDocument();
+  expect(screen.queryByText(/you need an admin account/i)).not.toBeInTheDocument();
 });
 
 test('renders admin children for authenticated admins', () => {

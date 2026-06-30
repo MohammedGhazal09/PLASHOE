@@ -29,6 +29,11 @@ export const ordersApi = {
     return data;
   },
 
+  completeMockPayment: async (id, outcome) => {
+    const { data } = await api.post(`/orders/${id}/payment/mock`, { outcome });
+    return data;
+  },
+
   reorder: async (id) => {
     const { data } = await api.post(`/orders/${id}/reorder`);
     return data;

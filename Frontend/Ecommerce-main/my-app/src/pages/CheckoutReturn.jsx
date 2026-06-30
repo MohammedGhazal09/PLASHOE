@@ -6,6 +6,7 @@ import { getPaymentStatusLabel } from '../utils/paymentStatus';
 export default function CheckoutReturn({ variant = 'success' }) {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId');
+  const mockOutcome = searchParams.get('mock');
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(Boolean(orderId));
   const [error, setError] = useState(orderId ? null : 'missing-order');
@@ -89,6 +90,11 @@ export default function CheckoutReturn({ variant = 'success' }) {
         <div className="border p-6 rounded mb-8">
           <p className="text-sm text-gray-500 mb-2">Payment status</p>
           <p className="text-2xl font-semibold">{paymentLabel}</p>
+          {mockOutcome && (
+            <p className="mt-3 border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              Sandbox outcome recorded. No real money was processed.
+            </p>
+          )}
           <p className="text-gray-500 mt-3">
             {order.paymentStatus === 'paid'
               ? 'Your order is confirmed and ready for processing.'

@@ -5,7 +5,7 @@ import {
   cancelOrderWithStockRestore,
   getShippingOptionsForCart,
 } from '../services/checkoutService.js';
-import { startCheckoutPayment } from '../services/paymentService.js';
+import { completeMockPayment, startCheckoutPayment } from '../services/paymentService.js';
 
 const toIdString = (value) => {
   if (!value) return '';
@@ -129,6 +129,26 @@ export const cancelOrder = async (req, res, next) => {
       success: true,
       message: 'Order cancelled',
       data: order
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Complete a sandbox/mock payment outcome
+// @route   POST /api/orders/:id/payment/mock
+export const completeMockOrderPayment = async (req, res, next) => {
+  try {
+    const order = await completeMockPayment({
+      user: req.user,
+      orderId: req.params.id,
+      outcome: req.body.outcome,
+    });
+
+    res.json({
+      success: true,
+      message: `Mock payment ${req.body.outcome} recorded`,
+      data: order,
     });
   } catch (error) {
     next(error);

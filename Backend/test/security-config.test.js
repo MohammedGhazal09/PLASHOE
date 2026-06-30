@@ -42,6 +42,7 @@ describe("runtime configuration validation", () => {
       frontendUrl: "http://localhost:3000",
       port: 5000,
       paymentsEnabled: false,
+      paymentProviderMode: "mock",
     });
   });
 
@@ -97,30 +98,46 @@ describe("runtime configuration validation", () => {
   it("disables payment config by default only in tests", () => {
     expect(validateRuntimeEnv({ ...baseEnv, NODE_ENV: "test" })).toMatchObject({
       paymentsEnabled: false,
+      paymentProviderMode: "mock",
     });
   });
 
-  it("requires Stripe and return URL config when payments are enabled", () => {
-    expect(() => validateRuntimeEnv({ ...baseEnv, PAYMENTS_ENABLED: "true" })).toThrow(
-      /STRIPE_SECRET_KEY is required/
-    );
-    expect(() => validateRuntimeEnv({ ...baseEnv, NODE_ENV: "production" })).toThrow(
-      /STRIPE_SECRET_KEY is required/
-    );
-    expect(() =>
+  it("uses mock payment mode when Stripe config is incomplete", () => {
+    expect(validateRuntimeEnv({ ...baseEnv, PAYMENTS_ENABLED: "true" })).toMatchObject({
+      paymentsEnabled: false,
+      paymentProviderMode: "mock",
+    });
+    expect(validateRuntimeEnv({ ...baseEnv, NODE_ENV: "production" })).toMatchObject({
+      paymentsEnabled: false,
+      paymentProviderMode: "mock",
+    });
+    expect(
       validateRuntimeEnv({
         ...baseEnv,
         PAYMENTS_ENABLED: "true",
         STRIPE_SECRET_KEY: paymentEnv.STRIPE_SECRET_KEY,
       })
-    ).toThrow(/STRIPE_WEBHOOK_SECRET is required/);
-    expect(() =>
+    ).toMatchObject({
+      paymentsEnabled: false,
+      paymentProviderMode: "mock",
+    });
+  });
+
+  it("uses Stripe mode when full payment config is present", () => {
+    expect(
       validateRuntimeEnv({
         ...baseEnv,
         PAYMENTS_ENABLED: "true",
         ...paymentEnv,
+        PAYMENT_SUCCESS_URL: "http://localhost:3000/checkout/success",
+        PAYMENT_CANCEL_URL: "http://localhost:3000/checkout/cancel",
       })
-    ).toThrow(/PAYMENT_SUCCESS_URL is required/);
+    ).toMatchObject({
+      paymentsEnabled: true,
+      paymentProviderMode: "stripe",
+      paymentSuccessUrl: "http://localhost:3000/checkout/success",
+      paymentCancelUrl: "http://localhost:3000/checkout/cancel",
+    });
   });
 
   it("validates payment return URLs when payments are enabled", () => {

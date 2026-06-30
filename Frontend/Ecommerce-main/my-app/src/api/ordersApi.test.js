@@ -66,6 +66,15 @@ test('cancel returns unwrapped cancel response data', async () => {
   expect(result.data).toEqual({ status: 'cancelled' });
 });
 
+test('completeMockPayment posts the chosen sandbox outcome', async () => {
+  api.post.mockResolvedValue({ data: { success: true, data: { paymentStatus: 'paid' } } });
+
+  const result = await ordersApi.completeMockPayment('order-1', 'approve');
+
+  expect(api.post).toHaveBeenCalledWith('/orders/order-1/payment/mock', { outcome: 'approve' });
+  expect(result.data).toEqual({ paymentStatus: 'paid' });
+});
+
 test('reorder posts to the order reorder endpoint', async () => {
   api.post.mockResolvedValue({ data: { success: true, data: { added: 1 } } });
 

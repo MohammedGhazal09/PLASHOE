@@ -2,7 +2,7 @@
 
 ## Overview
 
-This roadmap turns the verified PLASHOE gaps into execution phases. The sequence starts with defects already proven by spike 001, then adds test coverage, security hardening, checkout integrity, payment readiness, admin fulfillment, catalog/frontend cleanup, deployment operations, production launch setup, frontend tooling modernization, operational monitoring, and final release cutover. Post-release phases then expand the store into richer admin operations, shopping intent, product confidence, discovery, checkout conversion, returns, sustainability content, retention, shoppable merchandising, account self-service, admin analytics, lifecycle operations, moderation, merchandising tooling, and shipping rules.
+This roadmap turns the verified PLASHOE gaps into execution phases. The sequence starts with defects already proven by spike 001, then adds test coverage, security hardening, checkout integrity, payment readiness, admin fulfillment, catalog/frontend cleanup, deployment operations, production launch setup, frontend tooling modernization, operational monitoring, and final release cutover. Post-release phases then expand the store into richer admin operations, shopping intent, product confidence, discovery, checkout conversion, returns, sustainability content, retention, shoppable merchandising, account self-service, admin analytics, lifecycle operations, moderation, merchandising tooling, shipping rules, demo admin portfolio access, and sandbox payment demonstrations.
 
 ## Phases
 
@@ -39,6 +39,8 @@ This roadmap turns the verified PLASHOE gaps into execution phases. The sequence
 - [x] **Phase 26: Review Moderation and Customer Trust Controls** - Add admin moderation for public review quality and trust. (completed 2026-06-30)
 - [x] **Phase 27: Searchable Admin Product Picker for Merchandising Workflows** - Replace manual product-id entry with reusable admin product selection. (completed 2026-06-30)
 - [x] **Phase 28: Shipping Rates and International Checkout Rules** - Add server-owned shipping methods, country rules, and checkout totals. (completed 2026-06-30)
+- [x] **Phase 29: Demo Admin Portfolio Access and Safe Preview Mode** - Let signed-in portfolio reviewers open a restricted admin preview with all actions disabled. (completed 2026-06-30)
+- [x] **Phase 30: Hybrid Sandbox Payment Demo Mode** - Show payment-system handling with Stripe test mode when configured and a mock gateway fallback otherwise. (completed 2026-06-30)
 
 ## Phase Details
 
@@ -859,9 +861,65 @@ Plan candidates:
 - D-03: Do all work inline and do not use subagents.
 - D-72: Checkout totals remain backend-owned; do not trust frontend-submitted shipping prices.
 
+### Phase 29: Demo Admin Portfolio Access and Safe Preview Mode
+
+**Goal**: Recruiters and portfolio reviewers who create an account can reach the admin page as a clearly restricted demo preview without receiving real admin permissions or mutation ability.
+**Depends on**: Phase 28
+**Requirements**: V3-DEMOADMIN-01, V3-DEMOADMIN-02, V3-DEMOADMIN-03, V3-DEMOADMIN-04, V3-DEMOADMIN-05
+**Canonical refs**: `Frontend/Ecommerce-main/my-app/src/components/AdminRoute.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/AdminConsole.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/admin/`, `Frontend/Ecommerce-main/my-app/src/api/adminApi.js`, `Backend/middleware/auth.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Any authenticated non-admin account can reach the admin page in demo mode without being marked or treated as a real admin.
+  2. The admin shell and every admin resource screen show clear recruiter/portfolio copy explaining that this is a restricted demo and why controls are disabled.
+  3. Create, update, delete, status-change, fulfillment, moderation, notification, and other mutation controls are disabled or converted to no-op restricted actions in demo mode.
+  4. Demo admin preview uses sanitized/example data or safe read-only views; backend admin APIs that expose sensitive data or mutate state remain protected by real admin authorization.
+  5. Tests cover signed-out access, signed-in demo access, real-admin access, disabled action states, restricted messaging, and direct non-admin API mutation attempts.
+
+**Plans**: 3 plans
+
+Plan candidates:
+
+- [x] 29-01: Add demo-admin access contract and route-state boundary for signed-in non-admins.
+- [x] 29-02: Add restricted admin preview UI with persistent notices and disabled mutation controls across admin screens.
+- [x] 29-03: Add backend/frontend tests, docs, and visual QA for demo restrictions and real-admin authorization boundaries.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-73: Demo access must not set `isAdmin`, weaken backend `admin` middleware, or rely on frontend-only disabled controls for security.
+- D-74: Restriction messaging must be visible on initial admin load and near disabled actions, including keyboard/accessibility states.
+
+### Phase 30: Hybrid Sandbox Payment Demo Mode
+
+**Goal**: PLASHOE can demonstrate real payment-system thinking without charging real money by using Stripe test mode when configured and a controlled mock gateway fallback when Stripe is unavailable.
+**Depends on**: Phase 29
+**Requirements**: V3-PAYDEMO-01, V3-PAYDEMO-02, V3-PAYDEMO-03, V3-PAYDEMO-04, V3-PAYDEMO-05
+**Canonical refs**: `Backend/services/paymentService.js`, `Backend/services/paymentProvider.js`, `Backend/services/paymentState.js`, `Backend/controllers/webhookController.js`, `Backend/config/env.js`, `Frontend/Ecommerce-main/my-app/src/pages/Checkout.jsx`, `Frontend/Ecommerce-main/my-app/src/pages/CheckoutReturn.jsx`, `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js`
+**Success Criteria** (what must be TRUE):
+
+  1. Checkout uses Stripe test-mode hosted checkout when sandbox Stripe configuration is present and clearly states that no real money is charged.
+  2. Checkout falls back to a mock payment gateway only when Stripe sandbox configuration is missing, with explicit approve, decline, and cancel outcomes.
+  3. Both Stripe-test and mock outcomes drive the existing order payment states instead of creating a separate fake payment model.
+  4. The UI shows the active payment mode, supported demo outcomes, and safe retry/cancel messaging without collecting or storing card data.
+  5. Tests cover configured Stripe flow, mock fallback, success/failure/cancel return paths, payment-state persistence, and webhook/authorization boundaries.
+
+**Plans**: 3 plans
+
+Plan candidates:
+
+- [x] 30-01: Add payment-mode selection and mock gateway fallback behind existing payment services.
+- [x] 30-02: Add checkout and return UI copy for sandbox Stripe and mock payment outcomes.
+- [x] 30-03: Add tests, docs, and visual QA for payment demo states and no-real-money messaging.
+
+**Cross-cutting constraints:**
+
+- D-03: Do all work inline and do not use subagents.
+- D-75: Do not store card numbers, fake PANs, or payment secrets; the mock gateway only emits controlled demo outcomes.
+- D-76: Keep real Stripe production setup blocked behind Phase 9/12 provider evidence and explicit release approval.
+
 ## Progress
 
-**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24 -> Phase 25 -> Phase 26 -> Phase 27 -> Phase 28
+**Execution Order:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24 -> Phase 25 -> Phase 26 -> Phase 27 -> Phase 28 -> Phase 29 -> Phase 30
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -893,11 +951,15 @@ Plan candidates:
 | 26. Review Moderation and Customer Trust Controls | 3/3 | Complete | 2026-06-30 |
 | 27. Searchable Admin Product Picker for Merchandising Workflows | 3/3 | Complete | 2026-06-30 |
 | 28. Shipping Rates and International Checkout Rules | 3/3 | Complete | 2026-06-30 |
+| 29. Demo Admin Portfolio Access and Safe Preview Mode | 3/3 | Complete | 2026-06-30 |
+| 30. Hybrid Sandbox Payment Demo Mode | 3/3 | Complete | 2026-06-30 |
 
 ## Recommendations
 
 - Resume Phase 9 evidence capture when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler inputs are available.
 - Keep Phase 11 focused on live monitoring, alerting, backup/restore, and incident-readiness evidence once the provider setup exists.
 - Treat Phase 12 as the only production cutover phase; local completion of phases 13-21 does not imply hosted release approval.
-- Product-growth phases 22-28 are complete; return to Phase 9 production launch evidence when external setup is available.
+- Product-growth and portfolio-demo phases 22-30 are complete; resume external production-readiness phases when provider inputs are available.
+- Keep Phase 29 as a read-only preview path for signed-in reviewers; do not grant real admin privileges to every signup.
+- Keep Phase 30 as sandbox-only payment demonstration work; do not imply production payment launch or real-money processing.
 - Preserve the no-subagent constraint for GSD execution unless the repository instruction changes.

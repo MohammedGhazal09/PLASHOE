@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
   objectIdSchema,
   optionalTrimmedString,
@@ -30,4 +31,8 @@ export const createOrderSchema = strictObject({
 
 export const shippingOptionsSchema = strictObject({
   country: trimmedString('country', 80),
+});
+
+export const mockPaymentOutcomeSchema = strictObject({
+  outcome: z.enum(['approve', 'decline', 'cancel']),
 });

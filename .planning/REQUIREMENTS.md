@@ -197,11 +197,27 @@
 - [x] **V3-SHIP-03**: Orders persist selected shipping method, shipping price, country, and final total.
 - [x] **V3-SHIP-04**: Payment amount and order persistence tests cover shipping-rate behavior.
 
+### Demo Admin Preview
+
+- [x] **V3-DEMOADMIN-01**: Signed-in non-admin accounts can reach the admin page in demo mode without receiving real admin role claims.
+- [x] **V3-DEMOADMIN-02**: Demo admin screens visibly explain the portfolio/recruiter restriction and why controls are disabled.
+- [x] **V3-DEMOADMIN-03**: Every create, update, delete, status-change, fulfillment, moderation, and notification control is disabled or handled as a safe no-op in demo mode.
+- [x] **V3-DEMOADMIN-04**: Backend admin APIs and middleware continue rejecting non-admin direct requests and do not expose sensitive private data to demo users.
+- [x] **V3-DEMOADMIN-05**: Tests and visual QA cover signed-out, signed-in demo, real-admin, disabled action, restriction-copy, and direct API authorization scenarios.
+
+### Hybrid Sandbox Payment Demo
+
+- [x] **V3-PAYDEMO-01**: Checkout uses Stripe test-mode hosted checkout when sandbox Stripe configuration is present.
+- [x] **V3-PAYDEMO-02**: Checkout falls back to a mock payment gateway only when Stripe sandbox configuration is missing.
+- [x] **V3-PAYDEMO-03**: Stripe-test and mock outcomes reuse existing order payment states and do not introduce a parallel fake payment model.
+- [x] **V3-PAYDEMO-04**: Checkout and return screens explain the active sandbox/mock mode, no-real-money boundary, retry path, and failure/cancel outcomes.
+- [x] **V3-PAYDEMO-05**: Tests and visual QA cover Stripe-configured flow, mock fallback, approve/decline/cancel states, persistence, and webhook/authorization boundaries.
+
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Pre-release storefront marketing expansion | Current v1 risk is reliability and production readiness; post-release growth features are tracked in phases 13-28. |
+| Pre-release storefront marketing expansion | Current v1 risk is reliability and production readiness; post-release growth features are tracked in phases 13-30. |
 | Mobile app | Web checkout must be reliable first. |
 | Multi-vendor marketplace | Not supported by current data model or admin workflow. |
 
@@ -313,13 +329,23 @@
 | V3-SHIP-02 | Phase 28 | Complete |
 | V3-SHIP-03 | Phase 28 | Complete |
 | V3-SHIP-04 | Phase 28 | Complete |
+| V3-DEMOADMIN-01 | Phase 29 | Complete |
+| V3-DEMOADMIN-02 | Phase 29 | Complete |
+| V3-DEMOADMIN-03 | Phase 29 | Complete |
+| V3-DEMOADMIN-04 | Phase 29 | Complete |
+| V3-DEMOADMIN-05 | Phase 29 | Complete |
+| V3-PAYDEMO-01 | Phase 30 | Complete |
+| V3-PAYDEMO-02 | Phase 30 | Complete |
+| V3-PAYDEMO-03 | Phase 30 | Complete |
+| V3-PAYDEMO-04 | Phase 30 | Complete |
+| V3-PAYDEMO-05 | Phase 30 | Complete |
 
 **Coverage:**
 
 - v1 requirements: 50 total
 - v2 requirements: 31 total
-- v3 requirements: 23 total
-- Mapped to phases: 104
+- v3 requirements: 33 total
+- Mapped to phases: 114
 - Unmapped: 0
 
 ---

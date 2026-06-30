@@ -53,6 +53,14 @@ const parsePaymentsEnabled = (env) => {
   return raw.toLowerCase() !== 'false';
 };
 
+const hasCompleteStripeConfig = ({
+  stripeSecretKey,
+  stripeWebhookSecret,
+  paymentSuccessUrl,
+  paymentCancelUrl,
+}) =>
+  Boolean(stripeSecretKey && stripeWebhookSecret && paymentSuccessUrl && paymentCancelUrl);
+
 const rejectTemplatePlaceholder = (value, key, env, errors) => {
   if (env.NODE_ENV === 'test' || !value) {
     return;
@@ -70,11 +78,22 @@ export const validateRuntimeEnv = (env = process.env) => {
   const frontendUrl = getTrimmed(env, 'FRONTEND_URL');
   const jwtExpire = getTrimmed(env, 'JWT_EXPIRE') || JWT_SECURITY.defaultExpiresIn;
   const portValue = getTrimmed(env, 'PORT');
-  const paymentsEnabled = parsePaymentsEnabled(env);
+  const paymentsRequested = parsePaymentsEnabled(env);
   const stripeSecretKey = getTrimmed(env, 'STRIPE_SECRET_KEY');
   const stripeWebhookSecret = getTrimmed(env, 'STRIPE_WEBHOOK_SECRET');
   const paymentSuccessUrl = getTrimmed(env, 'PAYMENT_SUCCESS_URL');
   const paymentCancelUrl = getTrimmed(env, 'PAYMENT_CANCEL_URL');
+  const paymentProviderMode =
+    paymentsRequested &&
+    hasCompleteStripeConfig({
+      stripeSecretKey,
+      stripeWebhookSecret,
+      paymentSuccessUrl,
+      paymentCancelUrl,
+    })
+      ? 'stripe'
+      : 'mock';
+  const paymentsEnabled = paymentProviderMode === 'stripe';
 
   if (!mongoUri) {
     errors.push('MONGO_URI is required');
@@ -106,30 +125,11 @@ export const validateRuntimeEnv = (env = process.env) => {
   let normalizedPaymentSuccessUrl = paymentSuccessUrl;
   let normalizedPaymentCancelUrl = paymentCancelUrl;
 
-  if (paymentsEnabled) {
-    if (!stripeSecretKey) {
-      errors.push('STRIPE_SECRET_KEY is required when payments are enabled');
-    } else {
-      rejectTemplatePlaceholder(stripeSecretKey, 'STRIPE_SECRET_KEY', env, errors);
-    }
-
-    if (!stripeWebhookSecret) {
-      errors.push('STRIPE_WEBHOOK_SECRET is required when payments are enabled');
-    } else {
-      rejectTemplatePlaceholder(stripeWebhookSecret, 'STRIPE_WEBHOOK_SECRET', env, errors);
-    }
-
-    if (!paymentSuccessUrl) {
-      errors.push('PAYMENT_SUCCESS_URL is required when payments are enabled');
-    } else {
-      normalizedPaymentSuccessUrl = validateUrl(paymentSuccessUrl, 'PAYMENT_SUCCESS_URL', errors);
-    }
-
-    if (!paymentCancelUrl) {
-      errors.push('PAYMENT_CANCEL_URL is required when payments are enabled');
-    } else {
-      normalizedPaymentCancelUrl = validateUrl(paymentCancelUrl, 'PAYMENT_CANCEL_URL', errors);
-    }
+  if (paymentProviderMode === 'stripe') {
+    rejectTemplatePlaceholder(stripeSecretKey, 'STRIPE_SECRET_KEY', env, errors);
+    rejectTemplatePlaceholder(stripeWebhookSecret, 'STRIPE_WEBHOOK_SECRET', env, errors);
+    normalizedPaymentSuccessUrl = validateUrl(paymentSuccessUrl, 'PAYMENT_SUCCESS_URL', errors);
+    normalizedPaymentCancelUrl = validateUrl(paymentCancelUrl, 'PAYMENT_CANCEL_URL', errors);
   }
 
   if (errors.length > 0) {
@@ -145,6 +145,7 @@ export const validateRuntimeEnv = (env = process.env) => {
     frontendUrl: normalizedFrontendUrl,
     port,
     paymentsEnabled,
+    paymentProviderMode,
     stripeSecretKey,
     stripeWebhookSecret,
     paymentSuccessUrl: normalizedPaymentSuccessUrl,

@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate, faBell, faBoxOpen, faChartLine, faClipboardList, faEnvelope, faImages, faNewspaper, faStar, faTags } from '@fortawesome/free-solid-svg-icons';
+import { adminApi } from '../api/adminApi';
+import { useAdminDemoMode } from '../context/adminDemoMode';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminOrders from './admin/AdminOrders';
 import AdminReturns from './admin/AdminReturns';
@@ -27,11 +29,20 @@ const sections = [
 
 export default function AdminConsole() {
   const [activeSection, setActiveSection] = useState('dashboard');
+  const adminDemoMode = useAdminDemoMode();
   const active = useMemo(
     () => sections.find((section) => section.id === activeSection) || sections[0],
     [activeSection]
   );
   const ActiveComponent = active.Component;
+
+  useLayoutEffect(() => {
+    adminApi.setDemoMode(adminDemoMode);
+
+    return () => {
+      adminApi.setDemoMode(false);
+    };
+  }, [adminDemoMode]);
 
   return (
     <main className="min-h-screen bg-light">
@@ -64,8 +75,27 @@ export default function AdminConsole() {
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1">
-          <ActiveComponent />
+        <section className="min-w-0 flex-1 space-y-4">
+          {adminDemoMode && (
+            <div
+              id="admin-demo-mode-notice"
+              role="status"
+              className="border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+            >
+              <p className="font-semibold">Demo admin preview</p>
+              <p className="mt-1">
+                This portfolio account can inspect sample operations data, but write actions are disabled because it is not a real administrator account.
+              </p>
+            </div>
+          )}
+          <fieldset
+            disabled={adminDemoMode}
+            aria-describedby={adminDemoMode ? 'admin-demo-mode-notice' : undefined}
+            className="m-0 min-w-0 border-0 p-0"
+          >
+            <legend className="sr-only">Admin section controls</legend>
+            <ActiveComponent />
+          </fieldset>
         </section>
       </div>
     </main>

@@ -64,6 +64,7 @@ Admin routes use the same bearer token plus the backend `admin` middleware, whic
 | GET | `/api/orders/:id` | Return one order if owned by the user or requested by an admin. | Bearer JWT, owner or admin | `ordersApi.getById(id)` |
 | POST | `/api/orders/:id/reorder` | Move currently available items from a prior order into the current user's cart. | Bearer JWT, owner only | `ordersApi.reorder(id)` |
 | PUT | `/api/orders/:id/cancel` | Cancel an owned order unless it is shipped or delivered. | Bearer JWT, owner only | `ordersApi.cancel(id)` |
+| POST | `/api/orders/:id/payment/mock` | Record a mock sandbox payment outcome: `approve`, `decline`, or `cancel`. | Bearer JWT, owner only, mock provider order | `ordersApi.completeMockPayment(id, outcome)` |
 | GET | `/api/admin/orders` | List all orders for admins with bounded pagination and filters. | Admin bearer JWT | `adminApi.getOrders(params)` |
 | GET | `/api/admin/orders/:id` | Return full admin order detail with limited user identity. | Admin bearer JWT | `adminApi.getOrder(id)` |
 | PATCH | `/api/admin/orders/:id/fulfillment` | Advance fulfillment and update carrier/tracking fields. | Admin bearer JWT | `adminApi.updateOrderFulfillment(id, payload)` |
@@ -793,7 +794,7 @@ Review create returns `201` with the created public review and the updated aggre
 
 Order checkout-start returns status `201`, `message: "Payment started"`, and `data.order` plus `data.payment`. An exact retry with the same `Idempotency-Key` returns status `200`, `message: "Payment already started"`, the same order, and the stored pending payment URL. Missing `Idempotency-Key` returns `400`. Reusing the key for a changed non-empty cart/request state returns `409`.
 
-The backend calculates order items, subtotal, discount, total, coupon usage, and stock decrement from the authenticated cart. Provider-backed orders start with fulfillment `status: "pending"` and payment state `payment_pending`; verified webhook success is the only path that moves fulfillment to `processing` and `paymentStatus` to `paid`. Order numbers are unique display identifiers beginning with `PLS-`; they are not strict sequences.
+The backend calculates order items, subtotal, discount, total, coupon usage, and stock decrement from the authenticated cart. Provider-backed orders start with fulfillment `status: "pending"` and payment state `payment_pending`. In Stripe mode, verified webhook success moves fulfillment to `processing` and `paymentStatus` to `paid`. In mock sandbox mode, `POST /api/orders/:id/payment/mock` records controlled demo outcomes without collecting card data. Order numbers are unique display identifiers beginning with `PLS-`; they are not strict sequences.
 
 ```json
 {
@@ -821,6 +822,28 @@ The backend calculates order items, subtotal, discount, total, coupon usage, and
   }
 }
 ```
+
+When Stripe config is incomplete or `PAYMENTS_ENABLED=false`, checkout returns a mock gateway URL:
+
+```json
+{
+  "provider": "mock",
+  "checkoutUrl": "https://frontend.example.test/checkout/mock?orderId=665000000000000000000010",
+  "sessionId": "mock-session-665000000000000000000010",
+  "paymentIntentId": null,
+  "demoMode": true
+}
+```
+
+`POST /api/orders/:id/payment/mock`
+
+```json
+{
+  "outcome": "approve"
+}
+```
+
+Supported mock outcomes are `approve`, `decline`, and `cancel`. They transition the same order payment fields to `paid`, `payment_failed`, or `payment_canceled`; decline and cancel release reserved inventory once through the existing payment-state service.
 
 Payment status values:
 
@@ -954,7 +977,7 @@ The frontend wrappers are relative to the configured axios `baseURL`; with the d
 | `Frontend/Ecommerce-main/my-app/src/api/cartApi.js` | `cartApi` | `GET /api/cart`, `POST /api/cart/merge`, `POST /api/cart/items`, `PUT /api/cart/items/:itemId`, `DELETE /api/cart/items/:itemId`, `DELETE /api/cart`, `POST /api/cart/coupon`, `DELETE /api/cart/coupon` |
 | `Frontend/Ecommerce-main/my-app/src/api/wishlistApi.js` | `wishlistApi` | `GET /api/wishlist`, `POST /api/wishlist/items`, `DELETE /api/wishlist/items/:productId` |
 | `Frontend/Ecommerce-main/my-app/src/api/reviewsApi.js` | `reviewsApi` | `GET /api/products/:id/reviews`, `POST /api/products/:id/reviews` |
-| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `ordersApi` | `POST /api/orders` with optional `Idempotency-Key`, `GET /api/orders`, `GET /api/orders/:id`, `POST /api/orders/:id/reorder`, `PUT /api/orders/:id/cancel` |
+| `Frontend/Ecommerce-main/my-app/src/api/ordersApi.js` | `ordersApi` | `POST /api/orders` with optional `Idempotency-Key`, `GET /api/orders`, `GET /api/orders/:id`, `POST /api/orders/:id/payment/mock`, `POST /api/orders/:id/reorder`, `PUT /api/orders/:id/cancel` |
 | `Frontend/Ecommerce-main/my-app/src/api/returnsApi.js` | `returnsApi` | `POST /api/returns`, `GET /api/returns`, `GET /api/returns/:id` |
 | `Frontend/Ecommerce-main/my-app/src/api/backInStockApi.js` | `backInStockApi` | `POST /api/back-in-stock` |
 | `Frontend/Ecommerce-main/my-app/src/api/contactApi.js` | `contactApi` | `POST /api/contact` |
@@ -963,6 +986,6 @@ The frontend wrappers are relative to the configured axios `baseURL`; with the d
 
 ## Admin Console
 
-The frontend admin console is available at `/admin`. It requires an authenticated user whose backend auth response includes `isAdmin: true`; the frontend guard is a user-experience boundary only, and every admin API call still requires backend bearer-token authentication plus the backend `admin` middleware.
+The frontend admin console is available at `/admin`. Signed-out users are redirected to `/account`. Authenticated non-admin users can open a portfolio demo preview with sanitized sample admin data and disabled write controls. Real admin API calls still require backend bearer-token authentication plus the backend `admin` middleware; the demo preview does not set `isAdmin` or weaken backend authorization.
 
-The console supports order list/detail/fulfillment operations, product create/update/delete, coupon list/create/delete, and contact message list/mark-read/delete workflows through `adminApi`.
+The console supports order list/detail/fulfillment operations, product create/update/delete, coupon list/create/delete, and contact message list/mark-read/delete workflows through `adminApi`. In demo mode, `adminApi` returns sample reads and rejects mutation wrappers before HTTP requests are sent.

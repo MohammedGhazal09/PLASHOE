@@ -5,27 +5,27 @@ milestone_name: milestone
 current_phase: 9
 current_plan: Blocked on external setup
 status: external_setup_blocked
-last_updated: "2026-06-30T06:52:00+03:00"
+last_updated: "2026-06-30T08:45:00+03:00"
 last_activity: 2026-06-30
 progress:
-  total_phases: 28
-  completed_phases: 25
-  total_plans: 72
-  completed_plans: 72
-  percent: 89
+  total_phases: 30
+  completed_phases: 27
+  total_plans: 78
+  completed_plans: 78
+  percent: 90
 ---
 
 # Project State: PLASHOE
 
 **Current Phase:** Phase 9 - Production Launch Setup and Staging Verification (blocked on external setup)
-**Status:** Feature phases 13-28 are complete; production launch, operational provider evidence, and release cutover remain blocked or not started.
+**Status:** Feature and portfolio-demo phases 13-30 are complete; production launch, operational provider evidence, and release cutover remain blocked or not started.
 **Current Plan:** None active locally
-**Next recommended run:** Resume `$gsd-execute-phase 9` when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler evidence are available. Then complete Phase 11 provider evidence and Phase 12 release approval/cutover.
+**Next recommended run:** Resume `$gsd-execute-phase 9` when external staging, MongoDB, Stripe, host/log provider, notification path, rollback command, and MapTiler evidence are available.
 **Last Activity:** 2026-06-30
 
 ## Current Focus
 
-Phases 13-28 are complete with source-controlled admin, wishlist, product detail, discovery, checkout conversion, returns, sustainability, retention, shoppable lookbook, account self-service, admin dashboard, back-in-stock admin workflows, newsletter consent, review moderation, reusable admin product picker, and server-owned shipping rules work verified by local tests, builds, and browser evidence. Remaining production-readiness focus still matters: Phase 9 is blocked on external staging/provider inputs, Phase 11 is blocked on live operations/provider proof, and Phase 12 remains an explicit production cutover approval step. No hosted, provider-delivery, or production success is claimed from the local feature sweep.
+Phases 13-30 are complete with source-controlled admin, wishlist, product detail, discovery, checkout conversion, returns, sustainability, retention, shoppable lookbook, account self-service, admin dashboard, back-in-stock admin workflows, newsletter consent, review moderation, reusable admin product picker, server-owned shipping rules, restricted demo admin preview, and hybrid sandbox payment demo work verified by local tests, builds, and browser evidence. Remaining production-readiness focus still matters: Phase 9 is blocked on external staging/provider inputs, Phase 11 is blocked on live operations/provider proof, and Phase 12 remains an explicit production cutover approval step. No hosted, provider-delivery, or production success is claimed from the local feature sweep.
 
 ## Accumulated Context
 
@@ -91,6 +91,10 @@ Phases 13-28 are complete with source-controlled admin, wishlist, product detail
 - 2026-06-30: Completed Phase 26 with protected review moderation APIs, aggregate-safe approve/hide transitions, Reviews admin UI, focused backend/frontend tests, production build, and Hercules/Playwright visual QA evidence.
 - 2026-06-30: Completed Phase 27 with reusable admin product picker UI, lookbook hotspot and bundle picker integration, focused frontend tests, production build, and Hercules/Playwright visual QA evidence.
 - 2026-06-30: Completed Phase 28 with server-owned shipping rules, protected shipping-options quote endpoint, shipping-inclusive checkout totals and order persistence, checkout shipping method UI, focused backend/frontend tests, production build, and Hercules/Playwright visual QA evidence.
+- 2026-06-30: Added Phase 29 for demo admin portfolio access and safe preview mode.
+- 2026-06-30: Added Phase 30 for hybrid sandbox payment demo mode.
+- 2026-06-30: Completed Phase 29 with authenticated non-admin demo admin access, sanitized sample admin reads, read-only restriction notice, disabled admin controls, direct mutation wrapper guards, full frontend tests, production build, and Hercules/Playwright visual QA evidence.
+- 2026-06-30: Completed Phase 30 with Stripe-or-mock payment mode selection, mock checkout gateway approve/decline/cancel outcomes, payment-state reuse, docs, full backend/frontend tests, production build, and Hercules/Playwright visual QA evidence.
 
 ### Decisions
 
@@ -100,7 +104,9 @@ Phases 13-28 are complete with source-controlled admin, wishlist, product detail
 - Keep Phase 3 dependency remediation bounded to patch/minor upgrades unless audit evidence requires a major migration.
 - Treat the completed phases 13-21 feature sweep as local/source-controlled evidence only; production readiness still depends on phases 9, 11, and 12.
 - Phase 13 was executed first because the admin console provided the management surface needed by later catalog, review, return, sustainability, retention, and lookbook work.
-- Product-growth phases 22-28 are complete; resume Phase 9 production launch evidence when external launch inputs become available.
+- Product-growth and portfolio-demo phases 22-30 are complete; resume external launch inputs next unless a new portfolio feature is explicitly requested.
+- Phase 29 keeps admin capabilities visible for portfolio reviewers without granting real admin permissions, weakening backend authorization, or relying on disabled UI controls as the security boundary.
+- Phase 30 reuses the existing payment services and state model, with mock fallback only for sandbox demonstration when Stripe configuration is missing.
 
 ### Known Open Risks
 
@@ -110,3 +116,5 @@ Phases 13-28 are complete with source-controlled admin, wishlist, product detail
 - Production release, tag/push decisions, rollback readiness, and post-launch review remain open until Phase 12 and require explicit user approval for release actions.
 - Phase 9 cannot be marked passed until staging backend/frontend origins, MongoDB isolation proof, Stripe test-mode dashboard evidence, and MapTiler/public config decisions are supplied.
 - Notification provider delivery remains intentionally deferred until consent, unsubscribe, suppression, audit, and rate-limit requirements are specified.
+- Demo admin preview uses sanitized sample data and must stay read-only for non-admin accounts.
+- Hybrid payment demo must never collect card numbers or imply real-money production readiness without Phase 9/12 provider evidence and explicit release approval.

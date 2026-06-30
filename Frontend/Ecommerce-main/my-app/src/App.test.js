@@ -39,6 +39,7 @@ vi.mock('./pages', () => ({
   Sale: () => <section>Sale page</section>,
   Cart: () => <section>Cart page</section>,
   Checkout: () => <section>Checkout page</section>,
+  CheckoutMockPayment: () => <section>Checkout mock payment page</section>,
   CheckoutReturn: () => <section>Checkout return page</section>,
   Account: () => <section>Account page</section>,
   AdminConsole: () => <section>Admin console page</section>,
