@@ -39,6 +39,20 @@ dotenv.config(
 
 const app = express();
 let runtimeInitializationPromise;
+const DEFAULT_FRONTEND_URL = "http://localhost:5173";
+
+export const createAllowedCorsOrigins = (frontendUrl = DEFAULT_FRONTEND_URL) => {
+  const configuredOrigin = new URL(frontendUrl).origin;
+  const origins = new Set([configuredOrigin]);
+  const url = new URL(configuredOrigin);
+
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+    url.hostname = url.hostname === "localhost" ? "127.0.0.1" : "localhost";
+    origins.add(url.origin);
+  }
+
+  return origins;
+};
 
 const initializeRuntime = async () => {
   validateRuntimeEnv(process.env);
@@ -61,8 +75,12 @@ const ensureRuntimeInitialized = async (req, res, next) => {
   }
 };
 
+const allowedCorsOrigins = createAllowedCorsOrigins(process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL);
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: (origin, callback) => {
+    callback(null, !origin || allowedCorsOrigins.has(origin));
+  },
   credentials: true,
 };
 

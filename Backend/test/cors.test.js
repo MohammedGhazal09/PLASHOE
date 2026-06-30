@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 const configuredOrigin = "https://shop.example";
 
 let app;
+let createAllowedCorsOrigins;
 let envDir;
 let originalFrontendUrl;
 let originalDotenvPath;
@@ -22,7 +23,7 @@ describe("cors configuration", () => {
     delete process.env.FRONTEND_URL;
     process.env.DOTENV_CONFIG_PATH = envPath;
 
-    ({ default: app } = await import("../app.js"));
+    ({ default: app, createAllowedCorsOrigins } = await import("../app.js"));
   });
 
   afterAll(() => {
@@ -48,5 +49,16 @@ describe("cors configuration", () => {
       .expect(200);
 
     expect(response.headers["access-control-allow-origin"]).toBe(configuredOrigin);
+  });
+
+  it("allows the matching localhost and 127.0.0.1 loopback origins", () => {
+    expect([...createAllowedCorsOrigins("http://localhost:5174")]).toEqual([
+      "http://localhost:5174",
+      "http://127.0.0.1:5174",
+    ]);
+    expect([...createAllowedCorsOrigins("http://127.0.0.1:5174")]).toEqual([
+      "http://127.0.0.1:5174",
+      "http://localhost:5174",
+    ]);
   });
 });
